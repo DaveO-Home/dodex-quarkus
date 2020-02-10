@@ -1,0 +1,27 @@
+{
+  "name": "dodex-quarkus",
+  "version": "1.0.0",
+  "description": "A java asynchronous server for Dodex using quarkus",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaveO-Home/dodex-vertx.git"
+  },
+  "keywords": [
+    "Java",
+    "javaRx",
+    "vertx",
+    "quarkus"
+  ],
+  "author": "DaveO",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DaveO-Home/dodex-quarkus/issues"
+  },
+  "homepage": "https://github.com/DaveO-Home/dodex-quarkus#readme",
+  "dependencies": {
+  }
+}
