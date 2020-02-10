@@ -1,0 +1,100 @@
+{
+    "application": "Dodex",
+    "defaultdb": "sqlite3",
+    "sqlite3": {
+        "dev": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "dodex_tests.db",
+                "url": "jdbc:sqlite:"
+            }
+        },
+        "prod": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "dodex.db",
+                "url": "jdbc:sqlite:"
+            }
+        }
+    },
+    "postgres": {
+        "dev": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "//localhost",
+                "url": "jdbc:postgresql:",
+                "dbname": "/test"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "//localhost",
+                "url": "jdbc:postgresql:",
+                "dbname": "/dodex"
+            }
+        }
+    },
+    "cubrid": {
+        "dev": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost:33000:",
+                "url": "jdbc:cubrid:",
+                "dbname": "test:public::"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost:33000",
+                "url": "jdbc:CUBRID:",
+                "dbname": "dodex:public::"
+            }
+        }
+    },
+    "mariadb": {
+        "dev": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "//localhost:3306",
+                "url": "jdbc:mariadb:",
+                "dbname": "/test"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "//localhost:3306",
+                "url": "jdbc:mariadb:",
+                "dbname": "/dodex"
+            }
+        }
+    }
+}
