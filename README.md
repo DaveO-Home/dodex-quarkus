@@ -2,7 +2,7 @@
 
 An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus Supersonic Subatomic Java Framework.
 
-See <https://github.com/DaveO-Home/dodex-quarkus/QUARKUS-README.md> for Quarkus details.
+See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> for Quarkus details.
 
 ## Install Assumptions
 
