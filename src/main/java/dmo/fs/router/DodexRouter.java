@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.MessageHandler;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -32,7 +33,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-@ServerEndpoint("/dodex")         
+@ServerEndpoint("/dodex")
+@ApplicationScoped       
 public class DodexRouter {
     private Vertx vertx;
     private final static Logger logger = LoggerFactory.getLogger(DodexRouter.class.getName());
@@ -59,7 +61,7 @@ public class DodexRouter {
     @OnOpen
     public void onOpen(Session session) {
         sessions.put(session.getId(), session);
-
+        
         session.addMessageHandler(new MessageHandler.Whole<String>() {
             @Override
             public void onMessage(String message) {
