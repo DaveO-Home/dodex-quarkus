@@ -7,6 +7,7 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 ## Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:
+
 ```bash
 ./gradlew quarkusDev
 ```
@@ -20,6 +21,7 @@ Be aware that it’s not an _über-jar_ as the dependencies are copied into the 
 The application is now runnable using `java -jar build/dodex-quarkus-1.0.0-runner.jar`.
 
 If you want to build an _über-jar_, just add the `--uber-jar` option to the command line:
+
 ```bash
 ./gradlew quarkusBuild --uber-jar
 ```

@@ -1,9 +1,13 @@
+#Dodex
+deploy
+
 # Eclipse
 .project
 .classpath
 .settings/
 bin/
 src/main/resources/static/node_modules
+*.db
 
 # IntelliJ
 .idea

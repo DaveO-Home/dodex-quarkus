@@ -1,8 +1,13 @@
 package dmo.fs.db;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -11,28 +16,23 @@ import org.davidmoten.rx.jdbc.Database;
 import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
 import org.davidmoten.rx.jdbc.pool.Pools;
 
-import dmo.fs.utils.ConsoleColors;
+import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.reactivex.disposables.Disposable;
+import io.vertx.core.Future;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
+public class DodexDatabaseMariadb extends DbMariadb {
 	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseMariadb.class.getName());
 	protected Disposable disposable;
 	protected ConnectionProvider cp;
 	protected NonBlockingConnectionPool pool;
 	protected Database db;
 	protected Properties dbProperties = new Properties();
-	protected Map<String, String> dbOverrideMap = new HashMap<>();
-	protected Map<String, String> dbMap = new HashMap<>();
-	protected JsonNode defaultNode = null;
+	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected JsonNode defaultNode;
 	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
 	protected DodexUtil dodexUtil = new DodexUtil();
 
@@ -42,7 +42,7 @@ public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
 
 		defaultNode = dodexUtil.getDefaultNode();
 
-		webEnv = DodexUtil.getEnv();
+		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -64,7 +64,7 @@ public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = DodexUtil.getEnv();
+		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -74,13 +74,8 @@ public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
 		databaseSetup();
 	}
 
-	@Override
-	public String getAllUsers() {
-		return super.getAllUsers();
-	}
-
 	private void databaseSetup() throws InterruptedException, SQLException {
-		if (webEnv.equals("dev")) {
+		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
 			DbConfiguration.configureDefaults(dbMap, dbProperties); // Using prod (./dodex.db)
@@ -89,41 +84,39 @@ public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
 
 		pool = Pools.nonBlocking().maxPoolSize(Runtime.getRuntime().availableProcessors() * 5).connectionProvider(cp)
 				.build();
-
+		
 		db = Database.from(pool);
 
-		Disposable disposable = db.member().doOnSuccess(c -> {
-			Statement stat = c.value().createStatement();
+		Future.future(prom -> {
+			db.member().doOnSuccess(c -> {
+				Statement stat = c.value().createStatement();
 
-			// stat.executeUpdate("drop table UNDELIVERED");
-			// stat.executeUpdate("drop table USERS");
-			// stat.executeUpdate("drop table MESSAGES");
-			
+				// stat.executeUpdate("drop table UNDELIVERED");
+				// stat.executeUpdate("drop table USERS");
+				// stat.executeUpdate("drop table MESSAGES");
+				
 
-			String sql = getCreateTable("USERS");
-			if (!tableExist(c.value(), "USERS")) {
-				stat.executeUpdate(sql);
-			}
-			sql = getCreateTable("MESSAGES");
-			if (!tableExist(c.value(), "MESSAGES")) {
-				stat.executeUpdate(sql);
-			}
-			sql = getCreateTable("UNDELIVERED");
-			if (!tableExist(c.value(), "UNDELIVERED")) {
-				stat.executeUpdate(sql);
-			}
-			stat.close();
-			c.value().close();
-		}).subscribe(result -> {
-			//
-		}, throwable -> {
-			logger.error("{0}Error creating database tables{1}",
-					new Object[] { ConsoleColors.RED, ConsoleColors.RESET });
-			throwable.printStackTrace();
+				String sql = getCreateTable("USERS");
+				if (!tableExist(c.value(), "USERS")) {
+					stat.executeUpdate(sql);
+				}
+				sql = getCreateTable("MESSAGES");
+				if (!tableExist(c.value(), "MESSAGES")) {
+					stat.executeUpdate(sql);
+				}
+				sql = getCreateTable("UNDELIVERED");
+				if (!tableExist(c.value(), "UNDELIVERED")) {
+					stat.executeUpdate(sql);
+				}
+				stat.close();
+				c.value().close();
+			}).subscribe(result -> {
+				prom.complete();
+			}, throwable -> {
+				logger.error(String.join(ColorUtilConstants.RED, "Error creating database tables: ", throwable.getMessage(), ColorUtilConstants.RESET));
+				throwable.printStackTrace();
+			});
 		});
-		await(disposable);
-		// generate all jooq sql only once.
-		setupSql(db);
 	}
 	
 	@Override
@@ -141,24 +134,23 @@ public class DodexDatabaseMariadb extends DbMariadb implements DodexDatabase {
 		return new MessageUserImpl();
 	}
 
+	@Override
+	public void callSetupSql() throws SQLException {
+		setupSql(db);
+	}
+
 	// per stack overflow
 	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
 		boolean exists = false;
 		try (ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
 			while (rs.next()) {
 				String name = rs.getString("TABLE_NAME");
-				if (name != null && name.toLowerCase().equals(tableName.toLowerCase())) {
+				if (name != null && name.equalsIgnoreCase(tableName)) {
 					exists = true;
 					break;
 				}
 			}
 		}
 		return exists;
-	}
-
-	private static void await(Disposable disposable) throws InterruptedException {
-		while (!disposable.isDisposed()) {
-			Thread.sleep(100);
-		}
 	}
 }

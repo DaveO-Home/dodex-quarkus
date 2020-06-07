@@ -8,46 +8,52 @@ import javax.websocket.Session;
 import org.davidmoten.rx.jdbc.Database;
 import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
 
-import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 
 public interface DodexDatabase {
 
-	public String getAllUsers();
+	String getAllUsers();
 
-	public String getUserByName();
+	String getUserByName();
 
-    public String getInsertUser();
+    String getInsertUser();
     
-	public String getRemoveUndelivered();
+	String getRemoveUndelivered();
 
-	public String getRemoveMessage();
+	String getRemoveMessage();
 
-    public String getUndeliveredMessage();
+    String getUndeliveredMessage();
 	
-	public String getDeleteUser();
+	String getDeleteUser();
 
-	public Long addUser(Session sesson, Database db, MessageUser messageUser) throws SQLException, InterruptedException;
+	Future<MessageUser> addUser(Session session, Database db, MessageUser messageUser) throws SQLException, InterruptedException;
 
-	public long deleteUser(Session session, Database db, MessageUser messageUser) throws SQLException, InterruptedException;
+	Future<Long> deleteUser(Session session, Database db, MessageUser messageUser) throws SQLException, InterruptedException;
 
-	public long addMessage(Session session, MessageUser messageUser, String message, Database db) throws SQLException, InterruptedException;
+	Future<Long> addMessage(Session session, MessageUser messageUser, String message, Database db) throws SQLException, InterruptedException;
 
-	public int addUndelivered(Session session, List<String> undelivered, Long messageId, Database db) throws SQLException;
+	Future<Void> addUndelivered(Session session, List<String> undelivered, Long messageId, Database db) throws SQLException;
 
-	public Long getUserIdByName(String name, Database db) throws InterruptedException, SQLException;
+	Future<Long> getUserIdByName(String name, Database db) throws InterruptedException, SQLException;
 
-	public void addUndelivered(Long userId, Long messageId, Database db) throws SQLException, InterruptedException;
+	Future<Void> addUndelivered(Long userId, Long messageId, Database db) throws SQLException, InterruptedException;
 
-	public int processUserMessages(Session session, Database db, MessageUser messageUser);
+	int processUserMessages(Session session, Database db, MessageUser messageUser);
 
-	public Database getDatabase();
+	Database getDatabase();
 
-	public NonBlockingConnectionPool getPool();
+	NonBlockingConnectionPool getPool();
 
-	public MessageUser createMessageUser();
+	MessageUser createMessageUser();
 
-	public MessageUser selectUser(MessageUser messageUser, Session session, Database db) throws InterruptedException, SQLException;
+	Future<MessageUser> selectUser(MessageUser messageUser, javax.websocket.Session session, Database db) throws InterruptedException, SQLException;
 
-	public StringBuilder buildUsersJson(Database db, MessageUser messageUser) throws InterruptedException, SQLException;
+	Future<StringBuilder> buildUsersJson(Database db, MessageUser messageUser) throws InterruptedException, SQLException;
 
+	void setVertx(Vertx vertx);
+
+	Vertx getVertx();
+
+	void callSetupSql() throws SQLException;
 }

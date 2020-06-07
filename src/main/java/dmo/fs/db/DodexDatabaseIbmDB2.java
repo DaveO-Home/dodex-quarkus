@@ -23,8 +23,8 @@ import io.vertx.core.Future;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-public class DodexDatabasePostgres extends DbPostgres {
-	private final static Logger logger = LoggerFactory.getLogger(DodexDatabasePostgres.class.getName());
+public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
+	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseIbmDB2.class.getName());
 	protected Disposable disposable;
 	protected ConnectionProvider cp;
 	protected NonBlockingConnectionPool pool;
@@ -36,7 +36,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
 	protected DodexUtil dodexUtil = new DodexUtil();
 
-	public DodexDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
+	public DodexDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
 			throws InterruptedException, IOException, SQLException {
 		super();
 
@@ -58,11 +58,10 @@ public class DodexDatabasePostgres extends DbPostgres {
 		databaseSetup();
 	}
 
-	public DodexDatabasePostgres() throws InterruptedException, IOException, SQLException {
+	public DodexDatabaseIbmDB2() throws InterruptedException, IOException, SQLException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		
 		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
@@ -83,40 +82,40 @@ public class DodexDatabasePostgres extends DbPostgres {
 		} else {
 			DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
 		}
-		cp = DbConfiguration.getPostgresConnectionProvider();
+		cp = DbConfiguration.getIbmDb2ConnectionProvider();
 
 		pool = Pools.nonBlocking()
 				.maxPoolSize(Runtime.getRuntime().availableProcessors() * 5).connectionProvider(cp)
 				.build();
 		
 		db = Database.from(pool);
-		
+				
 		Future.future(prom -> {
 			db.member().doOnSuccess(c -> {
 				Statement stat = c.value().createStatement();
-
+				
 				// stat.executeUpdate("drop table undelivered");
 				// stat.executeUpdate("drop table users");
 				// stat.executeUpdate("drop table messages");
-				// stat.executeUpdate("drop sequence messages_id_seq;");
-				// stat.executeUpdate("drop sequence users_id_seq;");
 				
 				String sql = getCreateTable("USERS");
 				// Set defined user
-				sql = sql.replaceAll("dummy", dbProperties.get("user").toString());
 				if (!tableExist(c.value(), "users")) {
 					stat.executeUpdate(sql);
+					sql = getUsersIndex("USERS");
+					stat.executeUpdate(sql);
 				}
+				
 				sql = getCreateTable("MESSAGES");
-				sql = sql.replaceAll("dummy", dbProperties.get("user").toString());
 				if (!tableExist(c.value(), "messages")) {
 					stat.executeUpdate(sql);
 				}
+
 				sql = getCreateTable("UNDELIVERED");
-				sql = sql.replaceAll("dummy", dbProperties.get("user").toString());
 				if (!tableExist(c.value(), "undelivered")) {
 					stat.executeUpdate(sql);
 				}
+
 				stat.close();
 				c.value().close();
 			}).subscribe(result -> {
@@ -148,18 +147,16 @@ public class DodexDatabasePostgres extends DbPostgres {
 		setupSql(db);
 	}
 
-	// per stack overflow
 	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
 		boolean exists = false;
-		try (ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
-			while (rs.next()) {
-				String name = rs.getString("TABLE_NAME");
-				if (name != null && name.equalsIgnoreCase(tableName)) {
-					exists = true;
-					break;
-				}
+		try(Statement stat = conn.createStatement()) {		
+			try(ResultSet rs = stat.executeQuery("select 1 from " + tableName + " where 0 = 1")) {
+				exists = true;
+			} catch(Exception e) {
+				logger.info(String.join("", ColorUtilConstants.BLUE, "Creating table: ", tableName, ColorUtilConstants.RESET));
 			}
 		}
+		
 		return exists;
 	}
 }

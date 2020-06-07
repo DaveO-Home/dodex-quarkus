@@ -3,7 +3,7 @@ package dmo.fs.router;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 
-import dmo.fs.utils.ConsoleColors;
+import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -25,14 +25,11 @@ public class DodexRoutes {
     private final StaticHandler staticHandler = StaticHandler.create();
     private final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
     private String ip = "";
-    
-    DodexRoutes() {
-    }
 
     void onStart(@Observes StartupEvent event) {
         String value = System.getenv("VERTXWEB_ENVIRONMENT");
 
-		if (isProduction) {
+        if (isProduction) {
             DodexUtil.setEnv("prod");
             staticHandler.setCachingEnabled(true);
 		} else {
@@ -41,21 +38,17 @@ public class DodexRoutes {
 		}
 		staticHandler.setWebRoot("static");
 
-        logger.info("{0}{1}{2} ",
-            new Object[] { 
-                ConsoleColors.BLUE_BOLD_BRIGHT,
-                "Dodex Server on Quarkus started",
-                ConsoleColors.RESET
-            });
+        logger.info(String.join("", 
+            ColorUtilConstants.BLUE_BOLD_BRIGHT, 
+            "Dodex Server on Quarkus started", 
+            ColorUtilConstants.RESET));
     }
 
     void onStop(@Observes ShutdownEvent event) {
-        logger.info("{0}{1}{2} ",
-            new Object[] { 
-                ConsoleColors.BLUE_BOLD_BRIGHT,
-                "Stopping Quarkus",
-                ConsoleColors.RESET
-            });
+        logger.info(String.join("", 
+            ColorUtilConstants.BLUE_BOLD_BRIGHT, 
+            "Stopping Quarkus", 
+            ColorUtilConstants.RESET));
     }
 
     @Route(regex = "/test[/]?|/test/.*\\.html", methods = HttpMethod.GET)

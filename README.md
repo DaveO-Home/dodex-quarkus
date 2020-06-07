@@ -7,7 +7,7 @@ See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> 
 ## Install Assumptions
 
 1. Java 8 or higher installed with JAVA_HOME set.
-2. Gradle 6+ installed. If you have sdkman installed, execute ```sdk install gradle 6.1.1``` otherwise executing gradlew should install gradle.
+2. Gradle 6+ installed. If you have sdkman installed, execute ```sdk install gradle 6.4.1``` otherwise executing gradlew should install gradle.
 3. The `npm` javascript package manager installed.
 
 ## Getting Started
@@ -18,6 +18,7 @@ See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> 
 4. Execute url `http://localhost:8089/test` in a browser.
 5. You can also run `http://localhost:8089/test/bootstrap.html` for a bootstrap example.
 6. Follow instructions for dodex at <https://www.npmjs.com/package/dodex-mess> and <https://www.npmjs.com/package/dodex-input>.
+   ___Note:___ In dev mode(`gradlew quarkusDev`), when modifying Java code, all you have to do is refresh the browser window.
 
 ### Operation
 
@@ -44,7 +45,7 @@ See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> 
     }
 ```
 
-## Test
+## Test Dodex
 
 1. Make sure the demo Java-quarkus server is running in development mode.
 2. Test Dodex-mess by entering the URL `localhost:3089/test/index.html` in a browser.
