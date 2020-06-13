@@ -47,7 +47,7 @@ public interface DodexDatabase {
 
 	MessageUser createMessageUser();
 
-	Future<MessageUser> selectUser(MessageUser messageUser, javax.websocket.Session session, Database db) throws InterruptedException, SQLException;
+	Future<MessageUser> selectUser(MessageUser messageUser, Session session, Database db) throws InterruptedException, SQLException;
 
 	Future<StringBuilder> buildUsersJson(Database db, MessageUser messageUser) throws InterruptedException, SQLException;
 

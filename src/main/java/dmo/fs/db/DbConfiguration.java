@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -17,9 +17,9 @@ import dmo.fs.utils.DodexUtil;
 import io.quarkus.runtime.configuration.ProfileManager;
 
 @ApplicationScoped
-public class DbConfiguration {
+public abstract class DbConfiguration {
 
-    private static Map<String, String> map = new HashMap<>();
+    private static Map<String, String> map = new ConcurrentHashMap<>();
     private static Properties properties = new Properties();
 
     private static Boolean isUsingSqlite3 = false;
@@ -29,7 +29,7 @@ public class DbConfiguration {
     private static Boolean isUsingIbmDB2 = false;
     private static String defaultDb = "sqlite3";
     private static DodexUtil dodexUtil = new DodexUtil();
-    private static DodexDatabase dodexDatabase = null;
+    private static DodexDatabase dodexDatabase;
     private static final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
     
     private enum DbTypes {
@@ -162,4 +162,5 @@ public class DbConfiguration {
         map2.forEach((key, value) -> map1
             .merge( key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
     }
+
 }

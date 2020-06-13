@@ -38,11 +38,11 @@ import io.vertx.core.logging.LoggerFactory;
 @ServerEndpoint("/dodex")
 @ApplicationScoped       
 public class DodexRouter {
-    private Vertx vertx;
+    protected final Vertx vertx;
     private final static Logger logger = LoggerFactory.getLogger(DodexRouter.class.getName());
-    private DodexDatabase dodexDatabase = null;
+    private DodexDatabase dodexDatabase;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
-    private Database db = null;
+    private Database db;
     private final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
     public DodexRouter() throws InterruptedException, IOException, SQLException {
@@ -58,7 +58,7 @@ public class DodexRouter {
 		} else {
 			DodexUtil.setEnv(value == null? "dev": value);
 		}
-        setup(vertx);
+        setup();
     }
 
     @OnOpen
@@ -82,14 +82,18 @@ public class DodexRouter {
     @OnClose
     public void onClose(Session session) {
         sessions.remove(session.getId());
-        logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Closing ws-connection to client: " + session.getRequestParameterMap().get("handle").get(0), ColorUtilConstants.RESET));
+        if(logger.isInfoEnabled()) {
+            logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Closing ws-connection to client: " + session.getRequestParameterMap().get("handle").get(0), ColorUtilConstants.RESET));
+        }
         broadcast(session, "User " + session.getRequestParameterMap().get("handle").get(0) + " left");
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
         sessions.remove(session.getId());
-        logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Websocket-failure...User ", session.getRequestParameterMap().get("handle").get(0) + " left on error: ", throwable.getMessage(), ColorUtilConstants.RESET));
+        if(logger.isInfoEnabled()) {
+            logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Websocket-failure...User ", session.getRequestParameterMap().get("handle").get(0) + " left on error: ", throwable.getMessage(), ColorUtilConstants.RESET));
+        }
     }
 
     private void broadcast(Session session, String message) {
@@ -105,7 +109,7 @@ public class DodexRouter {
             });
     }
 
-    private void setup(Vertx vertx) throws InterruptedException, IOException, SQLException {
+    private void setup() throws InterruptedException, IOException, SQLException {
         /**
          * You can customize the db config here by: 
          *  Map = db configuration, 
@@ -190,7 +194,7 @@ public class DodexRouter {
         final String computedMessage = returnObject.get("message");
         final String command = returnObject.get("command");
 
-        if (!"".equals(command) && command.equals(";removeuser")) {
+        if (!"".equals(command) && ";removeuser".equals(command)) {
             try {
                 dodexDatabase.deleteUser(session, db, messageUser);
             } catch (InterruptedException | SQLException e) {
@@ -217,9 +221,11 @@ public class DodexRouter {
                     })) {
                         s.getAsyncRemote().sendObject(messageUser.getName() + ": " + computedMessage, result ->  {
                             if (result.getException() != null) {
-                                logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, 
-                                    "Websocket-connection...Unable to send message: " + s.getRequestParameterMap().get("handle").get(0) + ": " + result.getException(), 
-                                    ColorUtilConstants.RESET));
+                                if(logger.isInfoEnabled()) {
+                                    logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, 
+                                        "Websocket-connection...Unable to send message: " + s.getRequestParameterMap().get("handle").get(0) + ": " + result.getException(), 
+                                        ColorUtilConstants.RESET));
+                                }
                             }
                         });
                         // keep track of delivered messages
@@ -240,7 +246,7 @@ public class DodexRouter {
             final List<String> disconnectedUsers = selected.stream()
                     .filter(user -> !onlineUsers.contains(user)).collect(Collectors.toList());
             // Save private message to send when to-user logs in
-            if (disconnectedUsers.size() > 0) {
+            if (!disconnectedUsers.isEmpty()) {
                 Future<Long> futureKey = null;
                 try {
                     futureKey = dodexDatabase.addMessage(session, messageUser, computedMessage, db);

@@ -30,6 +30,18 @@ See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> 
 6. When Dodex-quarkus is configured for the Cubrid database, the database must be created using UTF-8. For example `cubrid createdb dodex en_US.utf8`.
 7. The dodex server has an auto user clean up process. See `application-conf.json` and `DodexRouter.java` for configuration. It is turned off by default. Users and messages may be orphaned when clients change a handle when the server is offline.
 
+## Java Linting with PMD
+
+* Run `gradlew pmdMain` and `gradlew pmdTest` to verify code using a subset of PMD rules in `dodexstart.xml`
+* Reports can be found in `build/reports/pmd`
+  
+### Single Page React Application to demo Development and Integration Testing
+
+* Integrated in ***Dodex-Quarkus*** at `src/spa-react`
+* Documentation <https://github.com/DaveO-Home/dodex-quarkus/blob/master/src/spa-react/README.md>
+* Uses ***Sqlite3*** as default backend database
+* Router added to `src/main/java/dmo/fs/router/DodexRoutes.java`, see the `init` method.
+
 ## Debug
 
 * Executing `gradlew quarkusDev` defaults to debug mode.
@@ -53,6 +65,10 @@ See <https://github.com/DaveO-Home/dodex-quarkus/blob/master/QUARKUS-README.md> 
 4. To test the messaging, open up the URL in a different browser and make a connection by Ctrl+Double-Clicking the bottom card. Make sure you create a handle.
 5. Enter a message and click send to test.
 6. For dodex-input Double-Click a dial or bottom card to popup the input dialog. Allows for uploading, editing and removal of private content. Content in JSON can be defined as arrays to make HTML more readable.
+
+## ChangeLog
+
+<https://github.com/DaveO-Home/dodex-quarkus/blob/master/CHANGELOG.md>
 
 ## Authors
 

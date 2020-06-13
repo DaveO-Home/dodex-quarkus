@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.0) (2020-12-08)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.1.0...v1.2.0)
+
+* Added React SPA application
+* Added Java PMD linting
+* Upgraded Gradle to 6.5
+
 ## [v1.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.1.0) (2020-06-08)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/bc4d7b71f3edb5b7be73ea0e13c1d1f7ed525ea1...v1.1.0)
