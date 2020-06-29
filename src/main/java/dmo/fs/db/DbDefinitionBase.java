@@ -407,7 +407,7 @@ public abstract class DbDefinitionBase {
 					try {
 						Future<Void> future2 = addUndelivered(userId, messageId, db);
 						future2.onSuccess(handler -> {
-							promise.complete();
+							promise.tryComplete();
 						});
 					} catch (SQLException | InterruptedException e) {
 						logger.error(String.join("", "AddUndelivered: ", e.getMessage()));

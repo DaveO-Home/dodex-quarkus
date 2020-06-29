@@ -1,6 +1,14 @@
 # Changelog
 
-## [v1.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.0) (2020-12-08)
+## [v1.2.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.1) (2020-06-29)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.0...v1.2.1)
+
+* Fixed Dodex exception when messaging multiple private users
+* Removed puppeteer - install(npm install puppeteer) and uncomment in gulpfile.js to use.
+* Upgraded to Quarkus 1.5.2-Final
+
+## [v1.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.0) (2020-06-12)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.1.0...v1.2.0)
 

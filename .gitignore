@@ -1,4 +1,5 @@
 #Dodex
+*.log*
 dist*
 .cache
 deploy

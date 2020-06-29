@@ -88,11 +88,11 @@ public class DodexRoutes {
     public void init(@Observes Router router) {
         SpaRoutes spaRoutes;
         Router vertxRouter = router;
-        io.vertx.ext.web.Route route = router.route("/*").handler(staticHandler).handler(TimeoutHandler.create(2000));
+        router.route("/*").handler(staticHandler).handler(TimeoutHandler.create(2000));
         FaviconHandler faviconHandler = FaviconHandler.create();
 
         if (DodexUtil.getEnv().equals("dev")) {
-            route.handler(CorsHandler.create("*"/* Need ports 8089 & 9876 */).allowedMethod(HttpMethod.GET));
+            router.route().handler(CorsHandler.create("*"/* Need ports 8089 & 9876 */).allowedMethod(HttpMethod.GET));
         }
 
         try {
