@@ -27,6 +27,7 @@ import dmo.fs.db.DodexDatabase;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
+import javax.inject.Inject;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -38,7 +39,8 @@ import io.vertx.core.logging.LoggerFactory;
 @ServerEndpoint("/dodex")
 @ApplicationScoped       
 public class DodexRouter {
-    protected final Vertx vertx;
+    @Inject protected Vertx vertx; 
+    // protected final Vertx vertx;
     private final static Logger logger = LoggerFactory.getLogger(DodexRouter.class.getName());
     private DodexDatabase dodexDatabase;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
@@ -49,7 +51,7 @@ public class DodexRouter {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
         System.setProperty("dmo.fs.level", "INFO");
         System.setProperty("org.jooq.no-logo", "true");
-        this.vertx = Vertx.vertx();
+        // this.vertx = Vertx.vertx();
         String value = System.getenv("VERTXWEB_ENVIRONMENT");
         
         Locale.setDefault(new Locale("US"));
@@ -83,7 +85,7 @@ public class DodexRouter {
     public void onClose(Session session) {
         sessions.remove(session.getId());
         if(logger.isInfoEnabled()) {
-            logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Closing ws-connection to client: " + session.getRequestParameterMap().get("handle").get(0), ColorUtilConstants.RESET));
+            logger.info(String.format("%sClosing ws-connection to client: %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,  session.getRequestParameterMap().get("handle").get(0), ColorUtilConstants.RESET));
         }
         broadcast(session, "User " + session.getRequestParameterMap().get("handle").get(0) + " left");
     }
@@ -92,7 +94,7 @@ public class DodexRouter {
     public void onError(Session session, Throwable throwable) {
         sessions.remove(session.getId());
         if(logger.isInfoEnabled()) {
-            logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Websocket-failure...User ", session.getRequestParameterMap().get("handle").get(0) + " left on error: ", throwable.getMessage(), ColorUtilConstants.RESET));
+            logger.info(String.format("%sWebsocket-failure...User %s%s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, session.getRequestParameterMap().get("handle").get(0), " left on error: ", throwable.getMessage(), ColorUtilConstants.RESET));
         }
     }
 
@@ -103,7 +105,7 @@ public class DodexRouter {
             .forEach(s -> {
                 s.getAsyncRemote().sendObject(message, result ->  {
                     if (result.getException() != null) {
-                        logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Unable to send message: ", s.getRequestParameterMap().get("handle").get(0), ": ", result.getException().getMessage(), ColorUtilConstants.RESET));
+                        logger.info(String.format("%sUnable to send message: %s%s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, s.getRequestParameterMap().get("handle").get(0), ": ", result.getException().getMessage(), ColorUtilConstants.RESET));
                     }
                 });
             });
@@ -144,7 +146,7 @@ public class DodexRouter {
                     clean.startClean(config);
                 }
             } catch (final Exception exception) {
-                logger.info(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT, "Context Configuration failed...", exception.getMessage(), ColorUtilConstants.RESET));
+                logger.info(String.format("%sContext Configuration failed...%s%s", ColorUtilConstants.RED_BOLD_BRIGHT, exception.getMessage(), ColorUtilConstants.RESET));
             }
         }
 
@@ -152,7 +154,7 @@ public class DodexRouter {
 
         startupMessage = DodexUtil.getEnv().equals("dev") ? "In Development" : startupMessage;
         
-        logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, "Starting Web Socket...", startupMessage, ColorUtilConstants.RESET));
+        logger.info(String.format("%sStarting Web Socket...%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage, ColorUtilConstants.RESET));
     }
 
     private void doConnection(Session session) {
@@ -172,7 +174,14 @@ public class DodexRouter {
                     /*
                     * Send undelivered messages and remove user related messages.
                     */
-                    dodexDatabase.processUserMessages(session, db, resultUser);
+                    dodexDatabase.processUserMessages(session, db, resultUser)
+                        .onComplete(fut -> {
+                            int messageCount = fut.result().get("messages");
+                            if(messageCount > 0) {
+                                logger.info(String.format("%sMessages Delivered: %d to %s%s", 
+                                    ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount, resultUser.getName(), ColorUtilConstants.RESET));
+                            }
+                        });
                 });
             } catch (InterruptedException | SQLException e) {
                 e.printStackTrace();
@@ -222,8 +231,8 @@ public class DodexRouter {
                         s.getAsyncRemote().sendObject(messageUser.getName() + ": " + computedMessage, result ->  {
                             if (result.getException() != null) {
                                 if(logger.isInfoEnabled()) {
-                                    logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT, 
-                                        "Websocket-connection...Unable to send message: " + s.getRequestParameterMap().get("handle").get(0) + ": " + result.getException(), 
+                                    logger.info(String.format("%Websocket-connection...Unable to send message: %s%s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, 
+                                         s.getRequestParameterMap().get("handle").get(0), ": ", result.getException(), 
                                         ColorUtilConstants.RESET));
                                 }
                             }

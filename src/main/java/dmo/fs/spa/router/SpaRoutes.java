@@ -6,6 +6,8 @@ import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.Optional;
 
+import javax.inject.Inject;
+
 import org.davidmoten.rx.jdbc.Database;
 
 import dmo.fs.spa.SpaApplication;
@@ -32,19 +34,18 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
 public class SpaRoutes {
+	protected Vertx vertx;
 	private final static Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
 	private final static String FAILURE = "{\"status\":\"-99\"}";
 	private final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
-	
-	protected Vertx vertx;
 	protected Router router;
 	protected SessionStore sessionStore;
 	protected SpaDatabase spaDatabase;
 	protected Database db;
 
-	public SpaRoutes(Router router)
+	public SpaRoutes(Router router, Vertx vertx)
 			throws InterruptedException, IOException, SQLException {
-		this.vertx = Vertx.vertx();
+		this.vertx = vertx;
 		this.router = router;
 		sessionStore = LocalSessionStore.create(vertx);
 		spaDatabase = SpaDbConfiguration.getSpaDb();

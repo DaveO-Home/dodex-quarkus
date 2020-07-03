@@ -16,6 +16,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.websocket.Session;
 
@@ -572,23 +574,49 @@ public abstract class DbDefinitionBase {
 		return allUsers.getPromise().future();
 	}
 
-	class RemoveUndelivered implements Action {
-		List<Long> messageIds = new ArrayList<>();
-		Long userId;
-		int count;
-		Database db;
+	class CompletePromise implements Action {
+		Promise<Void> promise;
 
 		@Override
 		public void run() throws Exception {
-			List<Long> undelivered = messageIds;
-			for (Long messageId : undelivered) {
+			promise.tryComplete();
+		}
+
+		public Promise<Void> getPromise() {
+			return promise;
+		}
+
+		public void setPromise(Promise<Void> promise) {
+			this.promise = promise;
+		}
+	}
+
+	class RemoveUndelivered implements Action {
+		List<Long> messageIds = new ArrayList<>();
+		CompletePromise completePromise = new CompletePromise();
+		Long userId;
+		int count;
+		Database db;
+		Promise<Void> promise;
+		Promise<Map<String, Integer>> promise2 = Promise.promise();
+		Map<String, Integer> counts = new ConcurrentHashMap<>();
+
+		@Override
+		public void run() throws Exception {
+			completePromise.setPromise(promise);
+
+			for (Long messageId : messageIds) {
 				db.update(getRemoveUndelivered())
 					.parameter("USERID", userId)
 					.parameter("MESSAGEID", messageId)
 					.counts()
 					.doOnNext(c -> count += c)
+					.doOnComplete(completePromise)
 					.subscribe(result -> {
-						//
+						if(messageIds.size() == count) {
+							counts.put("messages", count);
+							promise2.complete(counts);
+						}
 					}, throwable -> {
 						logger.error(String.join(ColorUtilConstants.RED, "Error removing undelivered record: ", throwable.getCause().getMessage(), ColorUtilConstants.RESET));
 						throwable.printStackTrace();
@@ -623,24 +651,52 @@ public abstract class DbDefinitionBase {
 		public void setUserId(Long userId) {
 			this.userId = userId;
 		}
+
+		public Promise<Void> getPromise() {
+			return promise;
+		}
+
+		public void setPromise(Promise<Void> promise) {
+			this.promise = promise;
+		}
+
+		public Promise<Map<String, Integer>> getPromise2() {
+			return promise2;
+		}
+
+		public void setPromise2(Promise<Map<String, Integer>> promise2) {
+			this.promise2 = promise2;
+		}
 	}
 
 	class RemoveMessage implements Action {
 		List<Long> messageIds = new ArrayList<>();
 		int count;
 		Database db;
+		CompletePromise completePromise = new CompletePromise();
+		Promise<Void> promise;
 
 		@Override
 		public void run() throws Exception {
+			completePromise.setPromise(promise);
+
+			if(DbConfiguration.isUsingSqlite3()) {
+				try { // Sqlite3 needs a delay???
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					logger.error(String.format("Await: %s", e.getMessage()));
+				}
+			}
 			for (Long messageId : messageIds) {
 				db.update(getRemoveMessage())
 					.parameter("MESSAGEID", messageId)
 					.counts()
 					.doOnNext(c -> count += c)
+					.doOnComplete(completePromise)
 					.subscribe(result -> {
 						//
 					}, throwable -> {
-						logger.error(String.join(ColorUtilConstants.RED, "Error removing undelivered message: ", throwable.getMessage(), ColorUtilConstants.RESET));
+						logger.error(String.format("%sError removing undelivered message: %s%s", ColorUtilConstants.RED, throwable.getMessage(), ColorUtilConstants.RESET));
 						throwable.printStackTrace();
 					});
 			}
@@ -662,59 +718,76 @@ public abstract class DbDefinitionBase {
 			return messageIds;
 		}
 
+		public Promise<Void> getPromise() {
+			return promise;
+		}
+
+		public void setPromise(Promise<Void> promise) {
+			this.promise = promise;
+		}
 	}
 
-	public int processUserMessages(Session session, Database db, MessageUser messageUser) {
-		RemoveMessage removeMessage = new RemoveMessage();
+	public Future<Map<String, Integer>> processUserMessages(Session session, Database db, MessageUser messageUser) {
 		RemoveUndelivered removeUndelivered = new RemoveUndelivered();
+		RemoveMessage removeMessage = new RemoveMessage();
+		CompletePromise completePromise = new CompletePromise();
+
 		removeUndelivered.setUserId(messageUser.getId());
 		removeUndelivered.setCount(0);
 		removeUndelivered.setDatabase(db);
 		removeMessage.setCount(0);
 		removeMessage.setDatabase(db);
 		/*
-		 * Get all undelivered messages for current user
-		 */
-		Future.future(prom -> {
-			Disposable disposable = db.select(Undelivered.class)
+		* Get all undelivered messages for current user
+		*/
+		Future<Void> future = Future.future(promise -> {
+			completePromise.setPromise(promise);
+
+			db.select(Undelivered.class)
 				.parameter("id", messageUser.getId())
 				.get()
 				.doOnNext(result -> {
 					Date postDate = result.postDate();
 					String handle = result.fromHandle();
 					String message = result.message();
-					removeUndelivered.getMessageIds().add(result.messageId());
-					removeMessage.getMessageIds().add(result.messageId());
 					// Send messages back to client
 					session.getAsyncRemote().sendObject(handle + postDate + " " + message);
+					removeUndelivered.getMessageIds().add(result.messageId());
+					removeMessage.getMessageIds().add(result.messageId());
 				})
-				// Remove undelivered for user
-				.doOnComplete(removeUndelivered)
-				.doOnError(error -> logger.error(String.join(ColorUtilConstants.RED, "Remove Undelivered Error: ", error.getCause().getMessage(), ColorUtilConstants.RESET)))
-				.subscribe(result -> {
-					//
-				}, throwable -> {
-					logger.error(String.join(ColorUtilConstants.RED, "Error removing undelivered or message: ", throwable.getCause().getMessage(), ColorUtilConstants.RESET));
-					throwable.printStackTrace();
-				});
-				// We have to wait until all undelivered records for user are deleted
-				while (!disposable.isDisposed()) {
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						logger.error(String.join("", "Await: ", e.getMessage()));
-					}
-				}
-				// Continue with removing unattached message records
-				prom.complete();
-		}).onSuccess(s -> {
-			try {
-				removeMessage.run();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+				// Start remove undelivered for user
+				.doOnComplete(completePromise)
+				.doOnError(error -> logger.error(String.join(ColorUtilConstants.RED, "Remove Undelivered Error: ",
+						error.getMessage(), ColorUtilConstants.RESET)))
+				.subscribe();
 		});
-		return removeUndelivered.getCount();
+		future.compose(v -> {
+			// Remove undelivered for user
+			return Future.<Void>future(promise -> {
+				removeUndelivered.setPromise(promise);
+				try {
+					removeUndelivered.run();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				if (removeUndelivered.getCount() > 0) {
+					logger.info(String.join(ColorUtilConstants.BLUE_BOLD_BRIGHT, Integer.toString(removeUndelivered.getCount()), " Messages Delivered", " to ", messageUser.getName(), ColorUtilConstants.RESET));
+				}
+			});
+		})
+		.compose (v -> {
+			// Remove unattached Messages for user
+			return Future.<Void>future(promise -> {
+				removeMessage.setPromise(promise);
+				try {
+					removeMessage.run();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
+		});
+			
+		return removeUndelivered.getPromise2().future();
 	}
 
 	public void setIsTimestamp(Boolean isTimestamp) {

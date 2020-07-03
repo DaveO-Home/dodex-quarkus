@@ -5,8 +5,9 @@ import dodex from "dodex";
 import input from "dodex-input";
 import mess from "dodex-mess";
 
+let port = 8088; // Production port
 /* develblock:start */
-// if (typeof window.testit === "undefined" || !window.testit) {
+port = 8089; // Development port
 if (location.href.indexOf("context.html") === -1) {
 /* develblock:end */
   ReactDOM.render(
@@ -36,7 +37,7 @@ if (location.href.indexOf("context.html") === -1) {
       // server: "daveomix.us-south.cf.appdomain.cloud" // This will link to the cloud version
       // for the verticle "dodex-vertx" use
       // server: "localhost:8089" // if the test verticle is running.
-      server: "localhost:8089"
+      server: "localhost:" + port
     }).then(function () {
       // Add in app/personal cards
       for (let i = 0;i < 4;i++) {

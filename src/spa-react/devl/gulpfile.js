@@ -29,12 +29,6 @@ process.argv.forEach(function (val, index, array) {
 });
 let local = false;
 let allure = false;
-let disableTouch = false;
-const devFile = "../../../server-started";
-
-if (fs.existsSync(devFile)) {
-    fs.unlinkSync(devFile);
-}
 
 if (process.argv.includes("-l", 2) || process.argv.includes("-local", 2)) {
     local = true;
@@ -42,9 +36,7 @@ if (process.argv.includes("-l", 2) || process.argv.includes("-local", 2)) {
 if (process.argv.includes("-a", 2) || process.argv.includes("-allure", 2)) {
     allure = true;
 }
-if (process.argv.includes("-dt", 2) || process.argv.includes("-disableTouch", 2)) {
-    disableTouch = true;
-}
+
 global.local = local;
 global.allure = allure;
 
@@ -57,7 +49,7 @@ if (browsers) {
  */
 const pat = function (done) {
     if (!browsers) {
-        global.whichBrowser = ["ChromeHeadless"/*, "FirefoxHeadless"*/];
+        global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
     }
 
     new Server({
@@ -172,59 +164,6 @@ const watch = function (cb) {
         log("Error", e);
     }
 };
-
-const touch = function (cb) {
-    if(local || disableTouch) {
-        cb();
-        return;
-    }
-
-    const { utimesSync } = require("fs");
-    const filePath = path.join(__dirname, "../../main/java/dmo/fs/vertx/Server.java");
-    let time;
-
-    if (!isWatch) {
-        try {
-            time = new Date();
-            utimesSync(filePath, time, time);
-            if (fs.existsSync(devFile)) {
-                fs.unlinkSync(devFile);
-            }
-            cb();
-        } catch (err) {
-            //
-        }
-        return;
-    }
-
-    const watchDir = isProduction ? "dist" : "dist_test";
-    const distDir = `../../main/resources/static/${watchDir}/`
-    const bundleFile = path.join(__dirname, `../../main/resources/static/${watchDir}/react-fusebox/`);
-    const nodeWatch = require("node-watch");
-
-    if (!fs.existsSync(distDir)){
-        fs.mkdirSync(distDir);
-        fs.mkdirSync(`${distDir}/react-fusebox/`)
-    }
-
-    const watcher = nodeWatch(bundleFile);
-    watcher.on("change", (event, filename) => {
-        // touch a java file to rebuild vertx
-        try {
-            time = new Date();
-            utimesSync(filePath, time, time);
-        } catch (err) {
-            //
-        }
-    });
-    watcher.on("error", (event, filename) => {
-        console.log("ERROR:", event, filename);
-    });
-    watcher.on("ready", () => {
-        console.log("READY:", bundleFile);
-    });
-    cb();
- }
 /*
  * Build the application to the production distribution 
  */
@@ -349,7 +288,7 @@ const copy = async function (cb) {
  */
 const fuseboxAcceptance = function (done) {
     if (!browsers) {
-        global.whichBrowser = ["ChromeHeadless"/*, "FirefoxHeadless"*/];
+        global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
     }
     new Server({
         configFile: __dirname + "/karma.conf.js",
@@ -367,26 +306,12 @@ const fuseboxAcceptance = function (done) {
  */
 const fuseboxTdd = function (done) {
     if (!browsers) {
-        global.whichBrowser = ["Chrome"/*, "Firefox"*/];
+        global.whichBrowser = ["Chrome", "Firefox"];
     }
 
     new Server({
         configFile: __dirname + "/karma.conf.js",
     }, done).start();
-};
-/**
- * Continuous testing - test driven development.  
- */
-const fuseboxTddWait = function (done) {
-    if (!browsers) {
-        global.whichBrowser = ["Chrome"/*, "Firefox"*/];
-    }
-    console.log("Waiting for Vertx to Rebuild...");
-    setTimeout(function() {
-        new Server({
-            configFile: __dirname + "/karma.conf.js",
-        }, done).start();
-    }, 10000);
 };
 /**
  * Karma testing under Opera. -- needs configuation  
@@ -421,10 +346,9 @@ exports.rebuild = series(fuseboxRebuild, final);
 exports.copy = copy;
 exports.acceptance = fuseboxAcceptance;
 exports.e2e = fuseboxAcceptance;
-exports.development = series(setNoftl, watch, fuseboxTddWait);
 exports.lint = parallel(esLint, cssLint, bootLint);
 exports.opera = tddo;
-exports.snap = series(karmaServerSnap, final);
+// exports.snap = series(karmaServerSnap, final);
 exports.watch = watch;
 
 function fuseboxConfig(mode, props) {

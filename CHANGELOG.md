@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.2.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.2) (2020-07-03)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.1...v1.3.0)
+
+* No longer a need to manually restart the Quarkus server when developing javascript
+* removed blocking code when removing undelivered messages.
+* Fixed websocket port for production with fat jar.
+
 ## [v1.2.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.1) (2020-06-29)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.0...v1.2.1)

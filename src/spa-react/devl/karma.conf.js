@@ -29,7 +29,7 @@ if(global.allure === true) {
 module.exports = function (config) {
     // whichBrowser to use from gulp task.
     if (!global.whichBrowser) {
-        global.whichBrowser = ["ChromeHeadless"/*, "FirefoxHeadless"*/];
+        global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
     }
 
     config.set({

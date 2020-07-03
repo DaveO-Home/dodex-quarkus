@@ -54,8 +54,8 @@ The basic idea is to build a single page(spa) production application ensuring co
   
   __Note__ Npm will produce vulnerability warnings, these are mostly from the testing tools, specifically `jasmine-jquery` which is no longer actively maintained.
   
-  The test build will generate the spa application in `src/main/resources/static/dist_test/react-fusebox` and production in `src/main/resources/static/dist/react-fusebox`. The application is accessible after rebuilding the Quarkus test server. When modifying Java code, refreshing the browser window will rebuild the backend application and restart the Quarkus server. However, Quarkus hangs when modifying Javascript and rebuilding the Fuse-Box bundle.
-  __Important;__ You must manually stop and restart the Quarkus Sever(`gradlew quarkusDev`) to review the new front-end Javascript code. This is also required when copying front-end static content(`gulp copy`) to the application static directory.
+  The test build(`gulp test` or `gulp prod`) will generate the spa application in `src/main/resources/static/dist_test/react-fusebox` and production in `src/main/resources/static/dist/react-fusebox`. The application is accessible after rebuilding(`gradlew quarkusDev`) the Quarkus test server. When modifying Java or Javascript code, refreshing the browser window will re-deploy the backend application and the Quarkus server. For Javascript changes you need `gulp watch` running or you have to execute `gulp rebuild` or `gulp test`.
+    __Important;__ Added Quarkus property `%dev.quarkus.vertx.caching=false` to allow Java and Javascript development using the Quarkus hot reload.
 
 **Client:**
 
@@ -89,7 +89,7 @@ The javascript ***Gulp*** task runner is used to accomplish test execution, see 
 
 Run these commands from `src/spa-react/devl`.
 
-1. `gulp test` ***Currently does not work with Quarkus***
+1. `gulp test`
     * default, run once with headless browser
     * builds the ***React*** application using ***Fuse-Box***
     * copies static content
@@ -99,35 +99,33 @@ Run these commands from `src/spa-react/devl`.
     * reports the results to the console, see below
     * view in browser @ `http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html`
 2. `gulp rebuild`
-    * rebuild and redeploy the ***React*** application without testing(Must stop and start the Quarkus Server).
+    * rebuild and redeploy the ***React*** application without testing, refresh browser to see results.
 3. `gulp acceptance`
-    * run tests without rebuilding, very useful when using `gulp watch`(Run after running `gulp rebuild` and restarting Quarkus).
-4. `gulp watch` (Currently not useful without manually restarting the Quarkus server)
+    * run tests without rebuilding, very useful when using `gulp watch`(Run after running `gulp rebuild`).
+4. `gulp watch`
     * ***Fuse-Box*** watcher to rebuild application on javascript code changes
-    * once the verticle is redepoyed, execute `gulp acceptance` to test new/changed code.
+    * once the verticle is redepoyed(refreshing the browser), execute `gulp acceptance` to test new/changed code.
     * changes are also viewable in the browser
-5. `gulp tdd` Test driven development(requires restarting the Quarkus Server)
+5. `gulp tdd` Test driven development
     * default, run continuously with normal browser
     * run with `gulp watch` to automatically test while developing
-6. `gulp development` (Not working with Quarkus)
-    * run both `gulp tdd` and `gulp watch` in the same terminal window
-7. `gulp copy`
+6. `gulp copy`
     * Copy any changed content to the `Quarkus` static directory
-    * Manually restart ***Dodex-Quarkus*** to view new static content
-8. `gulp lint`
+    * Refresh the browser to view new static content
+7. `gulp lint`
     * Run linting for Javascript, CSS and Bootstrap
-9. `Allure Reporting`
+8. `Allure Reporting`
     * Run `gulp acceptance -a` or `gulp prod -a` for ***Allure*** reporting
     * Creates results in `devl/allure-results`
     * Execute `npm run allure` to generate reports in `devl/allure-reports`
     * Execute `npm start` to startup Node server to view
     * Use browser to view @ `http://localhost:3088`
-10. `gulp hmr`
+9. `gulp hmr`
     * Runs ***Fuse-Box*** hot module reload for the `React` application.
     * Runs a Node http Server and makes front-end javascript changes visible
     * Back-end Java is not accessible
     * Use browser to view @ `http://localhost:3087/dist_test/react-fusebox/appl/testapp_dev.html`
-11. `gulp preview`
+10. `gulp preview`
     * Runs ***Fuse-Box*** to build production front-end without minify and starts a node http server
     * Use browser to view @ `http://localhost:3087/dist/react-fusebox/appl/testapp.html`
 
@@ -228,11 +226,11 @@ A test and development scenario for ***Dodex-Quarkus***.
 6. `gulp watch`
 7. When developing ***Java***, refreshing the browser window will redeploy ***Dodex-Quarkus***.
 8. To test Java code, Open a desktop terminal window `cd <dodex-quarkus install>` and execute `gradlew test`
-9. When developing ***Javascript***, issuing a `save` will rebuild the ***Fuse-Box*** bundle, you will have to manually restart the Quarkus server
+9. When developing ***Javascript***, issuing a `save` will rebuild the ***Fuse-Box*** bundle, simply refresh the browser to run the Quarkus hot reload.
 10. Open a desktop terminal window
 11. `cd <dodex-quarkus install>/src/spa-react/devl`
 12. `gulp acceptance` to run tests
-13. When changing static content, execute `gulp copy`, and the Quarkus must be manually restarted
+13. When changing static content, execute `gulp copy`, refreshing the browser will reload the content.
 
 ### Fusebox
 
