@@ -150,9 +150,9 @@ public class DodexRouter {
             }
         }
 
-        String startupMessage = "In Production";
+        String startupMessage = "In Production with database: " + dodexDatabase.getDbName();
 
-        startupMessage = DodexUtil.getEnv().equals("dev") ? "In Development" : startupMessage;
+        startupMessage = DodexUtil.getEnv().equals("dev") ? "In Development with database: " + dodexDatabase.getDbName() : startupMessage;
         
         logger.info(String.format("%sStarting Web Socket...%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage, ColorUtilConstants.RESET));
     }

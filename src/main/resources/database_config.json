@@ -22,20 +22,20 @@
     "postgres": {
         "dev": { 
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "daveo",
+                "password": "albatross",
                 "ssl": "false"
             },
             "config": {
                 "host": "//localhost",
                 "url": "jdbc:postgresql:",
-                "dbname": "/test"
+                "dbname": "/daveo"
             }
         },
         "prod": { 
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "daveo",
+                "password": "albatross",
                 "ssl": "false"
             },
             "config": {
@@ -48,8 +48,8 @@
     "cubrid": {
         "dev": { 
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "dba",
+                "password": "albatross",
                 "ssl": "false"
             },
             "config": {
@@ -74,8 +74,8 @@
     "mariadb": {
         "dev": { 
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "daveo",
+		        "password": "Stuff*V4",
                 "ssl": "false"
             },
             "config": {
@@ -86,7 +86,7 @@
         },
         "prod": { 
             "credentials": {
-                "user": "user",
+                "user": "userp0",
                 "password": "password",
                 "ssl": "false"
             },

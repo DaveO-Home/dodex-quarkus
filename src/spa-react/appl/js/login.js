@@ -36,7 +36,14 @@ function Login() {
             userJson.password = JSON.parse(sessionStorage.getItem("credentials")).password;
             userLogin = userLogin + "?user=" + userJson.name + "&password=" + userJson.password;
         } else {
+            // if(Login.newLogin) {
+            //     type = "GET";
+            // }
+            // else {
+                // type = "POST";
+            // }
             formData = JSON.stringify($(submitButton.parentElement.parentElement).serializeArray());
+            // formData = JSON.stringify($(submitButton.parentElement.parentElement).serializeArray());
         }
 
         await $.ajax({
@@ -136,7 +143,7 @@ function Login() {
                     this.duplicateLogin();
                 }
             } else {
-                await this.user("GET", Login.submitButton);
+                await this.user("POST", Login.submitButton);
                 if (Login.returnData.status === "-1") {
                     this.notFound();
                 }

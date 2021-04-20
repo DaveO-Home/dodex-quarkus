@@ -33,7 +33,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseSqlite3(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -41,8 +41,6 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -64,7 +62,6 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -121,6 +118,11 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
 	@Override
 	public Database getDatabase() {
 		return Database.from(pool);
+	}
+
+    @Override
+	public String getDbName() throws IOException {
+		return dodexUtil.getDefaultDb();
 	}
 
 	@Override

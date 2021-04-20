@@ -109,9 +109,28 @@ public class DodexRoutes {
             DodexUtil.setEnv(value == null ? "dev" : value);
             staticHandler.setCachingEnabled(false);
         }
+        String readme = "/dist_test";
+        if(isProduction) {
+            readme = "/dist";
+        }
+        router.route(readme + "/README.md")
+            .produces("text/plain")
+            .produces("text/markdown")
+            .handler(ctx -> {
+                HttpServerResponse response = ctx.response();
+                String acceptableContentType = ctx.getAcceptableContentType();
+                response.putHeader("content-type", acceptableContentType);
+                response.sendFile("static/dist_test/README.md");
+            });
 
         staticHandler.setWebRoot("static");
-        router.route("/*").handler(staticHandler).handler(TimeoutHandler.create(2000));
+        
+        router.route("/*")
+            .produces("text/plain")
+            .produces("text/html")
+            .produces("text/markdown")
+            .produces("image/*")
+            .handler(staticHandler).handler(TimeoutHandler.create(2000));
 
         if (DodexUtil.getEnv().equals("dev")) {
             router.route().handler(CorsHandler.create("*"/* Need ports 8089 & 9876 */).allowedMethod(HttpMethod.GET));

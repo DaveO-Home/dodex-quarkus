@@ -1,5 +1,6 @@
 package dmo.fs.db;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ public interface DodexDatabase {
     String getUndeliveredMessage();
 	
 	String getDeleteUser();
+
+    String getDbName() throws IOException;
 
 	Future<MessageUser> addUser(Session session, Database db, MessageUser messageUser) throws SQLException, InterruptedException;
 

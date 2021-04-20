@@ -2,7 +2,7 @@
  * Successful acceptance tests & lints start the production build.
  * Tasks are run serially, 'accept' -> 'pat' -> ('eslint', 'csslint', 'bootlint') -> 'build'
  */
-const { src, /*dest,*/ series, parallel, task } = require("gulp");
+const { src, /* dest, */ series, parallel, task } = require("gulp");
 const runFusebox = require("./fuse.js");
 const chalk = require("chalk");
 const csslint = require("gulp-csslint");
@@ -10,7 +10,7 @@ const eslint = require("gulp-eslint");
 const exec = require("child_process").exec;
 const log = require("fancy-log");
 const path = require("path");
-const Server = require("karma").Server;
+const karma = require("karma");
 // const puppeteer = require("puppeteer");
 const fs = require("fs");
 
@@ -21,7 +21,7 @@ let useFtl = true;
 let isProduction = false;
 let isWatch = false;
 
-process.argv.forEach(function (val, index, array) {
+process.argv.forEach(function (val, index /* , array */) {
     useFtl = val === "--noftl" && useFtl ? false : useFtl;
     if(index > 2 && process.argv[index].indexOf("-") === -1) {
         process.argv[index] = "";
@@ -52,16 +52,7 @@ const pat = function (done) {
         global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
     }
 
-    new Server({
-        configFile: __dirname + "/karma.conf.js",
-        singleRun: true
-    }, function (result) {
-        var exitCode = !result ? 0 : result;
-        done();
-        if (exitCode > 0) {
-            process.exit(exitCode);
-        } 
-    }).start();
+    karmaServer(done, true, false);
 };
 /*
  * javascript linter
@@ -73,7 +64,7 @@ const esLint = function (cb) {
             quiet: 1,
         }))
         .pipe(eslint.format())
-        .pipe(eslint.result(result => {
+        .pipe(eslint.result(() => {
             // Keeping track of # of javascript files linted.
             lintCount++;
         }))
@@ -182,6 +173,7 @@ const build = function (cb) {
         ftl: false
     };
     let mode = "prod";
+    // eslint-disable-next-line no-unused-vars
     isProduction = true;
     const debug = true;
     try {
@@ -205,7 +197,7 @@ const preview = function (cb) {
         ftl: false
     };
     let mode = "preview";
-    isProduction = true;
+    // isProduction = true;
     const debug = true;
     try {
         return runFusebox(mode, fuseboxConfig(mode, props), debug, cb);
@@ -235,6 +227,8 @@ const fuseboxHmr = function (cb) {
         log("Error", e);
     }
 };
+
+// eslint-disable-next-line no-unused-vars
 const setNoftl = function (cb) {
     useFtl = false;
     cb();
@@ -290,16 +284,8 @@ const fuseboxAcceptance = function (done) {
     if (!browsers) {
         global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
     }
-    new Server({
-        configFile: __dirname + "/karma.conf.js",
-        singleRun: true
-    }, function (result) {
-        var exitCode = !result ? 0 : result;
-        done();
-        if (exitCode > 0) {
-            process.exit(exitCode);
-        }
-    }).start();
+
+    karmaServer(done, true, false);
 };
 /**
  * Continuous testing - test driven development.  
@@ -309,9 +295,7 @@ const fuseboxTdd = function (done) {
         global.whichBrowser = ["Chrome", "Firefox"];
     }
 
-    new Server({
-        configFile: __dirname + "/karma.conf.js",
-    }, done).start();
+    karmaServer(done, false, true);
 };
 /**
  * Karma testing under Opera. -- needs configuation  
@@ -320,9 +304,7 @@ const tddo = function (done) {
     if (!browsers) {
         global.whichBrowser = ["Opera"];
     }
-    new Server({
-        configFile: __dirname + "/karma.conf.js",
-    }, done).start();
+    karmaServer(done, false, true);
 };
 /*
 *   Make sure gulp terminates.
@@ -425,12 +407,40 @@ function fuseboxConfig(mode, props) {
     return configure;
 }
 
+function karmaServer(done, singleRun = false, watch = true) {
+    const parseConfig = karma.config.parseConfig;
+    const Server = karma.Server;
+
+    parseConfig(
+        path.resolve("./karma.conf.js"),
+        { port: 9876, singleRun: singleRun, watch: watch },
+        { promiseConfig: true, throwErrors: true },
+    ).then(
+        (karmaConfig) => {
+            if (!singleRun) {
+                done();
+            }
+            new Server(karmaConfig, function doneCallback(exitCode) {
+                console.log("Karma has exited with " + exitCode);
+                if (singleRun) {
+                    done();
+                }
+                if (exitCode > 0) {
+                    process.exit(exitCode);
+                }
+            }).start();
+        },
+        (rejectReason) => { console.err(rejectReason); }
+    );
+}
+
 /*
  * Taking a snapshot example
  */
+// eslint-disable-next-line no-unused-vars
 function karmaServerSnap(done) {
     if (!browsers) {
-        global.whichBrowser = ["ChromeHeadless"/*, "FirefoxHeadless"*/];
+        global.whichBrowser = ["ChromeHeadless" /* , "FirefoxHeadless" */];
     }
 
     takeSnapShot(["", "start"], true, done);
@@ -461,7 +471,7 @@ function snap(url, puppeteer, snapshot, close, done) {
     puppeteer.launch().then((browser) => {
         console.log("SnapShot URL", `${url}${snapshot[0]}`);
         let name = snapshot[1];
-        let page = browser.newPage().then((page) => {
+        browser.newPage().then((page) => {
             page.goto(`${url}${snapshot[0]}`).then(() => {
                 page.screenshot({ path: `./snapshots/${name}Acceptance.png` }).then(() => {
                     if(close) {
@@ -489,13 +499,13 @@ function takeSnapShot(snapshot, close, done) {
     snap(url, puppeteer, snapshot, close, done);
 }
 
-//From Stack Overflow - Node (Gulp) process.stdout.write to file
+// From Stack Overflow - Node (Gulp) process.stdout.write to file
 if (process.env.USE_LOGFILE == "true") {
     var util = require("util");
     var logFile = fs.createWriteStream("log.txt", { flags: "w" });
     // Or "w" to truncate the file every time the process starts.
     var logStdout = process.stdout;
-    /*eslint no-console: 0 */
+    /* eslint no-console: 0 */
     console.log = function () {
         logFile.write(util.format.apply(null, arguments) + "\n");
         logStdout.write(util.format.apply(null, arguments) + "\n");

@@ -33,7 +33,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -41,8 +41,6 @@ public class DodexDatabasePostgres extends DbPostgres {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -62,8 +60,6 @@ public class DodexDatabasePostgres extends DbPostgres {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		
-		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -133,6 +129,11 @@ public class DodexDatabasePostgres extends DbPostgres {
 		return Database.from(pool);
 	}
 	
+    @Override
+	public String getDbName() throws IOException {
+		return dodexUtil.getDefaultDb();
+	}
+
 	@Override
 	public NonBlockingConnectionPool getPool() {
 		return pool;

@@ -93,15 +93,15 @@ function getAdditionalContent() {
 					content: "<h1 style=\"font-size: 14px;\">My New Card Back</h1>"
 				}
 			},
-			card31: {
-				tab: "LIK",
-				front: {
-					content: '<a class="twitter-timeline" data-width="340" data-height="200" href="https://twitter.com/TwitterDev/likes?ref_src=twsrc%5Etfw">Tweets Liked by @TwitterDev</a>'
-				},
-				back: {
-					content: "<h1 style=\"font-size: 14px;\">My New Card Back</h1>"
-				}
-			}
+      card31: {
+        tab: "TWT",
+        front: {
+          content: '<blockquote data-cards="hidden" class="twitter-tweet"><p lang="en" dir="ltr">Sunsets don&#39;t get much better than this one over <a href="https://twitter.com/GrandTetonNPS?ref_src=twsrc%5Etfw">@GrandTetonNPS</a>. <a href="https://twitter.com/hashtag/nature?src=hash&amp;ref_src=twsrc%5Etfw">#nature</a> <a href="https://twitter.com/hashtag/sunset?src=hash&amp;ref_src=twsrc%5Etfw">#sunset</a> <a href="http://t.co/YuKy2rcjyU">pic.twitter.com/YuKy2rcjyU</a></p>&mdash; US Department of the Interior (@Interior) <a href="https://twitter.com/Interior/status/463440424141459456?ref_src=twsrc%5Etfw">May 5, 2014</a></blockquote>'
+        },
+        back: {
+          content: "<h1 style=\"font-size: 14px;\">My New Card Back</h1>"
+        }
+      }
     }
   };
 }

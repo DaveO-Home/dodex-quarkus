@@ -68,7 +68,6 @@ public abstract class DbConfiguration {
 
     public static ConnectionProvider getMariadbConnectionProvider() throws SQLException {
         isUsingMariadb = true;
-
         return ConnectionProvider.from(map.get("url") + map.get("host") + map.get("dbname") + "?charSet=utf8",
                 properties.get("user").toString(), properties.get("password").toString());
     }
@@ -99,11 +98,13 @@ public abstract class DbConfiguration {
     }
 
     public static boolean isProduction() {
+
         return isProduction;
     }
 
     public static DodexDatabase getDefaultDb() throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase(Locale.US);
+        
         try {
             if(defaultDb.equals(DbTypes.POSTGRES.db) && dodexDatabase == null) {
                 dodexDatabase = new DodexDatabasePostgres();
@@ -163,4 +164,7 @@ public abstract class DbConfiguration {
             .merge( key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
     }
 
+    public static String getDbName() {
+        return defaultDb;
+    }
 }

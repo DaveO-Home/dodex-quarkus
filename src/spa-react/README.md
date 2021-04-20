@@ -55,7 +55,8 @@ The basic idea is to build a single page(spa) production application ensuring co
   __Note__ Npm will produce vulnerability warnings, these are mostly from the testing tools, specifically `jasmine-jquery` which is no longer actively maintained.
   
   The test build(`gulp test` or `gulp prod`) will generate the spa application in `src/main/resources/static/dist_test/react-fusebox` and production in `src/main/resources/static/dist/react-fusebox`. The application is accessible after rebuilding(`gradlew quarkusDev`) the Quarkus test server. When modifying Java or Javascript code, refreshing the browser window will re-deploy the backend application and the Quarkus server. For Javascript changes you need `gulp watch` running or you have to execute `gulp rebuild` or `gulp test`.
-    __Important;__ Added Quarkus property `%dev.quarkus.vertx.caching=false` to allow Java and Javascript development using the Quarkus hot reload.
+
+  __Important;__ Added Quarkus property `%dev.quarkus.vertx.caching=false` to allow Java and Javascript development using the Quarkus hot reload.
 
 **Client:**
 
@@ -220,7 +221,7 @@ A test and development scenario for ***Dodex-Quarkus***.
 
 1. Open a desktop terminal window
 2. `cd <dodex-quarkus install>`, make sure ***Dodex*** is installed `npm install` in src/main/resources/static
-3. `gradlew run`
+3. `gradlew quarkusDev`
 4. Open a desktop terminal window
 5. `cd <dodex-vertx install>/src/spa-react/devl`, make sure ***React*** demo application is installed `npm install` in src/spa-react
 6. `gulp watch`

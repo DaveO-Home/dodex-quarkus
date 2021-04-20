@@ -144,7 +144,7 @@ public abstract class SqlBuilder {
 					if(SpaDbConfiguration.isUsingSqlite3()) {
 						Future<Integer> future = updateCustomLogin(db, resultLogin, "date");
 						future.onSuccess(result2 -> {
-							promise.complete(resultLogin);
+							promise.tryComplete(resultLogin);
 						});
 
 						future.onFailure(failed -> {
@@ -152,7 +152,8 @@ public abstract class SqlBuilder {
 							resultLogin.setStatus("-99");
 							promise.complete(resultLogin);
 						});
-					} 
+					}
+                    promise.tryComplete(resultLogin);
 				}
 				else {
 					promise.complete(resultLogin);

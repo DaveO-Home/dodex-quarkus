@@ -72,8 +72,8 @@
     "mariadb": {
         "dev": {
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "daveo",
+                "password": "Stuff*V4",
                 "ssl": "false"
             },
             "config": {
@@ -84,7 +84,7 @@
         },
         "prod": {
             "credentials": {
-                "user": "user",
+                "user": "userp",
                 "password": "password",
                 "ssl": "false"
             },

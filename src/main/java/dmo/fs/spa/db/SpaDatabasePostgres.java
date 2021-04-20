@@ -36,7 +36,7 @@ public class SpaDatabasePostgres extends DbPostgres {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -44,8 +44,6 @@ public class SpaDatabasePostgres extends DbPostgres {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv != null? webEnv : DbConfiguration.isProduction() ? "prod": "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -65,7 +63,6 @@ public class SpaDatabasePostgres extends DbPostgres {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);

@@ -1,8 +1,20 @@
 # Changelog
 
+## [v1.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.3.0) (2021-04-19)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.2...v1.3.0)
+
+* Upgraded to Quarkus 1.13.2
+* Added route to properly load markdown document. Static handler did not.
+* Determine environment the Quarkus way for dev/prod.
+* Removed twitter deprecated timeline on react dodex example.
+* Changed React Login form from GET to POST.
+* Upgraded React dependencies to 0 vulnerabilties.
+* Upgraded Karma Server configuration.
+
 ## [v1.2.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.2.2) (2020-07-03)
 
-[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.1...v1.3.0)
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.1...v1.2.2)
 
 * No longer a need to manually restart the Quarkus server when developing javascript
 * removed blocking code when removing undelivered messages.

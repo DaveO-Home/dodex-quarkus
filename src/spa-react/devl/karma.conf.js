@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const path = require("path");
 const bundler = "react-fusebox";
 const spa = "spa-react";
@@ -9,10 +9,10 @@ let startupHtml = "http://localhost:8089/dist_test/react-fusebox/appl/testapp_de
 try {
     fs.unlinkSync(path.join(__dirname, "karma.bootstrap2.js"));
 } catch (e) {
-    console.info(e.message);
+    console.warn(e.message);
 }
 /* Getting global value into the window envirnoment */
-const data = fs.readFileSync(path.join(__dirname, "karma.bootstrap.js"), 'utf8');
+const data = fs.readFileSync(path.join(__dirname, "karma.bootstrap.js"), "utf8");
 const result = data.replace(/local = false/, "local = " + global.local);
 fs.writeFileSync(path.join(__dirname, "karma.bootstrap2.js"), result, "utf8");
 
@@ -37,7 +37,7 @@ module.exports = function (config) {
         basePath: "../../",
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ["jasmine-jquery", "jasmine"],
+        frameworks: ["jasmine-jquery"],
         proxies: {
             /* Integration testing with backend Java Vertx server */
             "/views/": base + "/appl/views/",
@@ -71,13 +71,8 @@ module.exports = function (config) {
         bowerPackages: [
         ],
         plugins: [
-            "karma-chrome-launcher",
-            "karma-firefox-launcher",
-            "karma-opera-launcher",
-            "karma-jasmine",
-            "karma-jasmine-jquery",
-            "karma-mocha-reporter",
-            "karma-allure-reporter"
+            "karma-*",
+            "@metahub/karma-jasmine-jquery"
         ],
         /* Karma uses <link href="/base/appl/testapp_dev.html" rel="import"> -- you will need webcomponents polyfill to use browsers other than Chrome.
          * This test demo will work with Chrome/ChromeHeadless by default - Webcomponents included above, so FirefoxHeadless should work also. 

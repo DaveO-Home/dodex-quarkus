@@ -1,21 +1,26 @@
 plugins {
     id 'java'
-    id 'io.quarkus'
+    id "io.quarkus" version "1.13.2.Final"
     id 'nu.studer.jooq' version '3.0.3'
     id 'pmd'
 }
 
 repositories {
-     mavenLocal()
-     mavenCentral()
-     maven {
-         url "https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc"
-         url 'https://plugins.gradle.org/m2/'
-         url "http://maven.cubrid.org/"
+    jcenter()
+    maven {
+        url "https://plugins.gradle.org/m2/"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url "http://maven.cubrid.org/"
     }
 }
 
-version = "4.0.0-SNAPSHOT"
+version = "4.0.1-SNAPSHOT"
 
 ext {
     jooqVersion = "3.13.2"
@@ -34,51 +39,50 @@ pmd {
 }
 
 dependencies {
-    implementation "io.quarkus:quarkus-resteasy-jackson:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jgit:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-spring-web:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-resteasy:${quarkusPlatformVersion}"
+    // implementation "io.quarkus:quarkus-resteasy-reactive:${quarkusPlatformVersion}"
+    
+    // implementation "io.quarkus:quarkus-spring-web:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-undertow:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-undertow-websockets:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-resteasy-jackson:${quarkusPlatformVersion}"
+    // implementation "io.quarkus:quarkus-resteasy-reactive-jackson:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-resteasy-jsonb:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-resteasy-jaxb:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-resteasy:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-resteasy-mutiny:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
+    // implementation "io.quarkus:quarkus-agroal:${quarkusPlatformVersion}"
     implementation "com.github.davidmoten:rxjava2-jdbc:0.2.7"
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     
-    implementation "io.vertx:vertx-core:$version"
-    implementation "io.vertx:vertx-web:$version"
-    implementation "io.vertx:vertx-web-api-contract:$version"
-    implementation "io.vertx:vertx-rx-java2:$version"
-
-    // implementation "org.postgresql:postgresql:42.2.12"
-    implementation group:"org.xerial", name:"sqlite-jdbc", version:"3.31.1"
+    implementation "org.slf4j:slf4j-jcl:1.7.28"
     implementation "org.jooq:jooq"
+    
+    implementation group:"org.xerial", name:"sqlite-jdbc", version:"3.31.1"
     implementation group: 'cubrid', name: 'cubrid-jdbc', version: '10.2.1.8849'
-    // implementation 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
-    implementation group: "com.ibm.db2.jcc", name: "db2jcc", version: "db2jcc4"
 
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
     testImplementation 'io.rest-assured:rest-assured'
 }
 
 group 'dmo.fs'
-version '1.0.0'
+version '2.0.0'
 
 apply plugin: 'nu.studer.jooq'
 
 compileJava {
     options.compilerArgs << '-parameters'
 }
-sourceCompatibility = "1.8"
+sourceCompatibility = "11"
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 test {
