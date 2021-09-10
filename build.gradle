@@ -1,88 +1,76 @@
 plugins {
     id 'java'
-    id "io.quarkus" version "1.13.2.Final"
-    id 'nu.studer.jooq' version '3.0.3'
+    id "io.quarkus"
     id 'pmd'
 }
 
 repositories {
-    jcenter()
-    maven {
-        url "https://plugins.gradle.org/m2/"
-    }
-    maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
-    mavenCentral()
     mavenLocal()
+    mavenCentral()
     maven {
-        url "http://maven.cubrid.org/"
+        url "https://maven.cubrid.org/"
     }
-}
-
-version = "4.0.1-SNAPSHOT"
-
-ext {
-    jooqVersion = "3.13.2"
-}
-
-jooq {
-  version = "3.13.2"
-  edition = "OSS"
 }
 
 pmd {
     ruleSetFiles = files("dodexstart.xml")
     ruleSets = []
     ignoreFailures = true
-    toolVersion = "6.24.0"
+    toolVersion = "6.36.0"
+}
+
+ext {
+    vertxVersion = "4.1.2"
 }
 
 dependencies {
-    implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-jgit:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-resteasy:${quarkusPlatformVersion}"
-    // implementation "io.quarkus:quarkus-resteasy-reactive:${quarkusPlatformVersion}"
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     
-    // implementation "io.quarkus:quarkus-spring-web:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-undertow:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-undertow-websockets:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-resteasy-jackson:${quarkusPlatformVersion}"
-    // implementation "io.quarkus:quarkus-resteasy-reactive-jackson:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-resteasy-jsonb:${quarkusPlatformVersion}"
-    implementation "io.quarkus:quarkus-resteasy-jaxb:${quarkusPlatformVersion}"
+    implementation 'io.quarkus:quarkus-websockets'
+    implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-resteasy-mutiny:${quarkusPlatformVersion}"
+
+    implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
+    implementation 'io.quarkus:quarkus-reactive-mysql-client'
+    implementation "io.quarkus:quarkus-reactive-pg-client"
+    implementation 'io.quarkus:quarkus-reactive-db2-client'
+    implementation "io.quarkus:quarkus-vertx-core:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
+    
+    implementation "io.quarkus:quarkus-resteasy-jackson:${quarkusPlatformVersion}"
+    implementation 'io.quarkiverse.jooq:quarkus-jooq:0.2.2'
+    implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
-    // implementation "io.quarkus:quarkus-agroal:${quarkusPlatformVersion}"
-    implementation "com.github.davidmoten:rxjava2-jdbc:0.2.7"
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    
-    implementation "org.slf4j:slf4j-jcl:1.7.28"
-    implementation "org.jooq:jooq"
+    implementation "io.vertx:vertx-rx-java2:$version"
+    implementation 'io.quarkus:quarkus-smallrye-health'
     
     implementation group:"org.xerial", name:"sqlite-jdbc", version:"3.31.1"
-    implementation group: 'cubrid', name: 'cubrid-jdbc', version: '10.2.1.8849'
+    implementation group: 'cubrid', name: 'cubrid-jdbc', version: '11.0.1.0286'
 
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
     testImplementation 'io.rest-assured:rest-assured'
+
 }
 
 group 'dmo.fs'
-version '2.0.0'
+version '2.1.0'
 
-apply plugin: 'nu.studer.jooq'
 
 compileJava {
+    options.encoding = 'UTF-8'
     options.compilerArgs << '-parameters'
 }
 sourceCompatibility = "11"
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
 }
 
 test {

@@ -1,130 +1,113 @@
 package dmo.fs.spa.db;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.davidmoten.rx.jdbc.ConnectionProvider;
-import org.davidmoten.rx.jdbc.Database;
-import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
-import org.davidmoten.rx.jdbc.pool.Pools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.Future;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.Promise;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowIterator;
+import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseMariadb extends DbMariadb {
-	private final static Logger logger = LoggerFactory.getLogger(SpaDatabaseMariadb.class.getName());
-	protected Disposable disposable;
-	protected ConnectionProvider cp;
-	protected NonBlockingConnectionPool pool;
-	protected Database db;
+	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseMariadb.class.getName());
 	protected Properties dbProperties = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
-	public SpaDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
-			throws InterruptedException, IOException, SQLException {
-		super();
-
-		defaultNode = dodexUtil.getDefaultNode();
-
-        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-		dbProperties = dodexUtil.mapToProperties(dbMap);
-		
-		if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
-			this.dbProperties = dbOverrideProps;
-		}
-		if (dbOverrideMap != null) {
-			this.dbOverrideMap = dbOverrideMap;
-		}
-
-		dbProperties.setProperty("foreign_keys", "true");
-
-		SpaDbConfiguration.mapMerge(dbMap, dbOverrideMap);
-		databaseSetup();
-	}
-
-	public SpaDatabaseMariadb() throws InterruptedException, IOException, SQLException {
+	public SpaDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-		
-		dbProperties.setProperty("foreign_keys", "true");
 
-		databaseSetup();
+		if (dbOverrideProps != null) {
+			this.dbProperties = dbOverrideProps;
+		}
+		if (dbOverrideMap != null) {
+			this.dbOverrideMap = dbOverrideMap;
+		}
+
+		SpaDbConfiguration.mapMerge(dbMap, dbOverrideMap);
+		// databaseSetup();
 	}
 
-	private void databaseSetup() throws InterruptedException, SQLException {
+	public SpaDatabaseMariadb() throws InterruptedException, IOException, SQLException {
+		super();
+
+		defaultNode = dodexUtil.getDefaultNode();
+		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
+
+		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+		dbProperties = dodexUtil.mapToProperties(dbMap);
+		// databaseSetup();
+	}
+
+	@Override
+	public Future<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
+			// dbMap.put("dbname", "/myDbname"); // this wiil be merged into the default map
 			SpaDbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
-			SpaDbConfiguration.configureDefaults(dbMap, dbProperties); // Using prod (./dodex.db)
+			SpaDbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
 		}
-		cp = SpaDbConfiguration.getMariadbConnectionProvider();
 
-		pool = Pools.nonBlocking().maxPoolSize(Runtime.getRuntime().availableProcessors() * 5).connectionProvider(cp)
-				.build();
-		
-		db = Database.from(pool);
+		Promise<Void> setupPromise = Promise.promise();
+		MySQLPool pool = getPool(dbMap, dbProperties);
 
-		Future.future(prom -> {
-			db.member().doOnSuccess(c -> {
-				Statement stat = c.value().createStatement();
-
-				// stat.executeUpdate("drop table LOGIN");
-
-				String sql = getCreateTable("LOGIN");
-				if (!tableExist(c.value(), "LOGIN")) {
-					stat.executeUpdate(sql);
+		pool.getConnection().flatMap(conn -> {
+			conn.query(CHECKLOGINSQL).execute().flatMap(rows -> {
+				RowIterator<Row> ri = rows.iterator();
+				Integer val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getInteger(0);
 				}
-				
-				stat.close();
-				c.value().close();
-			}).subscribe(result -> {
-				prom.complete();
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error creating database tables: ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-			// generate all jooq sql only once.
-			prom.future().onSuccess(result -> {
-				try {
-					setupSql(db);
-				} catch (SQLException e) {
-					e.printStackTrace();
+				if (val == null) {
+					final String usersSql = getCreateTable("LOGIN");
+					conn.query(usersSql).execute().onFailure().invoke(error -> {
+						logger.error("{}Login Table Error: {}{}", ColorUtilConstants.RED, error,
+								ColorUtilConstants.RESET);
+					}).onItem().invoke(c -> {
+						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+								ColorUtilConstants.RESET);
+					}).subscribeAsCompletionStage();
 				}
-			});
-		});
-	}
-	
-	@Override
-	public Database getDatabase() {
-		return Database.from(pool);
-	}
+				return Uni.createFrom().item(conn);
+			}).onFailure().invoke(error -> {
+				logger.error("{}Check Login Table Error: {}{}", ColorUtilConstants.RED, error,
+						ColorUtilConstants.RESET);
+			}).subscribeAsCompletionStage();
+			return Uni.createFrom().item(conn);
+		}).flatMap(conn -> {
+			setupSql(pool);
+			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			setupPromise.complete();
+			return Uni.createFrom().item(pool);
+		}).subscribeAsCompletionStage();
 
-	@Override
-	public NonBlockingConnectionPool getPool() {
-		return pool;
+		return setupPromise.future();
 	}
 
 	@Override
@@ -132,18 +115,17 @@ public class SpaDatabaseMariadb extends DbMariadb {
 		return new SpaLoginImpl();
 	}
 
-	// per stack overflow
-	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
-		boolean exists = false;
-		try (ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
-			while (rs.next()) {
-				String name = rs.getString("TABLE_NAME");
-				if (name != null && name.equalsIgnoreCase(tableName)) {
-					exists = true;
-					break;
-				}
-			}
-		}
-		return exists;
+	private static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+
+		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+
+		MySQLConnectOptions connectOptions;
+		connectOptions = new MySQLConnectOptions().setHost(dbMap.get("host"))
+				.setPort(Integer.parseInt(dbMap.get("port"))).setUser(dbProperties.getProperty("user"))
+				.setPassword(dbProperties.getProperty("password")).setDatabase(dbMap.get("dbname"))
+				.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl"))).setIdleTimeout(1);
+
+		Vertx vertx = Vertx.vertx();
+		return MySQLPool.pool(vertx, connectOptions, poolOptions);
 	}
 }

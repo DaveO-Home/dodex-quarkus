@@ -1,7 +1,8 @@
 
 package dmo.fs.spa.db;
 
-public abstract class DbIbmDB2 extends RxJavaTimestampDb {
+public abstract class DbIbmDB2 extends SqlBuilder implements SpaDatabase {
+	protected static final String CHECKLOGINSQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='LOGIN'";
 
 	private enum CreateTable {
 		CREATELOGIN(
@@ -23,7 +24,7 @@ public abstract class DbIbmDB2 extends RxJavaTimestampDb {
         }
     };
 
-	public DbIbmDB2() {
+	protected DbIbmDB2() {
 		super();
 	}
 

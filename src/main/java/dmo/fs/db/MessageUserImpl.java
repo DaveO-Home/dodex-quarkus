@@ -62,10 +62,14 @@ public class MessageUserImpl implements MessageUser {
         Optional<Timestamp> loginTimestamp = login
             .filter(Timestamp.class::isInstance)
             .map(Timestamp.class::cast);
+        Optional<Long> loginLong = login
+            .filter(Long.class::isInstance)
+            .map(Long.class::cast);
         if(loginTimestamp.isPresent()) {
             this.lastLogin = loginTimestamp.get();
-        }
-        else {
+        } else if(loginLong.isPresent()) {
+            this.lastLogin = new Timestamp(loginLong.get());
+        } else {
             Optional<Date> loginDate = login
                 .filter(Date.class::isInstance)
                 .map(Date.class::cast);
@@ -78,5 +82,10 @@ public class MessageUserImpl implements MessageUser {
     @Override
     public Timestamp getLastLogin() {
         return  lastLogin;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s, %s, %s, %s, %s", id, name, password, ip, lastLogin);
     }
 }

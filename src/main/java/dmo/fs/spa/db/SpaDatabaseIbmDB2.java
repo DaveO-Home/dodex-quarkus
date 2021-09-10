@@ -1,53 +1,48 @@
 package dmo.fs.spa.db;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.davidmoten.rx.jdbc.ConnectionProvider;
-import org.davidmoten.rx.jdbc.Database;
-import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
-import org.davidmoten.rx.jdbc.pool.Pools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.db2client.DB2Pool;
+import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.core.Future;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.Promise;
+import io.vertx.db2client.DB2ConnectOptions;
+import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
-	private final static Logger logger = LoggerFactory.getLogger(SpaDatabaseIbmDB2.class.getName());
-	protected Disposable disposable;
-	protected ConnectionProvider cp;
-	protected NonBlockingConnectionPool pool;
-	protected Database db;
+	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseIbmDB2.class.getName());
 	protected Properties dbProperties = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
-	public SpaDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
-			throws InterruptedException, IOException, SQLException {
+	public SpaDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-		
+
 		if (dbOverrideProps != null) {
 			this.dbProperties = dbOverrideProps;
 		}
@@ -56,81 +51,63 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		}
 
 		SpaDbConfiguration.mapMerge(dbMap, dbOverrideMap);
-		databaseSetup();
+		// databaseSetup();
 	}
 
 	public SpaDatabaseIbmDB2() throws InterruptedException, IOException, SQLException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
+		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-
-		databaseSetup();
+		// databaseSetup();
 	}
 
-	private void databaseSetup() throws InterruptedException, SQLException {
-		// Override default credentials
-		// dbProperties.setProperty("user", "myUser");
-		// dbProperties.setProperty("password", "myPassword");
-		// dbProperties.setProperty("ssl", "false");
-		
-		if("dev".equals(webEnv)) {
+	@Override
+	public Future<Void> databaseSetup() {
+		if ("dev".equals(webEnv)) {
 			// dbMap.put("dbname", "/myDbname"); // this wiil be merged into the default map
 			SpaDbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
 			SpaDbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
 		}
-		cp = SpaDbConfiguration.getIbmDb2ConnectionProvider();
 
-		pool = Pools.nonBlocking()
-				.maxPoolSize(Runtime.getRuntime().availableProcessors() * 5).connectionProvider(cp)
-				.build();
-		
-		db = Database.from(pool);
-				
-		Future.future(prom -> {
-			db.member().doOnSuccess(c -> {
-				Statement stat = c.value().createStatement();
-				
-				// stat.executeUpdate("drop table login");
-				
-				String sql = getCreateTable("LOGIN");
-				// Set defined user
-				if (!tableExist(c.value(), "login")) {
-					stat.executeUpdate(sql);
-					sql = getLoginIndex("LOGIN");
-					stat.executeUpdate(sql);
-				}
-				
-				stat.close();
-				c.value().close();
-			}).subscribe(result -> {
-				prom.complete();
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error creating database tables: ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-			// generate all jooq sql only once.
-			prom.future().onSuccess(result -> {
-				try {
-					setupSql(db);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			});
-		});
-	}
+		Promise<Void> setupPromise = Promise.promise();
+		DB2Pool pool = getPool(dbMap, dbProperties);
 
-	@Override
-	public Database getDatabase() {
-		return Database.from(pool);
-	}
-	
-	@Override
-	public NonBlockingConnectionPool getPool() {
-		return pool;
+		pool.getConnection().flatMap(conn -> {
+			conn.query(CHECKLOGINSQL).execute().flatMap(rows -> {
+				RowIterator<Row> ri = rows.iterator();
+				String val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getString(0);
+				}
+				if (val == null) {
+					final String usersSql = getCreateTable("LOGIN").replace("dummy",
+							dbProperties.get("user").toString());
+					conn.query(usersSql).execute().onFailure().invoke(error -> {
+						logger.error("{}Login Table Error: {}{}", ColorUtilConstants.RED, error,
+								ColorUtilConstants.RESET);
+					}).onItem().invoke(c -> {
+						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+								ColorUtilConstants.RESET);
+					}).subscribeAsCompletionStage();
+				}
+				return Uni.createFrom().item(conn);
+			}).onFailure().invoke(error -> {
+				logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
+			}).subscribeAsCompletionStage();
+			return Uni.createFrom().item(conn);
+		}).flatMap(conn -> {
+			setupSql(pool);
+			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			setupPromise.complete();
+			return Uni.createFrom().item(pool);
+		}).subscribeAsCompletionStage();
+
+		return setupPromise.future();
 	}
 
 	@Override
@@ -138,16 +115,18 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		return new SpaLoginImpl();
 	}
 
-	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
-		boolean exists = false;
-		try(Statement stat = conn.createStatement()) {		
-			try(ResultSet rs = stat.executeQuery("select 1 from " + tableName + " where 0 = 1")) {
-				exists = true;
-			} catch(Exception e) {
-				logger.info(String.join("", ColorUtilConstants.BLUE, "Creating table: ", tableName, ColorUtilConstants.RESET));
-			}
-		}
-		
-		return exists;
+	private static DB2Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
+
+		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+
+		DB2ConnectOptions connectOptions;
+		connectOptions = new DB2ConnectOptions().setHost(dbMap.get("host")).setPort(Integer.parseInt(dbMap.get("port")))
+				.setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
+				.setDatabase(dbMap.get("dbname")).setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
+		// .setIdleTimeout(1)
+		;
+
+		Vertx vertx = Vertx.vertx();
+		return DB2Pool.pool(vertx, connectOptions, poolOptions);
 	}
 }

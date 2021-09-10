@@ -1,50 +1,45 @@
 package dmo.fs.db;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.davidmoten.rx.jdbc.ConnectionProvider;
-import org.davidmoten.rx.jdbc.Database;
-import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
-import org.davidmoten.rx.jdbc.pool.Pools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
-import io.vertx.core.Future;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
+import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowIterator;
+import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.sqlclient.PoolOptions;
 
 public class DodexDatabaseMariadb extends DbMariadb {
-	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseMariadb.class.getName());
-	protected Disposable disposable;
-	protected ConnectionProvider cp;
-	protected NonBlockingConnectionPool pool;
-	protected Database db;
+	private static final Logger logger = LoggerFactory.getLogger(DodexDatabaseMariadb.class.getName());
 	protected Properties dbProperties = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
-	public DodexDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
-			throws InterruptedException, IOException, SQLException {
+	public DodexDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-		
+
 		if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
 			this.dbProperties = dbOverrideProps;
 		}
@@ -55,7 +50,6 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		dbProperties.setProperty("foreign_keys", "true");
 
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
-		databaseSetup();
 	}
 
 	public DodexDatabaseMariadb() throws InterruptedException, IOException, SQLException {
@@ -65,70 +59,101 @@ public class DodexDatabaseMariadb extends DbMariadb {
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-		
-		dbProperties.setProperty("foreign_keys", "true");
 
-		databaseSetup();
+		dbProperties.setProperty("foreign_keys", "true");
 	}
 
-	private void databaseSetup() throws InterruptedException, SQLException {
+	public Promise<Pool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
-			DbConfiguration.configureDefaults(dbMap, dbProperties); // Using prod (./dodex.db)
+			DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
 		}
-		cp = DbConfiguration.getMariadbConnectionProvider();
 
-		pool = Pools.nonBlocking().maxPoolSize(Runtime.getRuntime().availableProcessors() * 5).connectionProvider(cp)
-				.build();
-		
-		db = Database.from(pool);
+		Promise<Pool> promise = Promise.promise();
+		MySQLPool pool = getPool(dbMap, dbProperties);
 
-		Future.future(prom -> {
-			db.member().doOnSuccess(c -> {
-				Statement stat = c.value().createStatement();
-
-				// stat.executeUpdate("drop table UNDELIVERED");
-				// stat.executeUpdate("drop table USERS");
-				// stat.executeUpdate("drop table MESSAGES");
-				
-
-				String sql = getCreateTable("USERS");
-				if (!tableExist(c.value(), "USERS")) {
-					stat.executeUpdate(sql);
+		pool.getConnection().flatMap(conn -> {
+			conn.query(CHECKUSERSQL).execute().flatMap(rows -> {
+				RowIterator<Row> ri = rows.iterator();
+				Integer val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getInteger(0);
 				}
-				sql = getCreateTable("MESSAGES");
-				if (!tableExist(c.value(), "MESSAGES")) {
-					stat.executeUpdate(sql);
+
+				if (val == null) {
+					final String usersSql = getCreateTable("USERS");
+					conn.query(usersSql).execute().onItem().invoke(r -> {
+						logger.info("{}Users Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+								ColorUtilConstants.RESET);
+					}).onFailure().invoke(error -> {
+						logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error,
+								ColorUtilConstants.RESET);
+					}).subscribeAsCompletionStage();
 				}
-				sql = getCreateTable("UNDELIVERED");
-				if (!tableExist(c.value(), "UNDELIVERED")) {
-					stat.executeUpdate(sql);
+				return Uni.createFrom().item(conn);
+			}).onFailure().invoke(error -> {
+				logger.error("{}Users Check Table Error: {}{}", ColorUtilConstants.RED, error,
+						ColorUtilConstants.RESET);
+			}).subscribeAsCompletionStage();
+			return Uni.createFrom().item(conn);
+		}).flatMap(conn -> {
+			conn.query(CHECKMESSAGESSQL).execute().flatMap(rows -> {
+				RowIterator<Row> ri = rows.iterator();
+				Integer val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getInteger(0);
 				}
-				stat.close();
-				c.value().close();
-			}).subscribe(result -> {
-				prom.complete();
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error creating database tables: ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-		});
+				if (val == null) {
+					final String sql = getCreateTable("MESSAGES");
+					conn.query(sql).execute().onItem().invoke(r -> {
+						logger.info("{}Messages Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+								ColorUtilConstants.RESET);
+					}).onFailure().invoke(error -> {
+						logger.error("{}Messages Create Table Error: {}{}", ColorUtilConstants.RED, error,
+								ColorUtilConstants.RESET);
+					}).subscribeAsCompletionStage();
+				}
+				return Uni.createFrom().item(conn);
+			}).subscribeAsCompletionStage();
+			return Uni.createFrom().item(conn);
+		}).flatMap(conn -> {
+			conn.query(CHECKUNDELIVEREDSQL).execute().flatMap(rows -> {
+				RowIterator<Row> ri = rows.iterator();
+				Integer val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getInteger(0);
+				}
+				if (val == null) {
+					final String sql = getCreateTable("UNDELIVERED");
+
+					conn.query(sql).execute().onItem().invoke(r -> {
+						logger.info("{}Undelivered Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+								ColorUtilConstants.RESET);
+					}).onFailure().invoke(error -> {
+						logger.error("{}Creating Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
+								ColorUtilConstants.RESET);
+					}).subscribeAsCompletionStage();
+				}
+				return Uni.createFrom().item(conn);
+			}).onFailure().invoke(error -> {
+				logger.error("{}Check Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
+						ColorUtilConstants.RESET);
+			}).subscribeAsCompletionStage();
+			return Uni.createFrom().item(conn);
+		}).flatMap(conn -> {
+			promise.complete(pool);
+			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			return null;
+		}).subscribeAsCompletionStage();
+
+		return promise;
 	}
-	
+
 	@Override
-	public Database getDatabase() {
-		return Database.from(pool);
-	}
-
-    @Override
-	public String getDbName() throws IOException {
-		return dodexUtil.getDefaultDb();
-	}
-
-	@Override
-	public NonBlockingConnectionPool getPool() {
-		return pool;
+	@SuppressWarnings("unchecked")
+	public <T> T getPool() {
+		return (T) pool;
 	}
 
 	@Override
@@ -136,23 +161,21 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		return new MessageUserImpl();
 	}
 
-	@Override
-	public void callSetupSql() throws SQLException {
-		setupSql(db);
-	}
+	private static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
-	// per stack overflow
-	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
-		boolean exists = false;
-		try (ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
-			while (rs.next()) {
-				String name = rs.getString("TABLE_NAME");
-				if (name != null && name.equalsIgnoreCase(tableName)) {
-					exists = true;
-					break;
-				}
-			}
-		}
-		return exists;
+		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+
+		MySQLConnectOptions connectOptions;
+		connectOptions = new MySQLConnectOptions()
+			.setHost(dbMap.get("host"))
+			.setPort(Integer.parseInt(dbMap.get("port")))
+			.setUser(dbProperties.getProperty("user"))
+			.setPassword(dbProperties.getProperty("password"))
+			.setDatabase(dbMap.get("dbname"))
+			.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
+			.setCharset("utf8mb4").setIdleTimeout(1);
+
+		Vertx vertx = Vertx.vertx();
+		return MySQLPool.pool(vertx, connectOptions, poolOptions);
 	}
 }

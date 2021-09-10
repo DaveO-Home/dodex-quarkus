@@ -44,8 +44,8 @@ public class SpaUtil {
     public static JsonNode getDefaultNode() throws IOException {
         final ObjectMapper jsonMapper = new ObjectMapper();
         JsonNode node;
-        
-        try(InputStream in = SpaUtil.class.getResourceAsStream("/database_spa_config.json")) {
+
+        try (InputStream in = SpaUtil.class.getResourceAsStream("/database_spa_config.json")) {
             node = jsonMapper.readTree(in);
         }
 
@@ -121,9 +121,9 @@ public class SpaUtil {
         }
 
         return SQLDialect.DEFAULT;
-      }
+    }
 
-      public static SpaLogin parseBody(String bodyData, SpaLogin spaLogin) {
+    public static SpaLogin parseBody(String bodyData, SpaLogin spaLogin) {
         JsonObject loginObject = new JsonObject(String.join("", "{\"data\":", bodyData, "}"));
         JsonArray data = loginObject.getJsonArray("data");
         int size = loginObject.getJsonArray("data").getList().size();
@@ -143,13 +143,17 @@ public class SpaUtil {
                     break;
             }
         }
-        
+
         spaLogin.setName(userName);
         spaLogin.setPassword(password);
         spaLogin.setId(0l);
         spaLogin.setLastLogin(new Date());
         spaLogin.setStatus("0");
-        
+
         return spaLogin;
-      }
+    }
+
+    public static SpaLogin createSpaLogin() {
+        return new SpaLoginImpl();
+    }
 }

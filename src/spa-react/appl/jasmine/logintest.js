@@ -30,7 +30,7 @@ export default function (Start, Helpers, ReactDOM, React, StartC, LoginC, timer)
             );
 
             loginObject = $("small .login");
-            loginObject.click();
+            loginObject.trigger("click");
 
             Start.base = true;
             // Note: if page does not refresh, increase the timer time.
@@ -90,7 +90,6 @@ export default function (Start, Helpers, ReactDOM, React, StartC, LoginC, timer)
         if(!window._local) {
             it("Login form - Make sure test user removed", function (done) {
                 loginButton = $(".modal .submit-login");
-                
                 if(loginButton.length === 0) {
                     done();
                     return;
@@ -136,7 +135,7 @@ export default function (Start, Helpers, ReactDOM, React, StartC, LoginC, timer)
                     form = modal.find("form:first");
                     if(form.length === 1 || timer === 40) {
                         checkbox = $("#newLogin");
-                        checkbox.click();
+                        checkbox.trigger("click");
                         nameObject = $("#inputUsername");
                         nameObject.val("abcde");
                         pwrdObject = $("#inputPassword");
@@ -230,7 +229,7 @@ export default function (Start, Helpers, ReactDOM, React, StartC, LoginC, timer)
             expect(modal[0]).toExist();
             
             closeButton = $(".close-modal");
-            closeButton.click();
+            closeButton.trigger("click");
             
             const numbers = timer(50, 50);
             const observable = numbers.subscribe(timer => {

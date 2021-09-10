@@ -28,7 +28,11 @@ export default App.controllers.Start ||
         index (options) {
             const indexUrl = "views/prod/index.html";
 
-            const markdownUrl = "../../README.md";
+            let markdownUrl = "../../README.md"; // prod
+            /* develblock:start */
+            markdownUrl = "../README.md"; // dev
+            /* develblock:end */
+
             this.view({
                 url: indexUrl,
                 urlMd: markdownUrl,
@@ -147,6 +151,7 @@ export default App.controllers.Start ||
             const mdFunction = data => {
                 me.html = `${App.html} ${Marked(data)}`;
             };
+
             $.get(options.urlMd, mdFunction, "text")
             .fail(err => {
                 console.warn("IT FAILED", err);

@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ParseQueryUtilHelper {
 
+    private ParseQueryUtilHelper () {}
+
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.substring(query.indexOf('?') + 1).split("&");
         Map<String, String> map = new ConcurrentHashMap<String, String>();

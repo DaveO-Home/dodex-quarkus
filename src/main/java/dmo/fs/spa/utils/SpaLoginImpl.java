@@ -79,7 +79,7 @@ public class SpaLoginImpl implements SpaLogin {
 
     @Override
     public Map<String, Object> getMap() {
-        Map<String, Object> map = new ConcurrentHashMap<String, Object>();
+        Map<String, Object> map = new ConcurrentHashMap<>();
         map.put("id", getId());
         map.put("name", getName());
         map.put("password", getPassword());
@@ -87,5 +87,10 @@ public class SpaLoginImpl implements SpaLogin {
         map.put("status", getStatus());
 
         return map;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Id: %s, Name: %s, Password: %s. Last-Login: %s, Status: %s", id, name, password, lastLogin, status);
     }
 }

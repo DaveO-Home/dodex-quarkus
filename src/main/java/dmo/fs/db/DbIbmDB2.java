@@ -1,8 +1,11 @@
 
 package dmo.fs.db;
 
-public abstract class DbIbmDB2 extends JavaRxTimestampDb {
-
+public abstract class DbIbmDB2 extends DbDefinitionBase implements DodexDatabase {
+	protected static final String CHECKUSERSQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='USERS'";
+    protected static final String CHECKMESSAGESQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='MESSAGES'";
+    protected static final String CHECKUNDELIVEREDSQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='UNDELIVERED'";
+    
 	private enum CreateTable {
 		CREATEUSERS(
 			"CREATE TABLE USERS (" +
@@ -19,7 +22,7 @@ public abstract class DbIbmDB2 extends JavaRxTimestampDb {
 		CREATEMESSAGES(
 			"CREATE TABLE MESSAGES (" +
 				"id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY," +
-				"message CLOB NOT NULL," +
+				"message VARCHAR(32672) NOT NULL," +
 				"from_handle VARCHAR(255) NOT NULL," +
 				"post_date TIMESTAMP(12) NOT NULL, " +
 				"PRIMARY KEY (id))"),
@@ -40,7 +43,7 @@ public abstract class DbIbmDB2 extends JavaRxTimestampDb {
         }
     };
 
-	public DbIbmDB2() {
+	protected DbIbmDB2() {
 		super();
 	}
 

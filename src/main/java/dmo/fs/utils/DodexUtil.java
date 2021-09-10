@@ -14,15 +14,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.jooq.SQLDialect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.reactivex.disposables.Disposable;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 public class DodexUtil {
-    private final static Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
-    private final static String REMOVEUSER = ";removeuser";
-    private final static String USERS = ";users";
+    private static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
+    private static final String REMOVEUSER = ";removeuser";
+    private static final String USERS = ";users";
     private static String env = "dev";
     String defaultDb = "sqlite3";
 
@@ -36,7 +36,7 @@ public class DodexUtil {
         }
     }
 
-    public Map<String, String> commandMessage(String clientData) {
+    public static Map<String, String> commandMessage(String clientData) {
         Map<String, String> returnObject = new ConcurrentHashMap<>();
     
         try {
@@ -53,8 +53,7 @@ public class DodexUtil {
         return returnObject;
     }
 
-    private Map<String, String> processCommand(String command, String data)
-            throws InterruptedException {
+    private static Map<String, String> processCommand(String command, String data) {
         String selectedUsers = "";
         Map<String, String> returnObject = new ConcurrentHashMap<>();
         String switchValue = command == null ? "" : command;
@@ -85,6 +84,7 @@ public class DodexUtil {
     public static String getEnv() {
         return env;
     }
+
     /*
         Split out command and data from client message.
     */

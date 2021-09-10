@@ -1,7 +1,8 @@
 
-package dmo.fs.spa.db;
+package dmo.fs.spa.db.reactive;
 
-public abstract class DbCubrid extends RxJavaTimestampDb {
+public abstract class DbCubrid extends SqlBuilder implements SpaDatabaseReactive {
+	protected final static String CHECKLOGINSQL = "SELECT class_name FROM _db_class WHERE class_name = 'login'";
 
 	private enum CreateTable {
 
@@ -22,7 +23,7 @@ public abstract class DbCubrid extends RxJavaTimestampDb {
         }
     };
 
-	public DbCubrid() {
+	protected DbCubrid() {
 		super();
 	}
 

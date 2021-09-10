@@ -19,29 +19,55 @@
             }
         }
     },
-    "postgres": {
+    "h2": {
         "dev": { 
             "credentials": {
-                "user": "daveo",
-                "password": "albatross",
+                "user": "sa",
+                "password": "sa",
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost",
-                "url": "jdbc:postgresql:",
-                "dbname": "/daveo"
+                "filename": "file:./testh2",
+                "url": "jdbc:h2:"
             }
         },
         "prod": { 
             "credentials": {
-                "user": "daveo",
-                "password": "albatross",
+                "user": "sa",
+                "password": "sa",
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost",
+                "filename": "file:./dodexh2",
+                "url": "jdbc:h2:"
+            }
+        }
+    },
+    "postgres": {
+        "dev": { 
+            "credentials": {
+                "user": "dodex",
+                "password": "dodex",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost",
+                "port": "5432",
                 "url": "jdbc:postgresql:",
-                "dbname": "/dodex"
+                "dbname": "dodex"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "dodex",
+                "password": "dodex",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost",
+                "port": "5432",
+                "url": "jdbc:postgresql:",
+                "dbname": "dodex"
             }
         }
     },
@@ -49,52 +75,85 @@
         "dev": { 
             "credentials": {
                 "user": "dba",
-                "password": "albatross",
+                "password": "",
                 "ssl": "false"
             },
             "config": {
                 "host": "localhost:33000:",
                 "url": "jdbc:cubrid:",
-                "dbname": "test:public::"
+                "dbname": "dodex:::"
             }
         },
         "prod": { 
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "dba",
+                "password": "",
                 "ssl": "false"
             },
             "config": {
                 "host": "localhost:33000",
                 "url": "jdbc:CUBRID:",
-                "dbname": "dodex:public::"
+                "dbname": "dodex:::"
             }
         }
     },
     "mariadb": {
         "dev": { 
             "credentials": {
-                "user": "daveo",
-		        "password": "Stuff*V4",
+                "user": "dodex",
+		        "password": "dodex",
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost:3306",
-                "url": "jdbc:mariadb:",
-                "dbname": "/test"
+                "host": "localhost",
+                "port": "3306",
+                "url": "jdbc:mysql:",
+                "dbname": "test"
             }
         },
         "prod": { 
             "credentials": {
-                "user": "userp0",
-                "password": "password",
+                "user": "dodex",
+                "password": "dodex",
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost:3306",
-                "url": "jdbc:mariadb:",
-                "dbname": "/dodex"
+                "host": "localhost",
+                "port": "3306",
+                "url": "jdbc:mysql:",
+                "dbname": "dodex"
+            }
+        }
+    },
+    "ibmdb2": {
+        "dev": { 
+            "credentials": {
+                "user": "db2inst1",
+                "password": "dodex",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost",
+                "port": "25010",
+                "url": "jdbc:db2:",
+                "dbname": "dodex",
+                "tabschema": "DB2INST1"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "db2inst1r",
+                "password": "dodex",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost",
+                "port": "25010",
+                "url": "jdbc:db2:",
+                "dbname": "dodex",
+                "tabschema": "DB2INST1"
             }
         }
     }
 }
+

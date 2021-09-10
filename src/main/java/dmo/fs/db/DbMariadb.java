@@ -1,8 +1,12 @@
 
 package dmo.fs.db;
 
-public abstract class DbMariadb extends JavaRxDateDb {
-
+public abstract class DbMariadb extends DbDefinitionBase implements DodexDatabase {
+	protected static final String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='LOGIN';";
+    public static final String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='USERS';";
+    protected static final String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='MESSAGES';";
+    protected static final String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='UNDELIVERED';";
+	
 	private enum CreateTable {
 		CREATEUSERS(
 			"CREATE TABLE USERS (" +
@@ -44,7 +48,7 @@ public abstract class DbMariadb extends JavaRxDateDb {
         }
     };
 
-	public DbMariadb() {
+	protected DbMariadb() {
 		super();
 	}
 

@@ -1,23 +1,26 @@
 
 package dmo.fs.db;
 
-public abstract class DbPostgres extends JavaRxTimestampDb {
+public abstract class DbPostgres extends DbDefinitionBase implements DodexDatabase {
+	public static final String CHECKUSERSQL = "SELECT to_regclass('public.users')";
+    protected static final String CHECKMESSAGESSQL = "SELECT to_regclass('public.messages')";
+    protected static final String CHECKUNDELIVEREDSQL = "SELECT to_regclass('public.undelivered')";
 
 	private enum CreateTable {
 		CREATEUSERS(
 			"CREATE SEQUENCE public.users_id_seq INCREMENT 1 START 19 MINVALUE 1 MAXVALUE 2147483647 CACHE 1; " +	
 			"ALTER SEQUENCE public.users_id_seq OWNER TO dummy;" +
-		"CREATE TABLE public.users" +
-			"(id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass)," +
-			"name character varying(255) COLLATE pg_catalog.\"default\"," +
-			"password character varying(255) COLLATE pg_catalog.\"default\"," +
-			"ip character varying(255) COLLATE pg_catalog.\"default\"," +
-			"last_login timestamp with time zone," +
-			"CONSTRAINT users_pkey PRIMARY KEY (id)," +
-			"CONSTRAINT users_name_unique UNIQUE (name)," +
-			"CONSTRAINT users_password_unique UNIQUE (password))" +
-			"WITH (OIDS = FALSE) TABLESPACE pg_default;" +		
-		"ALTER TABLE public.users OWNER to dummy;"),
+			"CREATE TABLE public.users" +
+				"(id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass)," +
+				"name character varying(255) COLLATE pg_catalog.\"default\"," +
+				"password character varying(255) COLLATE pg_catalog.\"default\"," +
+				"ip character varying(255) COLLATE pg_catalog.\"default\"," +
+				"last_login timestamp with time zone," +
+				"CONSTRAINT users_pkey PRIMARY KEY (id)," +
+				"CONSTRAINT users_name_unique UNIQUE (name)," +
+				"CONSTRAINT users_password_unique UNIQUE (password))" +
+				"WITH (OIDS = FALSE) TABLESPACE pg_default;" +		
+			"ALTER TABLE public.users OWNER to dummy;"),
 		CREATEMESSAGES(
 			"CREATE SEQUENCE public.messages_id_seq INCREMENT 1 START 4 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;" +
 			"ALTER SEQUENCE public.messages_id_seq OWNER TO dummy;" +
@@ -48,7 +51,7 @@ public abstract class DbPostgres extends JavaRxTimestampDb {
         }
     };
 
-	public DbPostgres() {
+	protected DbPostgres() {
 		super();
 	}
 

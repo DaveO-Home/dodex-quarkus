@@ -1,5 +1,7 @@
 import { messageAlert } from "./utils/alert";
+
 let status = "0";
+
 export function login(submitButton, isValidate) {
     const userLogin = new Login();
     status = "0";
@@ -27,23 +29,17 @@ function Login() {
     this.user = async (type, submitButton, url) => {
         let formData = {};
         let userLogin = typeof url !== "undefined" ? url : "/userlogin";
+
         if (type === "DELETE") {
             let userJson = {};
-            if(sessionStorage.getItem("credentials") === undefined) {
+            if (sessionStorage.getItem("credentials") === undefined) {
                 return;
             }
             userJson.name = JSON.parse(sessionStorage.getItem("credentials")).name;
             userJson.password = JSON.parse(sessionStorage.getItem("credentials")).password;
             userLogin = userLogin + "?user=" + userJson.name + "&password=" + userJson.password;
         } else {
-            // if(Login.newLogin) {
-            //     type = "GET";
-            // }
-            // else {
-                // type = "POST";
-            // }
             formData = JSON.stringify($(submitButton.parentElement.parentElement).serializeArray());
-            // formData = JSON.stringify($(submitButton.parentElement.parentElement).serializeArray());
         }
 
         await $.ajax({
@@ -58,9 +54,9 @@ function Login() {
                 if (status === "0" && type !== "DELETE") {
                     sessionStorage.setItem("credentials", JSON.stringify(Login.returnData));
                     $(".login:first").html("Log Out");
-                    $(".close-modal:first").click();
+                    $(".close-modal:first").trigger("click");
                     Login.newLogin = false;
-                } 
+                }
             },
             dataType: "json",
             contentType: "application/json"
@@ -74,7 +70,7 @@ function Login() {
         const validateForm = isValid => {
             try {
                 const inputs = Array.prototype.slice.call(Login.submitButton.parentElement.parentElement.querySelectorAll("input")); //  form
-                for (let i = 0;i < inputs.length;i++) {
+                for (let i = 0; i < inputs.length; i++) {
                     isValid = !inputs[i].checkValidity() ? false : isValid;
                     inputs[i].setCustomValidity("");
 
@@ -101,7 +97,7 @@ function Login() {
                             }
                         }
                 }
-                for (let i = 0;isValid && i < inputs.length;i++) {
+                for (let i = 0; isValid && i < inputs.length; i++) {
                     if (inputs[i].name === "username") {
                         this.credentials.user = inputs[i].value;
                     }
@@ -136,7 +132,6 @@ function Login() {
         if (isValid) {
             e.preventDefault();
             sessionStorage.removeItem("credentials");
-
             if (Login.newLogin) {
                 await this.user("PUT", Login.submitButton);
                 if (Login.returnData.status === "-2" || Login.returnData.status === "-4") {
@@ -154,7 +149,7 @@ function Login() {
         Object.defineProperty(String.prototype, "hashCode", {
             value: function () {
                 var hash = 0, i, chr;
-                for (i = 0;i < this.length;i++) {
+                for (i = 0; i < this.length; i++) {
                     chr = this.charCodeAt(i);
                     hash = ((hash << 5) - hash) + chr;
                     hash |= 0; // Convert to 32bit integer
@@ -184,7 +179,7 @@ function Login() {
     this.newUser = () => {
         const checkbox = Login.submitButton.parentElement.parentElement.querySelector("input[name=newLogin]");
         const password2 = Login.submitButton.parentElement.parentElement.querySelector("#inputPassword2");
-        
+
         checkbox.addEventListener("change", function () {
             const lastGroup = $(Login.submitButton.parentElement.parentElement).find(".form-group").last()[0];
             if (this.checked) {
@@ -200,7 +195,7 @@ function Login() {
     };
     this.backend = async (type, submitButton, url) => {
         await this.user(type, submitButton, url);
-        if(url && url.indexOf("/unregister") > -1) {
+        if (url && url.indexOf("/unregister") > -1) {
             sessionStorage.removeItem("credentials");
         }
         return Login.returnData;

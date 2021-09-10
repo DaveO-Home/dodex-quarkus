@@ -1,8 +1,9 @@
 
 package dmo.fs.spa.db;
 
-public abstract class DbPostgres extends RxJavaTimestampDb {
-	
+public abstract class DbPostgres extends SqlBuilder implements SpaDatabase {
+	public static final String CHECKLOGIN = "SELECT to_regclass('public.login')";
+
 	private enum CreateTable {
 		CREATELOGIN(
 			"CREATE SEQUENCE public.login_id_seq INCREMENT 1 START 19 MINVALUE 1 MAXVALUE 2147483647 CACHE 1; " +	
@@ -23,9 +24,9 @@ public abstract class DbPostgres extends RxJavaTimestampDb {
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
-	public DbPostgres() {
+	protected DbPostgres() {
 		super();
 	}
 

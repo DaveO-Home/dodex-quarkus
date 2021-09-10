@@ -4,806 +4,889 @@ package dmo.fs.db;
 import static org.jooq.impl.DSL.deleteFrom;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.insertInto;
-import static org.jooq.impl.DSL.mergeInto;
 import static org.jooq.impl.DSL.notExists;
-import static org.jooq.impl.DSL.param;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.table;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.websocket.Session;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.davidmoten.rx.jdbc.Database;
 import org.jooq.DSLContext;
+import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.JavaRxDateDb.Undelivered;
-import dmo.fs.db.JavaRxDateDb.Users;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.groups.UniSubscribe;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.jdbcclient.JDBCPool;
+import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.db2client.DB2Pool;
+import io.vertx.mutiny.mysqlclient.MySQLClient;
+import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.Pool;
+import io.vertx.mutiny.sqlclient.PropertyKind;
+import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowSet;
+import io.vertx.mutiny.sqlclient.SqlClient;
+import io.vertx.mutiny.sqlclient.SqlClientHelper;
+import io.vertx.mutiny.sqlclient.Tuple;
 
 public abstract class DbDefinitionBase {
-	private final static Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
-	protected final static String QUERYUSERS = "select * from USERS where password=?";
-	protected final static String QUERYMESSAGES = "select * from MESSAGES where id=?";
-	protected final static String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from USERS, UNDELIVERED, MESSAGES where USERS.id = user_id and MESSAGES.id = message_id and USERS.id = :id";
-
-	private static DSLContext create;
-
-	private static String GETALLUSERS;
-	private static String GETUSERBYNAME;
-	private static String GETINSERTUSER;
-	private static String GETUPDATEUSER;
-	private static String GETREMOVEUNDELIVERED;
-	private static String GETREMOVEMESSAGE;
-	private static String GETUNDELIVEREDMESSAGE;
-	private static String GETDELETEUSER;
-	private static String GETADDMESSAGE;
-	private static String GETADDUNDELIVERED;
-	private static String GETUSERNAMES;
-	private static String GETUSERBYID;
-	private static String GETREMOVEUSERUNDELIVERED;
-	private static String GETUSERUNDELIVERED;
-	private static String GETDELETEUSERBYID;
-	private static String GETSQLITEUPDATEUSER;
-	private static String GETREMOVEUSERS;
-	private Boolean isTimestamp;
-	private Vertx vertx;
-
-	public static void setupSql(Database db) throws SQLException {
-		if(GETALLUSERS != null) {
-			return;
-		}
-		try (Connection conn = db.connection().blockingGet()) {
-			create = DSL.using(conn, DodexUtil.getSqlDialect());
-			GETALLUSERS = setupAllUsers();
-			GETUSERBYNAME = setupUserByName();
-			GETINSERTUSER = setupInsertUser();
-			GETUPDATEUSER = setupUpdateUser();
-			GETREMOVEUNDELIVERED = setupRemoveUndelivered();
-			GETREMOVEMESSAGE = setupRemoveMessage();
-			GETUNDELIVEREDMESSAGE = setupUndeliveredMessage();
-			GETDELETEUSER = setupDeleteUser();
-			GETADDMESSAGE = setupAddMessage();
-			GETADDUNDELIVERED = setupAddUndelivered();
-			GETUSERNAMES = setupUserNames();
-			GETUSERBYID = setupUserById();
-			GETREMOVEUSERUNDELIVERED = setupRemoveUserUndelivered();
-			GETUSERUNDELIVERED = setupUserUndelivered();
-			GETDELETEUSERBYID = setupDeleteUserById();
-			GETSQLITEUPDATEUSER = setupSqliteUpdateUser();
-			GETREMOVEUSERS = setupRemoveUsers();
-		} catch(Exception e) {
-			logger.error(String.join("", "Creating JOOQ Sql: ", e.getMessage()));
-		}
-	}
-
-	private static String setupAllUsers() {
-		return create.renderNamedParams(
-				select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-						.from(table("USERS")).where(field("NAME").ne(param("NAME", ":name"))));
-	}
-
-	public String getAllUsers() {
-		return GETALLUSERS;
-	}
-
-	private static String setupUserByName() {
-		return create.renderNamedParams(
-				select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-						.from(table("USERS")).where(field("NAME").eq(param("NAME", ":name"))));
-	}
-
-	public String getUserByName() {
-		return GETUSERBYNAME;
-	}
-
-	private static String setupUserById() {
-		return create.renderNamedParams(
-				select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-						.from(table("USERS")).where(field("NAME").eq(param("NAME", ":name"))));
-	}
-
-	public String getUserById() {
-		return GETUSERBYID;
-	}
-
-	private static String setupInsertUser() {
-		return create.renderNamedParams(
-				insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-						.values(param("NAME", ":name"), param("PASSWORD", ":password"), param("IP", ":ip"),
-								param("LASTLOGIN", ":lastlogin")));
-	}
-
-	public String getInsertUser() {
-		return GETINSERTUSER;
-	}
-
-	private static String setupUpdateUser() {
-		return create.renderNamedParams(mergeInto(table("USERS"))
-				.columns(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-				.key(field("ID")).values(param("ID", ":id"), param("NAME", ":name"), param("PASSWORD", ":password"),
-						param("IP", ":ip"), param("LASTLOGIN", ":lastlogin")));
-	}
-
-	public String getUpdateUser() {
-		return GETUPDATEUSER;
-	}
-
-	public static String setupSqliteUpdateUser() {
-		return "update USERS set last_login = :LASTLOGIN where id = :USERID";
-	}
-
-	public String getSqliteUpdateUser() {
-		return GETSQLITEUPDATEUSER;
-	}
-
-	private static String setupRemoveUndelivered() {
-		return create.renderNamedParams(
-				deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq(param("USERID", ":userid")),
-						field("MESSAGE_ID").eq(param("MESSAGEID", ":messageid"))));
-	}
-
-	public String getRemoveUndelivered() {
-		return GETREMOVEUNDELIVERED;
-	}
-
-	private static String setupRemoveUserUndelivered() {
-		return create.renderNamedParams(
-				deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq(param("USERID", ":userid"))));
-	}
-
-	public String getRemoveUserUndelivered() {
-		return GETREMOVEUSERUNDELIVERED;
-	}
-
-	private static String setupRemoveMessage() {
-		return create.render(deleteFrom(table("MESSAGES"))
-				.where(create.renderNamedParams(field("ID").eq(param("MESSAGEID", ":messageid"))
-						.and(create.renderNamedParams(notExists(select().from(table("MESSAGES"))
-								.join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID")))
-								.and(field("ID").eq(param("MESSAGEID", ":messageid")))))))));
-	}
-
-	public String getRemoveMessage() {
-		return GETREMOVEMESSAGE;
-	}
-
-	private static String setupRemoveUsers() {
-		return create.render(
-				deleteFrom(table("USERS")).where(create.renderNamedParams(field("ID").eq(param("USERID", ":userid"))
-						.and(create.renderNamedParams(notExists(select().from(table("USERS")).join(table("UNDELIVERED"))
-								.on(field("ID").eq(field("USER_ID")))
-								.and(field("ID").eq(param("USERID", ":userid")))))))));
-	}
-
-	public String getRemoveUsers() {
-		return GETREMOVEUSERS;
-	}
-
-	private static String setupUndeliveredMessage() {
-		return create.renderNamedParams(
-				select(field("USER_ID"), field("MESSAGE_ID")).from(table("MESSAGES")).join(table("UNDELIVERED"))
-						.on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq(param("MESSAGEID", ":messageid")))
-						.and(field("USER_ID").eq(param("USERID", ":userid"))));
-	}
-
-	public String getUndeliveredMessage() {
-		return GETUNDELIVEREDMESSAGE;
-	}
-
-	private static String setupUserUndelivered() {
-		return create.renderNamedParams(
-				select(field("USER_ID"), field("MESSAGE_ID")).from(table("USERS")).join(table("UNDELIVERED"))
-						.on(field("ID").eq(field("USER_ID"))).and(field("ID").eq(param("USERID", ":userid"))));
-	}
-
-	public String getUserUndelivered() {
-		return GETUSERUNDELIVERED;
-	}
-
-	public Future<MessageUser> addUser(Session session, Database db, MessageUser messageUser)
-			throws InterruptedException, SQLException {
-		Promise<MessageUser> promise = Promise.promise();
-
-		Timestamp current = new Timestamp(new Date().getTime());
-		db.update(getInsertUser()).parameter("NAME", messageUser.getName())
-			.parameter("PASSWORD", messageUser.getPassword())
-			.parameter("IP", messageUser.getIp())
-			.parameter("LASTLOGIN", current)
-			.returnGeneratedKeys()
-			.getAs(Long.class)
-			.subscribe(key -> {
-				messageUser.setId(key);
-				messageUser.setLastLogin(current);
-				promise.tryComplete(messageUser);
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error adding user: ", throwable.getMessage(),
-						ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-				session.getAsyncRemote().sendObject(throwable.getMessage());
-			});
-
-		return promise.future();
-	}
-
-	public Future<Integer> updateUser(Session session, Database db, MessageUser messageUser)
-			throws InterruptedException, SQLException {
-		int count[] = { 0 };
-		Timestamp dateTime = new Timestamp(new Date().getTime());
-
-		Promise<Integer> promise = Promise.promise();
-
-		db.update(getUpdateUser()).parameter("ID", messageUser.getId()).parameter("NAME", messageUser.getName())
-			.parameter("PASSWORD", messageUser.getPassword())
-			.parameter("IP", messageUser.getIp())
-			.parameter("LASTLOGIN", dateTime)
-			.counts()
-			.doOnNext(c -> count[0] += c)
-			.subscribe(result -> {
-				promise.complete(count[0]);
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error Updating user: ", throwable.getMessage(),
-						ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-				session.getAsyncRemote().sendObject(throwable.getMessage());
-			});
-
-		return promise.future();
-	}
-
-	public Future<Integer> updateCustomUser(Session session, Database db, MessageUser messageUser, String type)
-			throws InterruptedException, SQLException {
-		int count[] = { 0 };
-
-		Promise<Integer> promise = Promise.promise();
-
-		db.update(getSqliteUpdateUser()).parameter("USERID", messageUser.getId())
-			.parameter("LASTLOGIN",
-					"date".equals(type) ? new Date().getTime() : new Timestamp(new Date().getTime()))
-			.counts().doOnNext(c -> count[0] += c)
-			.subscribe(result -> {
-				promise.complete(count[0]);
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error Updating user: ", throwable.getMessage(),
-						ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-				session.getAsyncRemote().sendObject(throwable.getMessage());
-			});
-
-		return promise.future();
-	}
-
-	private static String setupDeleteUser() {
-		return create.renderNamedParams(deleteFrom(table("USERS")).where(field("NAME").eq(param("NAME", ":name")),
-				field("PASSWORD").eq(param("PASSWORD", ":password"))));
-	}
-
-	public String getDeleteUser() {
-		return GETDELETEUSER;
-	}
-
-	private static String setupDeleteUserById() {
-		return create
-				.renderNamedParams(deleteFrom(table("USERS")).where(field("ID").eq(param("USERID", ":userid"))));
-	}
-
-	public String getDeleteUserById() {
-		return GETDELETEUSERBYID;
-	}
-
-	public Future<Long> deleteUser(Session session, Database db, MessageUser messageUser)
-			throws InterruptedException, SQLException {
-		Promise<Long> promise = Promise.promise();
-
-		db.update(getDeleteUser())
-			.parameter("NAME", messageUser.getName())
-			.parameter("PASSWORD", messageUser.getPassword())
-			.counts()
-			.subscribe(result -> {
-				messageUser.setId(Long.parseLong(result.toString()));
-				promise.complete(Long.parseLong(result.toString()));
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error deleting user: ", messageUser.getName(), " : ",
-						throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-				session.getAsyncRemote().sendObject(throwable.getMessage());
-			});
-		
-		return promise.future();
-	}
-
-	private static String setupAddMessage() {
-		return create.renderNamedParams(
-				insertInto(table("MESSAGES")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
-						.values(param("MESSAGE", ":message"), param("FROMHANDLE", ":fromHandle"),
-								param("POSTDATE", ":postdate")));
-	}
-
-	public String getAddMessage() {
-		return GETADDMESSAGE;
-	}
-
-	public Future<Long> addMessage(Session session, MessageUser messageUser, String message, Database db)
-			throws InterruptedException, SQLException {
-		Promise<Long> promise = Promise.promise();
-		
-		db.update(getAddMessage())
-			.parameter("MESSAGE", message)
-			.parameter("FROMHANDLE", messageUser.getName())
-			.parameter("POSTDATE", new Timestamp(new Date().getTime()))
-			.returnGeneratedKeys()
-			.getAs(Long.class)
-			.subscribe(result -> {
-				promise.complete(result);
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error adding messaage: ", message, " : ",
-						throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-				session.getAsyncRemote().sendObject(throwable.getMessage());
-			});
-		
-		return promise.future();
-	}
-
-	private static String setupAddUndelivered() {
-		return create
-				.renderNamedParams(insertInto(table("UNDELIVERED")).columns(field("USER_ID"), field("MESSAGE_ID"))
-						.values(param("USERID", ":userid"), param("MESSAGEID", ":messageid")));
-	}
-
-	public String getAddUndelivered() {
-		return GETADDUNDELIVERED;
-	}
-
-	public Future<Void> addUndelivered(Long userId, Long messageId, Database db) throws SQLException, InterruptedException {
-		Promise<Void> promise = Promise.promise();
-		
-		db.update(getAddUndelivered())
-			.parameter("USERID", userId)
-			.parameter("MESSAGEID", messageId)
-			.counts()
-			.subscribe(result -> {
-				promise.complete(); 
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Add Undelivered Error: ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-
-		return promise.future();
-	}
-
-	private static String setupUserNames() {
-		return create.renderNamedParams(
-				select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-						.from(table("USERS")).where(field("NAME").ne(param("NAME", ":name"))));
-	}
-
-	public String getUserNames() {
-		return GETUSERNAMES;
-	}
-
-	public Future<Void> addUndelivered(Session session, List<String> undelivered, Long messageId, Database db) {
-		Promise<Void> promise = Promise.promise();
-		try {
-			for (String name : undelivered) {
-				Future<Long> future = getUserIdByName(name, db);
-				future.onSuccess(userId -> {
-					try {
-						Future<Void> future2 = addUndelivered(userId, messageId, db);
-						future2.onSuccess(handler -> {
-							promise.tryComplete();
-						});
-					} catch (SQLException | InterruptedException e) {
-						logger.error(String.join("", "AddUndelivered: ", e.getMessage()));
-					}
-				});
-			}
-		} catch (Exception e) {
-			session.getAsyncRemote().sendObject(e.getMessage());
-		}
-		return promise.future();
-	}
-
-	public Future<Long> getUserIdByName(String name, Database db) throws InterruptedException {
-		Promise<Long> promise = Promise.promise();
-
-		db.select(getUserByName())
-			.parameter("NAME", name)
-			.autoMap(Users.class)
-			.doOnNext(result -> {
-				promise.complete(result.id());
-			})
-			.subscribe(result -> {
-			//
-		}, throwable -> {
-			logger.error(String.join(ColorUtilConstants.RED, "Error finding user by name: ", name, " : ",
-					throwable.getMessage(), ColorUtilConstants.RESET));
-			throwable.printStackTrace();
-		});
-
-		return promise.future();
-	}
-
-	public abstract MessageUser createMessageUser();
-
-	public Future<MessageUser> selectUser(MessageUser messageUser, Session session, Database db)
-			throws InterruptedException, SQLException {
-		MessageUser resultUser = createMessageUser();
-		Promise<MessageUser> promise = Promise.promise();
-
-		db.select(Users.class)
-			.parameter(messageUser.getPassword())
-			.get()
-			.doOnNext(result -> {
-				resultUser.setId(result.id());
-				resultUser.setName(result.name());
-				resultUser.setPassword(result.password());
-				resultUser.setIp(result.ip());
-				resultUser.setLastLogin(result.lastLogin());
-			})
-			.isEmpty()
-			.doOnSuccess(empty -> {
-				Future<Integer> future1 = null;
-				if (empty) {
-					Future<MessageUser> future2 = addUser(session, db, messageUser);
-
-					future2.onComplete(handler -> {
-						MessageUser result = future2.result();
-						resultUser.setId(result.getId());
-						resultUser.setName(result.getName());
-						resultUser.setPassword(result.getPassword());
-						resultUser.setIp(result.getIp());
-						resultUser.setLastLogin(result.getLastLogin());
-						promise.complete(resultUser);
-					});
-				}
-						
-				if (DbConfiguration.isUsingSqlite3() && !empty) {
-					try {
-						future1 = updateCustomUser(session, db, resultUser, "date");
-						promise.complete(resultUser);
-					} catch (InterruptedException | SQLException e) {
-						e.printStackTrace();
-					}
-				} else if (DbConfiguration.isUsingIbmDB2() && !empty) {
-					try {
-						future1 = updateCustomUser(session, db, resultUser, "timestamp");
-						promise.complete(resultUser);
-					} catch (InterruptedException | SQLException e) {
-						e.printStackTrace();
-					}
-				} else if (!empty) {
-					try {
-						future1 = updateUser(session, db, resultUser);
-						promise.complete(resultUser);
-					} catch (InterruptedException | SQLException e) {
-						e.printStackTrace();
-					}
-				}
-				if (!empty) {
-					future1.onSuccess(v -> {
-						// logger.info(String.join("", "Login Time Changed:", resultUser.getName()));
-					});
-				}		
-			})
-			.subscribe(result -> {
-				//
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error adding user: ", messageUser.getName(), " : ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-
-		return promise.future();
-	}
-
-	public Future<StringBuilder> buildUsersJson(Database db, MessageUser messageUser)
-			throws InterruptedException, SQLException {
-		StringBuilder userJson = new StringBuilder();
-		ObjectMapper mapper = new ObjectMapper();
-
-		class User {
-			String name;
-
-			public void setName(String name) {
-				this.name = name;
-			}
-
-			public String getName() {
-				return name;
-			}
-		}
-		class AllUsers implements Action {
-			private Promise<StringBuilder> promise;
-			@Override
-			public void run() throws Exception {
-				userJson.append(']');
-				promise.complete(userJson);
-			}
-			public void setPromise(Promise<StringBuilder>promise) {
-				this.promise = promise;
-			}
-			public Promise<StringBuilder> getPromise() {
-				return promise;
-			}
-		}
-
-		Promise<StringBuilder> promise = Promise.promise();
-		AllUsers allUsers = new AllUsers();
-		allUsers.setPromise(promise);
-		List<String> delimiter = new ArrayList<>();
-		User user = new User();
-		userJson.append('[');
-		delimiter.add("");
-
-		db.select(getAllUsers())
-			.parameter("NAME", messageUser.getName())
-			.autoMap(Users.class)
-			.doOnNext(result -> {
-				// build json = ["name": "user1", "name": "user2", etc...]
-				user.setName(result.name());
-				userJson.append(delimiter.get(0) + mapper.writeValueAsString(user));
-				delimiter.set(0, ",");
-			})
-			.doOnComplete(allUsers)
-			.subscribe(result -> {
-				//				
-			}, throwable -> {
-				logger.error(String.join(ColorUtilConstants.RED, "Error building registered user list: ", throwable.getMessage(), ColorUtilConstants.RESET));
-				throwable.printStackTrace();
-			});
-
-		// wait for user json before sending back to newly connected user
-		return allUsers.getPromise().future();
-	}
-
-	class CompletePromise implements Action {
-		Promise<Void> promise;
-
-		@Override
-		public void run() throws Exception {
-			promise.tryComplete();
-		}
-
-		public Promise<Void> getPromise() {
-			return promise;
-		}
-
-		public void setPromise(Promise<Void> promise) {
-			this.promise = promise;
-		}
-	}
-
-	class RemoveUndelivered implements Action {
-		List<Long> messageIds = new ArrayList<>();
-		CompletePromise completePromise = new CompletePromise();
-		Long userId;
-		int count;
-		Database db;
-		Promise<Void> promise;
-		Promise<Map<String, Integer>> promise2 = Promise.promise();
-		Map<String, Integer> counts = new ConcurrentHashMap<>();
-
-		@Override
-		public void run() throws Exception {
-			completePromise.setPromise(promise);
-
-			for (Long messageId : messageIds) {
-				db.update(getRemoveUndelivered())
-					.parameter("USERID", userId)
-					.parameter("MESSAGEID", messageId)
-					.counts()
-					.doOnNext(c -> count += c)
-					.doOnComplete(completePromise)
-					.subscribe(result -> {
-						if(messageIds.size() == count) {
-							counts.put("messages", count);
-							promise2.complete(counts);
-						}
-					}, throwable -> {
-						logger.error(String.join(ColorUtilConstants.RED, "Error removing undelivered record: ", throwable.getCause().getMessage(), ColorUtilConstants.RESET));
-						throwable.printStackTrace();
-					});
-			}
-		}
-
-		public int getCount() {
-			return count;
-		}
-
-		public void setCount(int count) {
-			this.count = count;
-		}
-
-		public void setDatabase(Database db) {
-			this.db = db;
-		}
-
-		public List<Long> getMessageIds() {
-			return messageIds;
-		}
-
-		public void setMessageIds(List<Long> messageIds) {
-			this.messageIds = messageIds;
-		}
-
-		public Long getUserId() {
-			return userId;
-		}
-
-		public void setUserId(Long userId) {
-			this.userId = userId;
-		}
-
-		public Promise<Void> getPromise() {
-			return promise;
-		}
-
-		public void setPromise(Promise<Void> promise) {
-			this.promise = promise;
-		}
-
-		public Promise<Map<String, Integer>> getPromise2() {
-			return promise2;
-		}
-
-		public void setPromise2(Promise<Map<String, Integer>> promise2) {
-			this.promise2 = promise2;
-		}
-	}
-
-	class RemoveMessage implements Action {
-		List<Long> messageIds = new ArrayList<>();
-		int count;
-		Database db;
-		CompletePromise completePromise = new CompletePromise();
-		Promise<Void> promise;
-
-		@Override
-		public void run() throws Exception {
-			completePromise.setPromise(promise);
-
-			if(DbConfiguration.isUsingSqlite3()) {
-				try { // Sqlite3 needs a delay???
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					logger.error(String.format("Await: %s", e.getMessage()));
-				}
-			}
-			for (Long messageId : messageIds) {
-				db.update(getRemoveMessage())
-					.parameter("MESSAGEID", messageId)
-					.counts()
-					.doOnNext(c -> count += c)
-					.doOnComplete(completePromise)
-					.subscribe(result -> {
-						//
-					}, throwable -> {
-						logger.error(String.format("%sError removing undelivered message: %s%s", ColorUtilConstants.RED, throwable.getMessage(), ColorUtilConstants.RESET));
-						throwable.printStackTrace();
-					});
-			}
-		}
-
-		public int getCount() {
-			return count;
-		}
-
-		public void setCount(int count) {
-			this.count = count;
-		}
-
-		public void setDatabase(Database db) {
-			this.db = db;
-		}
-
-		public List<Long> getMessageIds() {
-			return messageIds;
-		}
-
-		public Promise<Void> getPromise() {
-			return promise;
-		}
-
-		public void setPromise(Promise<Void> promise) {
-			this.promise = promise;
-		}
-	}
-
-	public Future<Map<String, Integer>> processUserMessages(Session session, Database db, MessageUser messageUser) {
-		RemoveUndelivered removeUndelivered = new RemoveUndelivered();
-		RemoveMessage removeMessage = new RemoveMessage();
-		CompletePromise completePromise = new CompletePromise();
-
-		removeUndelivered.setUserId(messageUser.getId());
-		removeUndelivered.setCount(0);
-		removeUndelivered.setDatabase(db);
-		removeMessage.setCount(0);
-		removeMessage.setDatabase(db);
-		/*
-		* Get all undelivered messages for current user
-		*/
-		Future<Void> future = Future.future(promise -> {
-			completePromise.setPromise(promise);
-
-			db.select(Undelivered.class)
-				.parameter("id", messageUser.getId())
-				.get()
-				.doOnNext(result -> {
-					Date postDate = result.postDate();
-					String handle = result.fromHandle();
-					String message = result.message();
-					// Send messages back to client
-					session.getAsyncRemote().sendObject(handle + postDate + " " + message);
-					removeUndelivered.getMessageIds().add(result.messageId());
-					removeMessage.getMessageIds().add(result.messageId());
-				})
-				// Start remove undelivered for user
-				.doOnComplete(completePromise)
-				.doOnError(error -> logger.error(String.join(ColorUtilConstants.RED, "Remove Undelivered Error: ",
-						error.getMessage(), ColorUtilConstants.RESET)))
-				.subscribe();
-		});
-		future.compose(v -> {
-			// Remove undelivered for user
-			return Future.<Void>future(promise -> {
-				removeUndelivered.setPromise(promise);
-				try {
-					removeUndelivered.run();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				if (removeUndelivered.getCount() > 0) {
-					logger.info(String.join(ColorUtilConstants.BLUE_BOLD_BRIGHT, Integer.toString(removeUndelivered.getCount()), " Messages Delivered", " to ", messageUser.getName(), ColorUtilConstants.RESET));
-				}
-			});
-		})
-		.compose (v -> {
-			// Remove unattached Messages for user
-			return Future.<Void>future(promise -> {
-				removeMessage.setPromise(promise);
-				try {
-					removeMessage.run();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			});
-		});
-			
-		return removeUndelivered.getPromise2().future();
-	}
-
-	public void setIsTimestamp(Boolean isTimestamp) {
-		this.isTimestamp = isTimestamp;
-	}
-
-	public boolean getisTimestamp() {
-		return this.isTimestamp;
-	}
-
-	public Vertx getVertx() {
-		return vertx;
-	}
-
-	public void setVertx(Vertx vertx) {
-		this.vertx = vertx;
-	}
-	
+    private static final Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
+    protected static final String QUERYUSERS = "select * from USERS where password=$";
+    protected static final String QUERYMESSAGES = "select * from MESSAGES where id=$";
+    protected static final String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from USERS, UNDELIVERED, MESSAGES where USERS.id = user_id and MESSAGES.id = message_id and USERS.id = $1";
+
+    protected static DSLContext create;
+
+    private static String GETALLUSERS;
+    private static String GETUSERBYNAME;
+    private static String GETINSERTUSER;
+    private static String GETUPDATEUSER;
+    private static String GETREMOVEUNDELIVERED;
+    private static String GETREMOVEMESSAGE;
+    private static String GETUNDELIVEREDMESSAGE;
+    private static String GETDELETEUSER;
+    private static String GETADDMESSAGE;
+    private static String GETADDUNDELIVERED;
+    private static String GETUSERNAMES;
+    private static String GETUSERBYID;
+    private static String GETREMOVEUSERUNDELIVERED;
+    private static String GETUSERUNDELIVERED;
+    private static String GETDELETEUSERBYID;
+    private static String GETSQLITEUPDATEUSER;
+    private static String GETREMOVEUSERS;
+    private static String GETCUSTOMDELETEMESSAGES;
+    private static String GETCUSTOMDELETEUSERS;
+    private static String GETMARIAINSERTUSER;
+    private static String GETMARIAADDMESSAGE;
+    private static String GETMARIADELETEUSER;
+    private Boolean isTimestamp;
+    protected Pool pool;
+    private boolean qmark = true;
+
+    public <T> void setupSql(T pool) {
+        // Non-Blocking Drivers
+        if (pool instanceof PgPool) {
+            this.pool = (PgPool) pool;
+            qmark = false;
+        } else if (pool instanceof MySQLPool) {
+            this.pool = (MySQLPool) pool;
+        } else if (pool instanceof DB2Pool) {
+            this.pool = (DB2Pool) pool;
+        } else {
+            this.pool = (Pool) pool;
+        }
+
+        Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
+
+        create = DSL.using(DodexUtil.getSqlDialect(), settings);
+        // Postges works with "$"(numbered) - Others work with "?"(un-numbered)
+        GETALLUSERS = qmark ? setupAllUsers().replaceAll("\\$\\d", "?") : setupAllUsers();
+        GETUSERBYNAME = qmark ? setupUserByName().replaceAll("\\$\\d", "?") : setupUserByName();
+        GETINSERTUSER = qmark ? setupInsertUser().replaceAll("\\$\\d", "?") : setupInsertUser();
+        GETMARIAINSERTUSER = qmark ? setupMariaInsertUser().replaceAll("\\$\\d", "?") : setupMariaInsertUser();
+        GETUPDATEUSER = qmark ? setupUpdateUser().replaceAll("\\$\\d{1,2}", "?") : setupUpdateUser();
+        GETREMOVEUNDELIVERED = qmark ? setupRemoveUndelivered().replaceAll("\\$\\d", "?") : setupRemoveUndelivered();
+        GETREMOVEMESSAGE = qmark ? setupRemoveMessage().replaceAll("\\$\\d", "?") : setupRemoveMessage();
+        GETUNDELIVEREDMESSAGE = qmark ? setupUndeliveredMessage().replaceAll("\\$\\d", "?") : setupUndeliveredMessage();
+        GETDELETEUSER = qmark ? setupDeleteUser().replaceAll("\\$\\d", "?") : setupDeleteUser();
+        GETMARIADELETEUSER = qmark ? setupMariaDeleteUser().replaceAll("\\$\\d", "?") : setupMariaDeleteUser();
+        GETADDMESSAGE = qmark ? setupAddMessage().replaceAll("\\$\\d", "?") : setupAddMessage();
+        GETMARIAADDMESSAGE = qmark ? setupMariaAddMessage().replaceAll("\\$\\d", "?") : setupMariaAddMessage();
+        GETADDUNDELIVERED = qmark ? setupAddUndelivered().replaceAll("\\$\\d", "?") : setupAddUndelivered();
+        GETUSERNAMES = qmark ? setupUserNames().replaceAll("\\$\\d", "?") : setupUserNames();
+        GETUSERBYID = qmark ? setupUserById().replaceAll("\\$\\d", "?") : setupUserById();
+        GETREMOVEUSERUNDELIVERED = qmark ? setupRemoveUserUndelivered().replaceAll("\\$\\d", "?")
+                : setupRemoveUserUndelivered();
+        GETUSERUNDELIVERED = qmark ? setupUserUndelivered().replaceAll("\\$\\d", "?") : setupUserUndelivered();
+        GETDELETEUSERBYID = qmark ? setupDeleteUserById().replaceAll("\\$\\d", "?") : setupDeleteUserById();
+        GETSQLITEUPDATEUSER = setupSqliteUpdateUser();
+        GETREMOVEUSERS = qmark ? setupRemoveUsers().replaceAll("\\$\\d", "?") : setupRemoveUsers();
+        GETCUSTOMDELETEMESSAGES = setupCustomDeleteMessage();
+        GETCUSTOMDELETEUSERS = setupCustomDeleteUsers();
+    }
+
+    private static String setupAllUsers() {
+        return create.renderNamedParams(
+                select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .from(table("USERS")).where(field("NAME").ne("$")));
+    }
+
+    public String getAllUsers() {
+        return GETALLUSERS;
+    }
+
+    private static String setupUserByName() {
+        return create.renderNamedParams(
+                select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .from(table("USERS")).where(field("NAME").eq("$")));
+    }
+
+    public String getUserByName() {
+        return GETUSERBYNAME;
+    }
+
+    private static String setupUserById() {
+        return create.renderNamedParams(
+                select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .from(table("USERS")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
+    }
+
+    public String getUserById() {
+        return GETUSERBYID;
+    }
+
+    private static String setupInsertUser() {
+        return create.renderNamedParams(
+                insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .values("$", "$", "$", "$").returning(field("ID")));
+    }
+
+    public String getInsertUser() {
+        return GETINSERTUSER;
+    }
+
+    private static String setupMariaInsertUser() {
+        return create.renderNamedParams(
+                insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .values("$", "$", "$", "$"));
+    }
+
+    public String getMariaInsertUser() {
+        return GETMARIAINSERTUSER;
+    }
+
+    private static String setupUpdateUser() {
+        return create.renderNamedParams(insertInto(table("USERS"))
+                .columns(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                .values("$1", "$2", "$3", "$4", "$5").onConflict(field("PASSWORD")).doUpdate()
+                .set(field("LAST_LOGIN"), "$5").returning(field("ID")));
+    }
+
+    public String getUpdateUser() {
+        return GETUPDATEUSER;
+    }
+
+    public static String setupSqliteUpdateUser() {
+        return "update USERS set last_login = ? where id = ?";
+    }
+
+    public String getSqliteUpdateUser() {
+        return GETSQLITEUPDATEUSER;
+    }
+
+    public static String setupCustomDeleteUsers() {
+        return "DELETE FROM USERS WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT USERS.id AS mid FROM USERS INNER JOIN UNDELIVERED ON user_id = USERS.id) AS u )";
+    }
+
+    public String getCustomDeleteUsers() {
+        return GETCUSTOMDELETEUSERS;
+    }
+
+    public static String setupCustomDeleteMessage() {
+        return "DELETE FROM MESSAGES WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT MESSAGES.id AS mid FROM MESSAGES INNER JOIN UNDELIVERED ON message_id = MESSAGES.id and MESSAGES.id = ?) AS m )";
+    }
+
+    public String getCustomDeleteMessages() {
+        return GETCUSTOMDELETEMESSAGES;
+    }
+
+    private static String setupRemoveUndelivered() {
+        return create.renderNamedParams(
+                deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
+    }
+
+    public String getRemoveUndelivered() {
+        return GETREMOVEUNDELIVERED;
+    }
+
+    private static String setupRemoveUserUndelivered() {
+        return create.renderNamedParams(deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$")));
+    }
+
+    public String getRemoveUserUndelivered() {
+        return GETREMOVEUSERUNDELIVERED;
+    }
+
+    private static String setupRemoveMessage() {
+        return create
+                .renderNamedParams(
+                        deleteFrom(table("MESSAGES")).where(create.renderNamedParams(field("ID").eq("$1")
+                                .and(create.renderNamedParams(notExists(select().from(table("MESSAGES"))
+                                        .join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID")))
+                                        .and(field("ID").eq("$2"))))))));
+    }
+
+    public String getRemoveMessage() {
+        return GETREMOVEMESSAGE;
+    }
+
+    private static String setupRemoveUsers() {
+        return create.renderNamedParams(deleteFrom(table("USERS")).where(create.renderNamedParams(
+                field("ID").eq("$").and(create.renderNamedParams(notExists(select().from(table("USERS"))
+                        .join(table("UNDELIVERED")).on(field("ID").eq(field("USER_ID"))).and(field("ID").eq("$"))))))));
+    }
+
+    public String getRemoveUsers() {
+        return GETREMOVEUSERS;
+    }
+
+    private static String setupUndeliveredMessage() {
+        return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID")).from(table("MESSAGES"))
+                .join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq("$"))
+                .and(field("USER_ID").eq("$")));
+    }
+
+    public String getUndeliveredMessage() {
+        return GETUNDELIVEREDMESSAGE;
+    }
+
+    private static String setupUserUndelivered() {
+        return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID"), field("MESSAGE"),
+                field("POST_DATE"), field("FROM_HANDLE")).from(table("USERS")).join(table("UNDELIVERED"))
+                        .on(field("USERS.ID").eq(field("USER_ID")).and(field("USERS.ID").eq("$")))
+                        .join(table("MESSAGES")).on(field("MESSAGES.ID").eq(field("MESSAGE_ID"))));
+    }
+
+    public String getUserUndelivered() {
+        return GETUSERUNDELIVERED;
+    }
+
+    private static String setupDeleteUser() {
+        return create.renderNamedParams(deleteFrom(table("USERS"))
+                .where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")).returning(field("ID")));
+    }
+
+    public String getDeleteUser() {
+        return GETDELETEUSER;
+    }
+
+    private static String setupMariaDeleteUser() {
+        return create.renderNamedParams(
+                deleteFrom(table("USERS")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
+    }
+
+    public String getMariaDeleteUser() {
+        return GETMARIADELETEUSER;
+    }
+
+    private static String setupDeleteUserById() {
+        return create.renderNamedParams(deleteFrom(table("USERS")).where(field("ID").eq("$1")).returning(field("ID")));
+    }
+
+    public String getDeleteUserById() {
+        return GETDELETEUSERBYID;
+    }
+
+    private static String setupAddMessage() {
+        return create.renderNamedParams(
+                insertInto(table("MESSAGES")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
+                        .values("$", "$", "$").returning(field("ID")));
+    }
+
+    public String getAddMessage() {
+        return GETADDMESSAGE;
+    }
+
+    private static String setupMariaAddMessage() {
+        return create.renderNamedParams(insertInto(table("MESSAGES"))
+                .columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE")).values("$", "$", "$"));
+    }
+
+    public String getMariaAddMessage() {
+        return GETMARIAADDMESSAGE;
+    }
+
+    private static String setupAddUndelivered() {
+        return create.renderNamedParams(
+                insertInto(table("UNDELIVERED")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
+    }
+
+    public String getAddUndelivered() {
+        return GETADDUNDELIVERED;
+    }
+
+    private static String setupUserNames() {
+        return create.renderNamedParams(
+                select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                        .from(table("USERS")).where(field("NAME").ne("$")));
+    }
+
+    public String getUserNames() {
+        return GETUSERNAMES;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<MessageUser> addUser(Session ws, MessageUser messageUser) {
+        Promise<MessageUser> promise = Promise.promise();
+        Timestamp current = new Timestamp(new Date().getTime());
+        OffsetDateTime time = OffsetDateTime.now();
+
+        Object lastLogin = DbConfiguration.isUsingPostgres() ? time : current;
+
+        Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword(), messageUser.getIp(), lastLogin);
+
+        pool.getConnection().onItem().invoke(conn -> {
+            String sql = getInsertUser();
+
+            if (DbConfiguration.isUsingMariadb()) {
+                sql = getMariaInsertUser();
+            }
+            conn.preparedQuery(sql).execute(parameters).onItem().transform(rows -> {
+                for (Row row : rows) {
+                    messageUser.setId(row.getLong(0));
+                }
+                if (DbConfiguration.isUsingMariadb()) {
+                    messageUser.setId(rows.property(MySQLClient.LAST_INSERTED_ID));
+                } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid()) {
+                    messageUser.setId(rows.property((PropertyKind<Row>) JDBCPool.GENERATED_KEYS).getLong(0));
+                }
+                messageUser.setLastLogin(current);
+                promise.tryComplete(messageUser);
+                return conn.close().subscribe();
+            }).onFailure().invoke(error -> {
+                logger.error("{}Error Adding user: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
+            }).subscribeAsCompletionStage();
+        }).onFailure().invoke(error -> {
+            logger.error("{}Error Adding user-database connection error: {}{}", ColorUtilConstants.RED, error,
+                    ColorUtilConstants.RESET);
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    public Promise<Integer> updateUser(Session ws, MessageUser messageUser) {
+        Promise<Integer> promise = Promise.promise();
+
+        pool.getConnection().call(conn -> {
+            Tuple parameters = getTupleParameters(messageUser);
+
+            String sql = DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3()
+                    || DbConfiguration.isUsingMariadb() ? getSqliteUpdateUser() : getUpdateUser();
+
+            conn.preparedQuery(sql).execute(parameters).map(rows -> {
+                conn.close().subscribeAsCompletionStage();
+                promise.complete(rows.rowCount());
+                return null;
+            }).onFailure().invoke(err -> {
+                logger.error(String.format("%sError Updating user: %s%s", ColorUtilConstants.RED, err,
+                        ColorUtilConstants.RESET));
+                ws.getAsyncRemote().sendObject(err.toString());
+                conn.close().subscribeAsCompletionStage();
+            }).subscribeAsCompletionStage();
+            return null;
+        }).subscribeAsCompletionStage();
+        return promise;
+    }
+
+    private Tuple getTupleParameters(MessageUser messageUser) {
+        Timestamp timeStamp = new Timestamp(new Date().getTime());
+        Long date = new Date().getTime();
+        OffsetDateTime time = OffsetDateTime.now();
+        Tuple parameters;
+
+        if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingMariadb()) {
+            parameters = Tuple.of(
+                    DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb() ? timeStamp : date,
+                    messageUser.getId());
+            return parameters;
+        }
+
+        parameters = Tuple.of(messageUser.getId(), messageUser.getName(), messageUser.getPassword(),
+                messageUser.getIp(), DbConfiguration.isUsingCubrid() ? timeStamp : time,
+                DbConfiguration.isUsingCubrid() ? timeStamp : time);
+
+        return parameters;
+    }
+
+    public Promise<Long> deleteUser(Session ws, MessageUser messageUser) {
+        Promise<Long> promise = Promise.promise();
+
+        pool.getConnection().call(conn -> {
+            Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword());
+
+            String sql = getDeleteUser();
+            if (DbConfiguration.isUsingMariadb()) {
+                sql = getMariaDeleteUser();
+            }
+
+            conn.preparedQuery(sql).execute(parameters).call(rows -> {
+                Long id = 0L;
+                for (Row row : rows) {
+                    id = row.getLong(0);
+                }
+                Long count = Long.valueOf(rows.rowCount());
+                messageUser.setId(id > 0L ? id : count);
+                conn.close().subscribeAsCompletionStage();
+                promise.complete(count);
+                return Uni.createFrom().item(rows);
+            }).onFailure().invoke(err -> {
+                String errMessage = null;
+                if (err != null && err.getMessage() == null) {
+                    errMessage = String.format("%s%s", "User deleted - but returned: ", err.getMessage());
+                } else {
+                    errMessage = String.format("%s%s", "Error deleting user: ", err);
+                }
+                logger.error(String.format("%s%s%s", ColorUtilConstants.RED, errMessage, ColorUtilConstants.RESET));
+                promise.complete(-1L);
+                conn.close().subscribeAsCompletionStage();
+            }).subscribeAsCompletionStage();
+            return Uni.createFrom().item(conn);
+        }).onFailure().invoke(err -> {
+            err.printStackTrace();
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<Long> addMessage(Session ws, MessageUser messageUser, String message) {
+        Promise<Long> promise = Promise.promise();
+        Timestamp timeStamp = new Timestamp(new Date().getTime());
+        OffsetDateTime time = OffsetDateTime.now();
+        Long date = new Date().getTime();
+        LocalDateTime localTime = LocalDateTime.now();
+
+        Object dateTime = time;
+        if (DbConfiguration.isUsingIbmDB2()) {
+            dateTime = localTime;
+        } else if (DbConfiguration.isUsingSqlite3()) {
+            dateTime = date;
+        } else if (DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingCubrid()) {
+            dateTime = timeStamp;
+        }
+
+        Tuple parameters = Tuple.of(message, messageUser.getName(), dateTime);
+
+        pool.getConnection().invoke(conn -> {
+            conn.begin().onItem().call(tx -> {
+                String sql = getAddMessage();
+                if (DbConfiguration.isUsingIbmDB2()) {
+                    sql = String.format("%s%s%s", "SELECT id FROM FINAL TABLE (", getAddMessage(), ")");
+                } else if (DbConfiguration.isUsingMariadb()) {
+                    sql = getMariaAddMessage();
+                }
+
+                conn.preparedQuery(sql).execute(parameters).call(rows -> {
+                    Long id = 0L;
+                    for (Row row : rows) {
+                        id = row.getLong(0);
+                    }
+                    if (DbConfiguration.isUsingMariadb()) {
+                        id = rows.property(MySQLClient.LAST_INSERTED_ID);
+                    } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid()) {
+                        id = rows.property((PropertyKind<Row>) JDBCPool.GENERATED_KEYS).getLong(0);
+                    }
+                    tx.commit().subscribeAsCompletionStage();
+                    promise.complete(id);
+                    conn.close().subscribeAsCompletionStage();
+                    return Uni.createFrom().item(rows);
+                }).onFailure().invoke(err -> {
+                    logger.error(String.format("%sError adding messaage: %s%s", ColorUtilConstants.RED,
+                            err.getCause().getMessage(), ColorUtilConstants.RESET));
+                    ws.getAsyncRemote().sendObject(err.getMessage());
+                    tx.rollback().subscribeAsCompletionStage();
+                    conn.close().subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage();
+                return Uni.createFrom().item(tx);
+            }).onFailure().invoke(err -> {
+                logger.error(String.format("%sTransaction Error adding messaage: %s%s", ColorUtilConstants.RED, err,
+                        ColorUtilConstants.RESET));
+            }).subscribeAsCompletionStage();
+        }).onFailure().invoke(err -> {
+            logger.error(String.format("%sConnection Error adding messaage: %s%s", ColorUtilConstants.RED, err,
+                    ColorUtilConstants.RESET));
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    public Promise<Void> addUndelivered(Long userId, Long messageId) {
+        Promise<Void> promise = Promise.promise();
+
+        Tuple parameters = Tuple.of(userId, messageId);
+        pool.getConnection().map(conn -> {
+            conn.preparedQuery(getAddUndelivered()).execute(parameters).invoke(rows -> {
+                conn.close().subscribeAsCompletionStage();
+                promise.complete();
+            }).onFailure().invoke(err -> {
+                logger.error(String.format("%sAdd Undelivered Error: %s%s", ColorUtilConstants.RED,
+                        err.getCause().getMessage(), ColorUtilConstants.RESET));
+                conn.close();
+            }).subscribeAsCompletionStage();
+            return Uni.createFrom().item(null);
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    public Promise<Void> addUndelivered(Session ws, List<String> undelivered, Long messageId) {
+        Promise<Void> promise = Promise.promise();
+
+        for (String name : undelivered) {
+            Promise<Long> future = getUserIdByName(name);
+            future.future().subscribeAsCompletionStage().thenCompose(userId -> {
+                addUndelivered(userId, messageId).future().invoke(() -> {
+                    promise.tryComplete();
+                }).onFailure().invoke(err -> {
+                    err.printStackTrace();
+                }).subscribeAsCompletionStage();
+                return null;
+            });
+        }
+
+        return promise;
+    }
+
+    public Promise<Long> getUserIdByName(String name) {
+        Promise<Long> promise = Promise.promise();
+
+        pool.getConnection().call(conn -> {
+            conn.preparedQuery(getUserByName()).execute(Tuple.of(name)).call(rows -> {
+                Long id = 0L;
+                for (Row row : rows) {
+                    id = row.getLong(0);
+                }
+                promise.complete(id);
+                conn.close().subscribeAsCompletionStage();
+                return Uni.createFrom().item(id);
+            }).onFailure().invoke(err -> {
+                logger.error(String.format("%sError finding user by name: %s - %s%s", ColorUtilConstants.RED, name,
+                        err.getCause().getMessage(), ColorUtilConstants.RESET));
+                conn.close().subscribeAsCompletionStage();
+            }).subscribeAsCompletionStage();
+            return Uni.createFrom().item(conn);
+        }).subscribeAsCompletionStage();
+        return promise;
+    }
+
+    public abstract MessageUser createMessageUser();
+
+    public Promise<MessageUser> selectUser(MessageUser messageUser, Session ws) {
+        MessageUser resultUser = createMessageUser();
+        Promise<MessageUser> promise = Promise.promise();
+        Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword());
+
+        pool.getConnection().onItem().ifNotNull().invoke(conn -> {
+            UniSubscribe<RowSet<Row>> data = conn.preparedQuery(getUserById()).execute(parameters).onFailure()
+                    .invoke(error -> {
+                        logger.error("{}Error getting user-database connection: {}{}", ColorUtilConstants.RED, error,
+                                ColorUtilConstants.RESET);
+                    }).subscribe();
+
+            data.asCompletionStage().thenComposeAsync(rows -> {
+                if (rows.size() == 0) {
+                    Promise<MessageUser> newUserPromise = addUser(ws, messageUser);
+                    MessageUser addedUser = newUserPromise.futureAndAwait();
+                    promise.complete(addedUser);
+                    conn.closeAndForget();
+                } else {
+                    for (Row row : rows) {
+                        resultUser.setId(row.getLong(0));
+                        resultUser.setName(row.getString(1));
+                        resultUser.setPassword(row.getString(2));
+                        resultUser.setIp(row.getString(3));
+                        Timestamp ts = null;
+                        if (DbConfiguration.isUsingPostgres()) {
+                            ts = Timestamp.valueOf(
+                                    LocalDateTime.ofInstant(row.getOffsetDateTime(4).toInstant(), ZoneOffset.UTC));
+                        } else if (row.getValue(4) instanceof LocalDateTime) {
+                            ts = Timestamp.valueOf(row.getLocalDateTime(4));
+                        }
+                        resultUser.setLastLogin(ts != null ? ts : row.getValue(4));
+                        Promise<Integer> updatePromise = updateUser(ws, resultUser);
+                        updatePromise.futureAndAwait();
+                        promise.complete(resultUser);
+                        conn.closeAndForget();
+                    }
+                }
+                return CompletableFuture.completedFuture(rows);
+            });
+        }).onFailure().invoke(error -> {
+            logger.error("{}Error Retriving/Adding User: {}{}", ColorUtilConstants.RED, error,
+                    ColorUtilConstants.RESET);
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    public Promise<StringBuilder> buildUsersJson(MessageUser messageUser) {
+        Promise<StringBuilder> promise = Promise.promise();
+
+        pool.getConnection().invoke(conn -> {
+            conn.preparedQuery(getAllUsers()).execute(Tuple.of(messageUser.getName())).onFailure().invoke(error -> {
+                logger.error("{}Error executing getAllUsers: {}{}", ColorUtilConstants.RED, error,
+                        ColorUtilConstants.RESET);
+            }).subscribe().asCompletionStage().thenComposeAsync(rows -> {
+                JsonArray jsonArray = new JsonArray();
+
+                for (Row row : rows) {
+                    jsonArray.add(new JsonObject().put("name", row.getString(1)));
+                }
+                promise.complete(new StringBuilder(jsonArray.toString()));
+                conn.close().onFailure().invoke(err -> {
+                    logger.error(String.format("%sError building user json: %s%s", ColorUtilConstants.RED,
+                            err.getCause().getMessage(), ColorUtilConstants.RESET));
+                    err.printStackTrace();
+                }).subscribeAsCompletionStage();
+                return null;
+            });
+        }).onFailure().invoke(err -> {
+            logger.error(String.format("%sError with database connection: %s%s", ColorUtilConstants.RED,
+                    err.getCause().getMessage(), ColorUtilConstants.RESET));
+            err.printStackTrace();
+        }).subscribeAsCompletionStage();
+
+        return promise;
+    }
+
+    public Promise<Map<String, Integer>> processUserMessages(Session ws, MessageUser messageUser) {
+        RemoveUndelivered removeUndelivered = new RemoveUndelivered();
+        RemoveMessage removeMessage = new RemoveMessage();
+        CompletePromise completePromise = new CompletePromise();
+        Promise<Void> promise = Promise.promise();
+        removeUndelivered.setUserId(messageUser.getId());
+
+        /*
+         * Get all undelivered messages for current user
+         */
+        completePromise.setPromise(promise);
+
+        Tuple parameters = Tuple.of(messageUser.getId());
+
+        SqlClientHelper.inTransactionUni(pool, tx -> {
+            removeUndelivered.setSqlConnection(tx);
+            removeMessage.setSqlConnection(tx);
+
+            tx.preparedQuery(getUserUndelivered()).execute(parameters).call(rows -> {
+                for (Row row : rows) {
+                    DateFormat formatDate = DateFormat.getDateInstance(DateFormat.DEFAULT,
+                            java.util.Locale.getDefault());
+
+                    String message = row.getString(2);
+                    String handle = row.getString(4);
+                    messageUser.setLastLogin(row.getValue(3));
+
+                    // Send messages back to client
+                    ws.getAsyncRemote()
+                            .sendObject(handle + formatDate.format(messageUser.getLastLogin()) + " " + message);
+                    removeUndelivered.getMessageIds().add(row.getLong(1));
+                    removeMessage.getMessageIds().add(row.getLong(1));
+                }
+                return Uni.createFrom().item(tx);
+            }).onFailure().call(err -> {
+                err.printStackTrace();
+                tx.close().subscribeAsCompletionStage();
+                return null;
+            }).eventually(removeUndelivered).call(rows -> {
+                Promise<Void> undeliveredPromise = Promise.promise();
+                removeMessage.setPromise(undeliveredPromise);
+                return Uni.createFrom().item(rows);
+            }).eventually(removeMessage).subscribeAsCompletionStage();
+            return Uni.createFrom().item(tx);
+        }).onFailure().call(err -> {
+            err.printStackTrace();
+            return null;
+        }).subscribeAsCompletionStage();
+
+        return removeUndelivered.getReturnPromise();
+    }
+
+    class CompletePromise implements Runnable {
+        Promise<Void> promise;
+
+        @Override
+        public void run() {
+            if (promise != null) {
+                promise.tryComplete();
+            }
+        }
+
+        public Promise<Void> getPromise() {
+            return promise;
+        }
+
+        public void setPromise(Promise<Void> promise) {
+            this.promise = promise;
+        }
+    }
+
+    class RemoveUndelivered implements Runnable {
+        List<Long> messageIds = new ArrayList<>();
+        CompletePromise completePromise = new CompletePromise();
+        Long userId;
+        int count;
+        Promise<Void> promise;
+        Promise<Map<String, Integer>> returnPromise = Promise.promise();
+        Map<String, Integer> counts = new ConcurrentHashMap<>();
+        SqlClient tx;
+
+        @Override
+        public void run() {
+            completePromise.setPromise(promise);
+
+            for (Long messageId : messageIds) {
+                Tuple parameters = Tuple.of(userId, messageId);
+                tx.preparedQuery(getRemoveUndelivered()).execute(parameters).invoke(rows -> {
+                    for (Row row : rows) {
+                        logger.info(row.toJson().toString());
+                    }
+                    count += rows.rowCount() == 0 ? 1 : rows.rowCount();
+
+                    if (messageIds.size() == count) {
+                        try {
+                            completePromise.run();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        counts.put("messages", count);
+                        returnPromise.complete(counts);
+                    }
+                }).onFailure().invoke(err -> {
+                    tx.close().subscribeAsCompletionStage();
+                    logger.error("Deleting Undelivered: {}", err.getCause().getMessage());
+                }).subscribeAsCompletionStage();
+            }
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+
+        public List<Long> getMessageIds() {
+            return messageIds;
+        }
+
+        public void setMessageIds(List<Long> messageIds) {
+            this.messageIds = messageIds;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public Promise<Void> getPromise() {
+            return promise;
+        }
+
+        public void setPromise(Promise<Void> promise) {
+            this.promise = promise;
+        }
+
+        public Promise<Map<String, Integer>> getReturnPromise() {
+            return returnPromise;
+        }
+
+        public void setReturnPromise(Promise<Map<String, Integer>> returnPromise) {
+            this.returnPromise = returnPromise;
+        }
+
+        public void setSqlConnection(SqlClient tx) {
+            this.tx = tx;
+        }
+    }
+
+    class RemoveMessage implements Runnable {
+        int count;
+        List<Long> messageIds = new ArrayList<>();
+        CompletePromise completePromise = new CompletePromise();
+        Promise<Void> promise;
+        SqlClient tx;
+
+        @Override
+        public void run() {
+            completePromise.setPromise(promise);
+
+            for (Long messageId : messageIds) {
+                if (DbConfiguration.isUsingSqlite3()) {
+                    try { // Sqlite3 needs a delay???
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        logger.error(String.join("", "Await: ", e.getMessage()));
+                    }
+                }
+
+                Tuple parameters = Tuple.of(messageId, messageId);
+                String sql = null;
+                if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb()
+                        || DbConfiguration.isUsingSqlite3()) {
+                    sql = getCustomDeleteMessages();
+                } else {
+                    parameters = Tuple.of(messageId);
+                    sql = getRemoveMessage();
+                }
+
+                tx.preparedQuery(sql).execute(parameters).invoke(rows -> {
+                    count += rows.rowCount() == 0 ? 1 : rows.rowCount();
+
+                    if (messageIds.size() == count) {
+                        tx.close().subscribeAsCompletionStage();
+                    }
+                }).onFailure().invoke(err -> {
+                    logger.error(String.format("%sDeleting Messages: %s%s", ColorUtilConstants.RED, err,
+                            ColorUtilConstants.RESET));
+                }).eventually(completePromise).onFailure().invoke(err -> {
+                    err.printStackTrace();
+                }).subscribeAsCompletionStage();
+            }
+        }
+
+        public List<Long> getMessageIds() {
+            return messageIds;
+        }
+
+        public void setMessageIds(List<Long> messageIds) {
+            this.messageIds = messageIds;
+        }
+
+        public Promise<Void> getPromise() {
+            return promise;
+        }
+
+        public void setPromise(Promise<Void> promise) {
+            this.promise = promise;
+        }
+
+        public void setSqlConnection(SqlClient tx) {
+            this.tx = tx;
+        }
+    }
+
+    public void setIsTimestamp(Boolean isTimestamp) {
+        this.isTimestamp = isTimestamp;
+    }
+
+    public boolean getisTimestamp() {
+        return this.isTimestamp;
+    }
+
+    public static DSLContext getCreate() {
+        return create;
+    }
 }

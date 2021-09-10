@@ -1,7 +1,10 @@
 
-package dmo.fs.db;
+package dmo.fs.db.reactive;
 
-public abstract class DbCubrid extends JavaRxTimestampDb {
+public abstract class DbCubrid extends DbCubridOverride implements DodexReactiveDatabase {
+	protected static final String CHECKUSERSQL = "SELECT class_name FROM _db_class WHERE class_name = 'users'";
+    protected static final String CHECKMESSAGESQL = "SELECT class_name FROM _db_class WHERE class_name = 'messages'";
+    protected static final String CHECKUNDELIVEREDSQL = "SELECT class_name FROM _db_class WHERE class_name = 'undelivered'";
 
 	private enum CreateTable {
 
@@ -40,7 +43,7 @@ public abstract class DbCubrid extends JavaRxTimestampDb {
         }
     };
 
-	public DbCubrid() {
+	protected DbCubrid() {
 		super();
 	}
 

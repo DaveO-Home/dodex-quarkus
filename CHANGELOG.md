@@ -1,5 +1,14 @@
 # Changelog
 
+## [v2.0.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.0) (2021-09-07)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.3.0...v2.0.0)
+
+* Upgraded to Quarkus 2.2.2
+* Converted to reactivex and mutiny
+* Upgraded React dependencies
+* Upgraded Dodex javascript
+
 ## [v1.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v1.3.0) (2021-04-19)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.2.2...v1.3.0)

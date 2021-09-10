@@ -1,7 +1,8 @@
 
 package dmo.fs.spa.db;
 
-public abstract class DbMariadb extends RxJavaDateDb {
+public abstract class DbMariadb extends SqlBuilder implements SpaDatabase {
+    protected static final String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='LOGIN';";
 
 	private enum CreateTable {
 		CREATELOGIN(
@@ -20,7 +21,7 @@ public abstract class DbMariadb extends RxJavaDateDb {
         }
     };
 
-	public DbMariadb() {
+	protected DbMariadb() {
 		super();
 	}
 

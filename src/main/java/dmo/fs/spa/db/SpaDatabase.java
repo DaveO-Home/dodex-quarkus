@@ -1,25 +1,20 @@
 package dmo.fs.spa.db;
 
-import java.sql.SQLException;
-
-import org.davidmoten.rx.jdbc.Database;
-import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
-
 import dmo.fs.spa.utils.SpaLogin;
 import io.vertx.core.Future;
+import io.vertx.mutiny.core.Promise;
 
 public interface SpaDatabase {
 
-	Database getDatabase();
-
-	NonBlockingConnectionPool getPool();
-
 	SpaLogin createSpaLogin();
 
-	Future<SpaLogin> getLogin(SpaLogin spaLogin, Database db) throws InterruptedException, SQLException;
+	Promise<SpaLogin> getLogin(SpaLogin spaLogin);
 
-	Future<SpaLogin> addLogin(SpaLogin spaLogin, Database db) throws InterruptedException, SQLException;
+	Promise<SpaLogin> addLogin(SpaLogin spaLogin);
 	
-	Future<SpaLogin> removeLogin(SpaLogin spaLogin, Database db) throws InterruptedException, SQLException;
+	Promise<SpaLogin> removeLogin(SpaLogin spaLogin);
 
+	Future<Void> databaseSetup();
+
+	static <T> void setupSql(T pool) {};
 }
