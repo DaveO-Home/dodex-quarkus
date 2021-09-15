@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2.0.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.1) (2021-09-15)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.0...v2.0.1)
+
+* Striked bad instructions in README
+* Made the dodex websocket more general - should work with any ip/host without manual changes 
+
 ## [v2.0.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.0) (2021-09-07)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v1.3.0...v2.0.0)

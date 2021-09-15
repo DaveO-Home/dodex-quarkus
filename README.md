@@ -27,8 +27,10 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
     1. Before running the Uber jar for production, do: (graalvm requires the Uber jar)
         * Make sure that the spa react javascript is installed. Execute `npm install` in the `src/spa-react` directory.
         * cd to src/spa-react/devl & execute gulp prod or gulp prd (bypasses tests)
-        * rm src/main/resources/static/node_modules (makes a smaller uber jar)
-    1. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar. __Note;__ The `node_modules` directory can be re-added by executing `npm install` in `src/main/resources/static`.
+        * ~~rm src/main/resources/static/node_modules (makes a smaller uber jar)~~
+    1. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar.
+
+    ~~__Note__; The `node_modules` directory can be re-added by executing `npm install` in `src/main/resources/static`.~~ However, the node_modules directory can be removed when running `graalvm`.
 
 1. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
 1. Execute url `http://localhost:8088/ddex` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.

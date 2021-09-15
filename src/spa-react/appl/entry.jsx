@@ -5,9 +5,7 @@ import dodex from "dodex";
 import input from "dodex-input";
 import mess from "dodex-mess";
 
-let port = 8088; // Production port
 /* develblock:start */
-port = 8089; // Development port
 if (location.href.indexOf("context.html") === -1) {
 /* develblock:end */
   ReactDOM.render(
@@ -21,6 +19,8 @@ if (location.href.indexOf("context.html") === -1) {
   );
 
   if (document.querySelector(".top--dodex") === null) {
+    // this should handle all hostnames and ports for the websocket setup
+    const server = window.location.hostname + (window.location.port.length > 0 ? ":" + window.location.port : "");
     // Content for cards A-Z and static card
     dodex.setContentFile("./dodex/data/content.js");
     dodex.init({
@@ -37,7 +37,7 @@ if (location.href.indexOf("context.html") === -1) {
       // server: "daveomix.us-south.cf.appdomain.cloud" // This will link to the cloud version
       // for the verticle "dodex-vertx" use
       // server: "localhost:8089" // if the test verticle is running.
-      server: "localhost:" + port
+      server: server
     }).then(function () {
       // Add in app/personal cards
       for (let i = 0;i < 4;i++) {
