@@ -40,7 +40,9 @@ public class Server implements QuarkusApplication {
         boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
         serverPromise.complete(server); // passing HttpServer instance to "DodexRoutes" for reactivex setup
-        Integer port = isProduction ? config.getValue("quarkus.http.port", Integer.class)
+        String host = isProduction ? config.getValue("quarkus.http.host", String.class)
+                : config.getValue("%dev.quarkus.http.port", String.class); // see application.properties
+        Integer port = isProduction ? config.getValue("quarkus.http.host", Integer.class)
                 : config.getValue("%dev.quarkus.http.port", Integer.class);
         boolean color = isProduction ? config.getValue("quarkus.log.console.color", Boolean.class)
                 : config.getValue("%dev.quarkus.log.console.color", Boolean.class);
@@ -50,8 +52,8 @@ public class Server implements QuarkusApplication {
         }
 
         Router router = CDI.current().select(Router.class).get();
-
-        server.requestHandler(router).listen(port);
+        
+        server.requestHandler(router).listen(port, host);
 
         if (!isProduction) {
             router.get("/bye").handler(rc -> {

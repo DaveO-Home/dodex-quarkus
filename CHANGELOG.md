@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.0.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-09-17)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.1...v2.0.2)
+
+* Added docker/podman/minikube - see README and ./kube directory
+* Added host to server startup - needed if using across multiple machines
+* Added "static" to a few more methods in DbReactiveSqlBase.java & src/main/java/dmo/fs/db/DbDefinitionBase.java
+
 ## [v2.0.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.1) (2021-09-15)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.0...v2.0.1)

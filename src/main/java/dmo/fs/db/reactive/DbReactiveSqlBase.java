@@ -119,7 +119,7 @@ public abstract class DbReactiveSqlBase {
                         .from(table("USERS")).where(field("NAME").ne("$")));
     }
 
-    public String getAllUsers() {
+    public static String getAllUsers() {
         return GETALLUSERS;
     }
 
@@ -129,7 +129,7 @@ public abstract class DbReactiveSqlBase {
                         .from(table("USERS")).where(field("NAME").eq("$")));
     }
 
-    public String getUserByName() {
+    public static String getUserByName() {
         return GETUSERBYNAME;
     }
 
@@ -139,7 +139,7 @@ public abstract class DbReactiveSqlBase {
                         .from(table("USERS")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
     }
 
-    public String getUserById() {
+    public static String getUserById() {
         return GETUSERBYID;
     }
 
@@ -149,7 +149,7 @@ public abstract class DbReactiveSqlBase {
                         .values("$", "$", "$", "$").returning(field("ID")));
     }
 
-    public String getInsertUser() {
+    public static String getInsertUser() {
         return GETINSERTUSER;
     }
 
@@ -159,7 +159,7 @@ public abstract class DbReactiveSqlBase {
                         .values("$", "$", "$", "$"));
     }
 
-    public String getMariaInsertUser() {
+    public static String getMariaInsertUser() {
         return GETMARIAINSERTUSER;
     }
 
@@ -170,7 +170,7 @@ public abstract class DbReactiveSqlBase {
                 .set(field("LAST_LOGIN"), "$5").returning(field("ID")));
     }
 
-    public String getUpdateUser() {
+    public static String getUpdateUser() {
         return GETUPDATEUSER;
     }
 
@@ -178,7 +178,7 @@ public abstract class DbReactiveSqlBase {
         return "update USERS set last_login = ? where id = ?";
     }
 
-    public String getSqliteUpdateUser() {
+    public static String getSqliteUpdateUser() {
         return GETSQLITEUPDATEUSER;
     }
 
@@ -186,7 +186,7 @@ public abstract class DbReactiveSqlBase {
         return "DELETE FROM USERS WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT USERS.id AS mid FROM USERS INNER JOIN UNDELIVERED ON user_id = USERS.id) AS u )";
     }
 
-    public String getCustomDeleteUsers() {
+    public static String getCustomDeleteUsers() {
         return GETCUSTOMDELETEUSERS;
     }
 
@@ -194,7 +194,7 @@ public abstract class DbReactiveSqlBase {
         return "DELETE FROM MESSAGES WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT MESSAGES.id AS mid FROM MESSAGES INNER JOIN UNDELIVERED ON message_id = MESSAGES.id and MESSAGES.id = ?) AS m )";
     }
 
-    public String getCustomDeleteMessages() {
+    public static String getCustomDeleteMessages() {
         return GETCUSTOMDELETEMESSAGES;
     }
 
@@ -203,7 +203,7 @@ public abstract class DbReactiveSqlBase {
                 deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
     }
 
-    public String getRemoveUndelivered() {
+    public static String getRemoveUndelivered() {
         return GETREMOVEUNDELIVERED;
     }
 
@@ -211,7 +211,7 @@ public abstract class DbReactiveSqlBase {
         return create.renderNamedParams(deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$")));
     }
 
-    public String getRemoveUserUndelivered() {
+    public static String getRemoveUserUndelivered() {
         return GETREMOVEUSERUNDELIVERED;
     }
 
@@ -224,7 +224,7 @@ public abstract class DbReactiveSqlBase {
                                         .and(field("ID").eq("$2"))))))));
     }
 
-    public String getRemoveMessage() {
+    public static String getRemoveMessage() {
         return GETREMOVEMESSAGE;
     }
 
@@ -244,7 +244,7 @@ public abstract class DbReactiveSqlBase {
                 .and(field("USER_ID").eq("$")));
     }
 
-    public String getUndeliveredMessage() {
+    public static String getUndeliveredMessage() {
         return GETUNDELIVEREDMESSAGE;
     }
 
@@ -255,7 +255,7 @@ public abstract class DbReactiveSqlBase {
                         .join(table("MESSAGES")).on(field("MESSAGES.ID").eq(field("MESSAGE_ID"))));
     }
 
-    public String getUserUndelivered() {
+    public static String getUserUndelivered() {
         return GETUSERUNDELIVERED;
     }
 
@@ -264,7 +264,7 @@ public abstract class DbReactiveSqlBase {
                 .where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")).returning(field("ID")));
     }
 
-    public String getDeleteUser() {
+    public static String getDeleteUser() {
         return GETDELETEUSER;
     }
 
@@ -273,7 +273,7 @@ public abstract class DbReactiveSqlBase {
                 deleteFrom(table("USERS")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
     }
 
-    public String getMariaDeleteUser() {
+    public static String getMariaDeleteUser() {
         return GETMARIADELETEUSER;
     }
 
@@ -281,7 +281,7 @@ public abstract class DbReactiveSqlBase {
         return create.renderNamedParams(deleteFrom(table("USERS")).where(field("ID").eq("$1")).returning(field("ID")));
     }
 
-    public String getDeleteUserById() {
+    public static String getDeleteUserById() {
         return GETDELETEUSERBYID;
     }
 
@@ -291,7 +291,7 @@ public abstract class DbReactiveSqlBase {
                         .values("$", "$", "$").returning(field("ID")));
     }
 
-    public String getAddMessage() {
+    public static String getAddMessage() {
         return GETADDMESSAGE;
     }
 
@@ -300,7 +300,7 @@ public abstract class DbReactiveSqlBase {
                 .columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE")).values("$", "$", "$"));
     }
 
-    public String getMariaAddMessage() {
+    public static String getMariaAddMessage() {
         return GETMARIAADDMESSAGE;
     }
 
@@ -309,7 +309,7 @@ public abstract class DbReactiveSqlBase {
                 insertInto(table("UNDELIVERED")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
     }
 
-    public String getAddUndelivered() {
+    public static String getAddUndelivered() {
         return GETADDUNDELIVERED;
     }
 
@@ -319,7 +319,7 @@ public abstract class DbReactiveSqlBase {
                         .from(table("USERS")).where(field("NAME").ne("$")));
     }
 
-    public String getUserNames() {
+    public static String getUserNames() {
         return GETUSERNAMES;
     }
 

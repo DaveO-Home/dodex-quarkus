@@ -14,21 +14,21 @@ import io.vertx.reactivex.jdbcclient.JDBCPool;
 
 public interface DodexReactiveDatabase {
 
-	String getAllUsers();
+	static String getAllUsers() { return null; }
 
-	String getUserByName();
+	static String getUserByName() { return null;  }
     
-    String getUserById();
+    static String getUserById() { return null; }
 
-    String getInsertUser();
+    static String getInsertUser() { return null; }
     
-	String getRemoveUndelivered();
+	static String getRemoveUndelivered() { return null; }
 
-	String getRemoveMessage();
+	static String getRemoveMessage() { return null; }
 
-    String getUndeliveredMessage();
+    static String getUndeliveredMessage() { return null; }
 	
-	String getDeleteUser();
+	static String getDeleteUser() { return null; } 
 
 	Future<MessageUser> addUser(Session session, MessageUser messageUser);
 
@@ -52,9 +52,9 @@ public interface DodexReactiveDatabase {
 
 	Future<StringBuilder> buildUsersJson(MessageUser messageUser) throws InterruptedException, SQLException;
 
-	void setVertx(Vertx vertx);
+	static void setVertx(Vertx vertx) {}
 
-	Vertx getVertx();
+	static Vertx getVertx() { return null; }
 
 	Promise<JDBCPool> databaseSetup();
 }

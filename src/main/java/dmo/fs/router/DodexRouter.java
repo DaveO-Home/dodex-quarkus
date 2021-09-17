@@ -86,7 +86,7 @@ public class DodexRouter {
         dodexReactiveRouter[0].setDodexDatabase(dodexReactiveDatabase);
         if (isReactive && !isInitialized) {
             dodexReactiveDatabase = DbConfiguration.getDefaultDb();
-            dodexReactiveDatabase.setVertx(io.vertx.reactivex.core.Vertx.vertx());
+            DodexReactiveDatabase.setVertx(io.vertx.reactivex.core.Vertx.vertx());
             dbPromiseReactive = dodexReactiveDatabase.databaseSetup();
             dbPromiseReactive.future().onComplete(jdbcPool -> {
                 dodexReactiveRouter[0].setup();

@@ -11,21 +11,21 @@ import javax.websocket.Session;
 
 public interface DodexDatabase {
 
-	String getAllUsers();
+	static String getAllUsers() { return null; }
 
-	String getUserByName();
+	static String getUserByName() { return null; }
     
-    String getUserById();
+    static String getUserById() { return null; }
 
-    String getInsertUser();
+    static String getInsertUser() { return null; }
     
-	String getRemoveUndelivered();
+	static String getRemoveUndelivered() { return null; }
 
-	String getRemoveMessage();
+	static String getRemoveMessage() { return null; }
 
-    String getUndeliveredMessage();
+    static String getUndeliveredMessage() { return null; }
 	
-	String getDeleteUser();
+	static String getDeleteUser() { return null; }
 
 	Promise<MessageUser> addUser(Session ws, MessageUser messageUser) throws SQLException, InterruptedException;
 

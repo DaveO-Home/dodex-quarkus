@@ -84,6 +84,54 @@ __The Quarkus Method:__ `gradlew quarkusBuild -Dquarkus.package.type=native -Dqu
 
 __The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will build an executable named `dmo.fs.quarkus.Server`. This executable should work.
 
+## Docker, Podman and Minikube(Kubernetes)
+
+* Assumes `docker`, `podman` and `minikube` are installed
+
+1. ### Building an __`image`__ and __`container`__ with `docker`
+    1. cd to the `dodex-quarkus` install directory
+    1. make sure `dodex` and the `spa-react` node_modules and application are installed
+
+        * in `src/main/resources/static` execute __`npm install`__
+        * in `src/spa-react` execute __`npm install`__
+        * startup Quarkus in dev mode - __`gradlew quarkusDev`__
+        * in `src/spa-react/devl` execute __`gulp prod`__ or __`gulp prd`__
+        * stop the quarkus server - ctrl-c or enter __`q`__
+        * build the production uber jar - __`./gradlew quarkusBuild -Dquarkus.package.type=uber-jar`__
+        * verify the jar's name - if different than `dodex-quarkus-2.1.0-runner.jar`, change in `./kube/Dockerfile`
+
+    1. execute __`docker build -t dodex-quarkus:latest -f kube/Dockerfile .`__
+    1. execute __`docker create -t -p 8088:8088 --name dodex_quarkus dodex-quarkus`__
+    1. execute __`docker start dodex_quarkus`__
+    1. use browser to view - <http://localhost:8088/ddex> or <http://localhost:8088/ddex/bootstrap/html>, if the spa-react was installed this link should work, <http://localhost:8088/dist/react-fusebox/appl/testapp.html>
+    1. execute __`docker stop dodex_quarkus`__
+    1. to clean-up execute __`docker rm dodex_quarkus`__ and __`docker rmi dodex-quarkus`__
+    1. to pull and generate a local image from the docker hub, __`execute docker build -t dodex-quarkus:latest -f kube/quarkus/Dockerfile .`__
+
+1. ### Building an __`image`__ and __`container`__ with `podman`
+    1. generate an empty pod execute __`podman pod create -n quarkus-pod -p 0.0.0.0:8088:8088`__
+    1. generate a container execute __`podman create -t --pod quarkus-pod --name quarkus_server dodex-quarkus:latest`__ __Note;__ if there is not a local image, use `dufferdo2/dodex-quarkus:latest` to pull from the docker hub.
+    1. start the container execute __`podman start quarkus_server`__
+    1. view in browser
+    1. to clean-up execute __`podman stop quarkus_server`__, __`podman rm quarkus_server`__, __`podman pod rm quarkus-pod`__
+    1. before cleaning up, generate a yaml file for `minikube`, execute __`podman generate kube quarkus_pod > quarkus.yml`__
+
+1. ### Building a __`deployment`__ and __`service`__ with `minikube`
+* `minikube` can be forced to pull from a local registry, however for this exercise `minikube` pulls from the docker hub, `dufferdo/dodex-quarkus`
+
+    1. execute __`minikube start`__
+    1. create a deployment with auto generated pod, execute __`kubectl create deployment quarkus-depl --image=dufferdo2/dodex-quarkus:latest`__
+    1. create a service from deployment, execute __`kubectl expose deploy quarkus-depl --name=quarkus-service --port 8088 --target-port 8088 --type=NodePort`__
+    1. to find the generated pod name, execute __`kubectl get pod`__
+    1. to run in default browser, execute __`minikube service quarkus-service`__
+    1. to get the ip:port to use, execute __`minikube service quarkus-service --url`__
+    1. view in browser
+    1. clean-up execute __`kubectl delete svc quarkus-service`__, __`kubectl delete deploy quarkus-depl`__, __`docker rmi dufferdo/dodex-quarkus`__
+    1. execute __`minikube stop`__
+
+    __Note;__ From the the above `quarkus.yml` file, a pod can be created, execute __`kubectl create -f quarkus.yml`__ and the service __`kubectl expose po quarkus-pod --name=quarkus-service --port 8088 --target-port 8088 --type=NodePort`__. Make sure the image entry in `quarkus.yml` is `image: dufferdo2/dodex-quarkus:latest`. Optionally add the following after `image:...` -  `imagePullPolicy: IfNotPresent`. If not working, try __`kubectl port-forward svc/quarkus-service 8088:8088`__ and view with `localhost:8088`. Depending on your setup, the following may be needed; __`eval $(minikube -p minikube docker-env)`__
+
+
 ## ChangeLog
 
 <https://github.com/DaveO-Home/dodex-quarkus/blob/master/CHANGELOG.md>
