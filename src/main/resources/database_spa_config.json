@@ -1,73 +1,45 @@
 {
-    "application": "Dodex",
+    "application": "spa",
     "defaultdb": "sqlite3",
     "sqlite3": {
-        "dev": { 
-            "credentials": {
-            },
+        "dev": {
+            "credentials": {},
             "config": {
-                "filename": "dodex_tests.db",
+                "filename": "build/dodex_tests.db",
                 "url": "jdbc:sqlite:"
             }
         },
-        "prod": { 
-            "credentials": {
-            },
+        "prod": {
+            "credentials": {},
             "config": {
                 "filename": "dodex.db",
                 "url": "jdbc:sqlite:"
             }
         }
     },
-    "h2": {
-        "dev": { 
-            "credentials": {
-                "user": "sa",
-                "password": "sa",
-                "ssl": "false"
-            },
-            "config": {
-                "filename": "file:./testh2",
-                "url": "jdbc:h2:"
-            }
-        },
-        "prod": { 
-            "credentials": {
-                "user": "sa",
-                "password": "sa",
-                "ssl": "false"
-            },
-            "config": {
-                "filename": "file:./dodexh2",
-                "url": "jdbc:h2:"
-            }
-        }
-    },
     "postgres": {
-        "dev": { 
+        "dev": {
             "credentials": {
                 "user": "dodex",
                 "password": "dodex",
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
-                "port": "5432",
+                "host": "//localhost",
                 "url": "jdbc:postgresql:",
-                "dbname": "dodex"
+                "dbname": "/dodex"
             }
         },
-        "prod": { 
+        "prod": {
             "credentials": {
                 "user": "dodex",
                 "password": "dodex",
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
-                "port": "5432",
+                "host": "//localhost",
                 "url": "jdbc:postgresql:",
-                "dbname": "dodex"
+                "dbname": "/dodex"
             }
         }
     },
@@ -98,20 +70,7 @@
         }
     },
     "mariadb": {
-        "dev": { 
-            "credentials": {
-                "user": "dodex",
-		        "password": "dodex",
-                "ssl": "false"
-            },
-            "config": {
-                "host": "localhost",
-                "port": "3306",
-                "url": "jdbc:mysql:",
-                "dbname": "test"
-            }
-        },
-        "prod": { 
+        "dev": {
             "credentials": {
                 "user": "dodex",
                 "password": "dodex",
@@ -120,7 +79,20 @@
             "config": {
                 "host": "localhost",
                 "port": "3306",
-                "url": "jdbc:mysql:",
+                "url": "jdbc:mariadb:",
+                "dbname": "test"
+            }
+        },
+        "prod": {
+            "credentials": {
+                "user": "user",
+                "password": "password",
+                "ssl": "false"
+            },
+            "config": {
+                "host": "localhost",
+                "port": "3306",
+                "url": "jdbc:mariadb:",
                 "dbname": "dodex"
             }
         }
@@ -142,18 +114,79 @@
         },
         "prod": { 
             "credentials": {
-                "user": "db2inst1r",
-                "password": "dodex",
+                "user": "user",
+                "password": "password",
                 "ssl": "false"
             },
             "config": {
                 "host": "localhost",
                 "port": "25010",
                 "url": "jdbc:db2:",
-                "dbname": "dodex",
+                "dbname": "dodexdb",
                 "tabschema": "DB2INST1"
+            }
+        }
+    },
+    "h2": {
+        "dev": { 
+            "credentials": {
+                "user": "sa",
+                "password": "sa",
+                "ssl": "false"
+            },
+            "config": {
+                "filename": "file:./testh2",
+                "url": "jdbc:h2:"
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "user": "sa",
+                "password": "sa",
+                "ssl": "false"
+            },
+            "config": {
+                "filename": "file:./dodexh2",
+                "url": "jdbc:h2:"
+            }
+        }
+    },
+    "cassandra": {
+        "dev": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "target/cassandra-db",
+                "url": ""
+            }
+        },
+        "prod": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "",
+                "url": ""
+            }
+        }
+    },
+    "firebase": {
+        "dev": { 
+            "credentials": {
+                "file": "/home/user/auth/service-account-key.json"
+            },
+            "config": {
+                "project": "dodex-firebase",
+                "url": ""
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "file": "/home/user/auth/service-account-key.json"
+            },
+            "config": {
+                "project": "dodex-firebase",
+                "url": ""
             }
         }
     }
 }
-

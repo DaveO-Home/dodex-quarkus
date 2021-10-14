@@ -31,7 +31,7 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 public class DodexReactiveRouter extends DbReactiveSqlBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
     Vertx vertxReactive = Vertx.vertx();
-    private DodexReactiveDatabase dodexDatabase = null;
+    private static DodexReactiveDatabase dodexDatabase = null;
     private static final String LOGFORMAT = "{}{}{}";
     final SharedData sd = vertxReactive.sharedData();
     final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
@@ -168,12 +168,12 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         }
     }
 
-    public DodexReactiveDatabase getDodexDatabase() {
+    public static DodexReactiveDatabase getDodexDatabase() {
         return dodexDatabase;
     }
 
-    public void setDodexDatabase(DodexReactiveDatabase dodexDatabase) {
-        this.dodexDatabase = dodexDatabase;
+    public static void setDodexDatabase(DodexReactiveDatabase reactiveDodexDatabase) {
+        dodexDatabase = reactiveDodexDatabase;
     }
 
     private MessageUser setMessageUser(Session session, Map<String, Session> sessions) {

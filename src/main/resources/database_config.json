@@ -154,6 +154,43 @@
                 "tabschema": "DB2INST1"
             }
         }
+    },
+    "cassandra": {
+        "dev": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "target/cassandra-db",
+                "url": ""
+            }
+        },
+        "prod": { 
+            "credentials": {
+            },
+            "config": {
+                "filename": "",
+                "url": ""
+            }
+        }
+    },
+    "firebase": {
+        "dev": { 
+            "credentials": {
+                "file": "/home/user/auth/service-account-key.json"
+            },
+            "config": {
+                "project": "dodex-firebase",
+                "url": ""
+            }
+        },
+        "prod": { 
+            "credentials": {
+                "file": "/home/user/auth/service-account-key.json"
+            },
+            "config": {
+                "project": "dodex-firebase",
+                "url": ""
+            }
+        }
     }
 }
-

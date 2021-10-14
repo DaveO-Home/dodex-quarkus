@@ -16,7 +16,11 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 4. Execute url `http://localhost:8089/test` in a browser.
 5. You can also run `http://localhost:8089/test/bootstrap.html` for a bootstrap example.
 6. Follow instructions for dodex at <https://www.npmjs.com/package/dodex-mess> and <https://www.npmjs.com/package/dodex-input>.
-   ___Note:___ In dev mode(`gradlew quarkusDev`), when modifying Java code, all you have to do is refresh the browser window.
+7. The Cassandra database has been added via an `Akka` micro-service. See; <https://www.npmjs.com/package/dodex-akka>.
+8. Added Cassandra database to the `React` demo allowing the `login` component to use Cassandra.
+9. See the `Firebase` section for using Google's `Firestore` backend.
+
+   ___Note:___ In dev mode(`gradlew quarkusDev`), when modifying Java code, all you have to do is refresh the browser window. You can also use `gradlew run` to set ENVIRONMENT variables first.
 
     ___See:___ Single Page React Section below on using Dodex in an SPA.
 
@@ -34,7 +38,7 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 
 1. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
 1. Execute url `http://localhost:8088/ddex` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.
-1. Swapping among databases; Use environment variable __`DEFAULT_DB`__ by setting it to either `sqlite3` ,`postgres`, `cubrid`, `mariadb`, `ibmdb2`, `h2` or set the default database in `database_config.json`.
+1. Swapping among databases; Use environment variable __`DEFAULT_DB`__ by setting it to either `sqlite3` ,`postgres`, `cubrid`, `mariadb`, `ibmdb2`, `h2`, `cassandra`, `firebase` or set the default database in `database_config.json`.
 1. When Dodex-quarkus is configured for the Cubrid database, the database must be created using UTF-8. For example `cubrid createdb dodex en_US.utf8`.
 1. The dodex server has an auto user clean up process. See `application-conf.json` and `DodexRouter.java` for configuration. It is turned off by default. Users and messages may be orphaned when clients change a handle when the server is offline.
 
@@ -131,6 +135,22 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will
 
     __Note;__ From the the above `quarkus.yml` file, a pod can be created, execute __`kubectl create -f quarkus.yml`__ and the service __`kubectl expose po quarkus-pod --name=quarkus-service --port 8088 --target-port 8088 --type=NodePort`__. Make sure the image entry in `quarkus.yml` is `image: dufferdo2/dodex-quarkus:latest`. Optionally add the following after `image:...` -  `imagePullPolicy: IfNotPresent`. If not working, try __`kubectl port-forward svc/quarkus-service 8088:8088`__ and view with `localhost:8088`. Depending on your setup, the following may be needed; __`eval $(minikube -p minikube docker-env)`__
 
+### Firebase
+
+* Create an account: <https://firebase.google.com>
+* Getting started: <https://firebase.google.com/docs/admin/setup#java>
+* Make sure you create a `Service-Account-Key.json` file as instructed. Dodex-Vertx uses the environment variable option to set the service-account - `GOOGLE_APPLICATION_CREDENTIALS`. See gradle.build as one way to set it.
+* You will need to login to the `Firebase` console and create the `dodex-firebase` project. See `src/main/java/dmo/fs/router/FirebaseRouter.java` for usage of the project-id and Google Credentials. __Note;__ The `Firebase` rules are not used, so they should be set to `allow read, write:  if false;` which may be the default.
+* You only need the `Authentication` and `Firestore` extensions.
+* If you want a different project name, change `.firebaserc`.
+* Gradle for development can set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable if you exec `gradlew run` instead of `gradlew quarkusDev`. Don't forget to modify the build.gradle file with the location of your  `Service-Account-Key.json` file.
+
+ #### Testing
+
+  * To make sure your project is created and the setup works, you should run the tests. __Note;__ They are written in Typescript.
+  * cd `../dodex-vertx/src/firebase` and run `npm install`
+  * execute `npm run emulators` to startup the emulators for testing.
+  * To test the model and rules after starting the emulators, in a different terminal window, run `npm test`.
 
 ## ChangeLog
 

@@ -33,6 +33,8 @@ public abstract class DbConfiguration {
     private static boolean overrideDefaultDb = false;
     private static DodexUtil dodexUtil = new DodexUtil();
     private static DodexDatabase dodexDatabase;
+    protected static DodexCassandra dodexCassandra;
+    private static DodexFirebase dodexFirebase;
     private static DodexReactiveDatabase dodexReactiveDatabase;
     private static final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
@@ -42,7 +44,9 @@ public abstract class DbConfiguration {
         MARIADB("mariadb"),
         IBMDB2("ibmdb2"),
         H2("h2"),
-        CUBRID("cubrid");
+        CASSANDRA("cassandra"),
+        CUBRID("cubrid"),
+        FIREBASE("firebase");
 
         String db;
 
@@ -120,11 +124,20 @@ public abstract class DbConfiguration {
             dodexDatabase = new DodexDatabaseIbmDB2();
             isUsingIbmDB2 = true;
         }
+        else if(defaultDb.equals(DbTypes.CASSANDRA.db) && dodexCassandra == null) {
+            dodexCassandra = new DodexDatabaseCassandra();
+            isUsingCassandra = true;
+            return (T) dodexCassandra;
+        }
         else if(defaultDb.equals(DbTypes.CUBRID.db) && dodexReactiveDatabase == null) {
             dodexReactiveDatabase = new DodexDatabaseCubrid();
             isUsingCubrid = true;
             return (T) dodexReactiveDatabase;
-        } 
+        } else if(defaultDb.equals(DbTypes.FIREBASE.db)) {
+            dodexFirebase = dodexFirebase == null? new DodexDatabaseFirebase(): dodexFirebase;
+            isUsingFirebase = true;
+            return (T) dodexFirebase;
+        }
     
         return (T) dodexDatabase;
     }
@@ -154,10 +167,18 @@ public abstract class DbConfiguration {
             else if(defaultDb.equals(DbTypes.IBMDB2.db) && dodexDatabase == null) {
                 dodexDatabase = new DodexDatabaseIbmDB2(overrideMap, overrideProps);
                 isUsingIbmDB2 = true;
+            } else if(defaultDb.equals(DbTypes.CASSANDRA.db) && dodexCassandra == null) {
+                dodexCassandra = new DodexDatabaseCassandra(overrideMap, overrideProps);
+                isUsingCassandra = true;
+                return (T) dodexCassandra;
             } else if(defaultDb.equals(DbTypes.CUBRID.db) && dodexReactiveDatabase == null) {
                 dodexReactiveDatabase = new DodexDatabaseCubrid(overrideMap, overrideProps);
                 isUsingCubrid = true;
-            } 
+            } else if(defaultDb.equals(DbTypes.FIREBASE.db)) {
+                dodexFirebase = dodexFirebase == null? new DodexDatabaseFirebase(): dodexFirebase;
+                isUsingFirebase = true;
+                return (T) dodexFirebase;
+            }
            
         return (T) dodexDatabase;
     }

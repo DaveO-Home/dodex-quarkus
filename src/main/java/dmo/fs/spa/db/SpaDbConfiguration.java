@@ -20,10 +20,19 @@ public class SpaDbConfiguration extends DbConfiguration {
 
     private static String defaultDb = "sqlite3";
     private static SpaDatabase spaDatabase;
+    private static SpaCassandra spaCassandra;
     private static SpaDatabaseReactive spaDatabaseReactive;
+    private static SpaDatabaseFirebase spaFirebase;
 
     private enum DbTypes {
-        POSTGRES("postgres"), SQLITE3("sqlite3"), CUBRID("cubrid"), MARIADB("mariadb"), H2("h2"), IBMDB2("ibmdb2");
+        POSTGRES("postgres"),
+        SQLITE3("sqlite3"),
+        CUBRID("cubrid"),
+        MARIADB("mariadb"),
+        H2("h2"),
+        CASSANDRA("cassandra"),
+        FIREBASE("firebase"),
+        IBMDB2("ibmdb2");
 
         String db;
 
@@ -62,15 +71,31 @@ public class SpaDbConfiguration extends DbConfiguration {
                 spaDatabaseReactive = new SpaDatabaseCubrid();
                 isUsingCubrid = true;
                 return (T) spaDatabaseReactive;
+            } else if(defaultDb.equals(DbTypes.CASSANDRA.db) && spaCassandra == null) {
+                spaCassandra = new SpaDatabaseCassandra();
+                isUsingCassandra = true;
+                return (T) spaCassandra;
+            } else if(defaultDb.equals(DbTypes.FIREBASE.db) && spaFirebase == null) {
+                spaFirebase = new SpaDatabaseFirebase();
+                isUsingFirebase = true;
+                return (T) spaFirebase;
             }
         } catch (InterruptedException | IOException | SQLException e) {
             e.printStackTrace();
+        }
+        
+        if(spaDatabaseReactive != null) {
+            return (T) spaDatabaseReactive;
+        } else if (spaCassandra != null) {
+            return (T) spaCassandra;
+        } else if (spaFirebase != null) {
+            return (T) spaFirebase;
         }
         return (T) spaDatabase;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T getSpaDb(Map<String, String> overrideMap, Properties overrideProps) {
+    public static <T> T getSpaDb(Map<String, String> overrideMap, Properties overrideProps) throws InterruptedException, SQLException {
         try {
             defaultDb = SpaUtil.getDefaultDb().toLowerCase();
 
@@ -95,9 +120,25 @@ public class SpaDbConfiguration extends DbConfiguration {
                 spaDatabaseReactive = new SpaDatabaseCubrid(overrideMap, overrideProps);
                 isUsingCubrid = true;
                 return (T) spaDatabaseReactive;
-            }
+            } else if(defaultDb.equals(DbTypes.CASSANDRA.db) && spaCassandra == null) {
+                spaCassandra = new SpaDatabaseCassandra(overrideMap, overrideProps);
+                isUsingCassandra = true;
+                return (T) dodexCassandra;
+            }  else if(defaultDb.equals(DbTypes.FIREBASE.db) && spaFirebase == null) {
+                spaFirebase = new SpaDatabaseFirebase(overrideMap, overrideProps);
+                isUsingFirebase = true;
+                return (T) spaFirebase;
+            } 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        if(spaDatabaseReactive != null) {
+            return (T) spaDatabaseReactive;
+        } else if (spaCassandra != null) {
+            return (T) spaCassandra;
+        } else if (spaFirebase != null) {
+            return (T) spaFirebase;
         }
         return (T) spaDatabase;
     }

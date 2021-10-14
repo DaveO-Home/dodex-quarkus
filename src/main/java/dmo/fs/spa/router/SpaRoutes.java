@@ -5,6 +5,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
+import com.google.cloud.firestore.Firestore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,26 +36,44 @@ import io.vertx.mutiny.core.Vertx;
 public class SpaRoutes {
     private static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
     private static final String FAILURE = "{\"status\":\"-99\"}";
-    protected static final SpaDatabase spaDatabase = SpaDbConfiguration.getSpaDb();
+    protected SpaDatabase spaDatabase;
 
     protected Vertx vertx = Vertx.vertx();
     protected Router router;
     protected SessionStore sessionStore;
-    // protected SpaApplication spaApplication;
+    protected Firestore firestore;
 
-    public SpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise)
-            throws InterruptedException, IOException, SQLException {
-        // spaApplication = new SpaApplication();
+    public SpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise) {
+        setSpaRoutes(router, routesPromise);
+    }
+
+    public SpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise, Firestore firestore) {
+        this.firestore = firestore;
+        setSpaRoutes(router, routesPromise);
+    }
+
+    private void setSpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise) {
         this.router = router;
         sessionStore = LocalSessionStore.create(io.vertx.core.Vertx.vertx());
 
-        spaDatabase.databaseSetup().onSuccess(none -> {
+        if (SpaDbConfiguration.isUsingCassandra() || SpaDbConfiguration.isUsingFirebase()) {
             setGetLoginRoute();
             setPutLoginRoute();
             setLogoutRoute();
             setUnregisterLoginRoute();
             routesPromise.complete();
-        });
+        } else {
+            spaDatabase = SpaDbConfiguration.getSpaDb();
+            if (spaDatabase != null) {
+                spaDatabase.databaseSetup().onSuccess(none -> {
+                    setGetLoginRoute();
+                    setPutLoginRoute();
+                    setLogoutRoute();
+                    setUnregisterLoginRoute();
+                    routesPromise.complete();
+                });
+            }
+        }
     }
 
     public void setGetLoginRoute() {
@@ -95,21 +116,26 @@ public class SpaRoutes {
                 if (queryData.isPresent()) {
                     response.putHeader("content-type", "application/json");
 
-                    Promise<SpaLogin> promise = spaApplication.getLogin(bodyDecoded);
+                    Promise<SpaLogin> promise;
+                    try {
+                        promise = spaApplication.getLogin(bodyDecoded);
 
-                    promise.future().onItem().call(result -> {
-                        if (result.getId() == null) {
-                            result.setId(0l);
-                        }
+                        promise.future().onItem().call(result -> {
+                            if (result.getId() == null) {
+                                result.setId(0l);
+                            }
 
-                        session.put("login", new JsonObject(result.getMap()));
-                        response.end(new JsonObject(result.getMap()).encode());
-                        return Uni.createFrom().item(result);
-                    }).onFailure().invoke(failed -> {
-                        logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT, "Get Login Failed: ",
-                                failed.getMessage(), ColorUtilConstants.RESET));
-                        response.end(FAILURE);
-                    }).subscribeAsCompletionStage();
+                            session.put("login", new JsonObject(result.getMap()));
+                            response.end(new JsonObject(result.getMap()).encode());
+                            return Uni.createFrom().item(result);
+                        }).onFailure().invoke(failed -> {
+                            logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
+                                    "Get Login Failed: ", failed.getMessage(), ColorUtilConstants.RESET));
+                            response.end(FAILURE);
+                        }).subscribeAsCompletionStage();
+                    } catch (InterruptedException | ExecutionException | SQLException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     routingContext.response().setStatusCode(500).end("Somethings wrong - Post");
                 }
@@ -168,17 +194,22 @@ public class SpaRoutes {
                                     e.printStackTrace();
                                 }
                                 Promise<SpaLogin> promise = null;
-                                promise = spaApplicationAdd.addLogin(bodyDecoded);
+                                try {
+                                    promise = spaApplicationAdd.addLogin(bodyDecoded);
 
-                                promise.future().onItem().call(result2 -> {
-                                    session.put("login", new JsonObject(result2.getMap()));
-                                    response.end(new JsonObject(result2.getMap()).encode());
-                                    return Uni.createFrom().item(result2);
-                                }).onFailure().invoke(failed -> {
-                                    logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                                            "Add Login failed...: ", failed.getMessage(), ColorUtilConstants.RESET));
-                                    response.end(FAILURE);
-                                }).subscribeAsCompletionStage();
+                                    promise.future().onItem().call(result2 -> {
+                                        session.put("login", new JsonObject(result2.getMap()));
+                                        response.end(new JsonObject(result2.getMap()).encode());
+                                        return Uni.createFrom().item(result2);
+                                    }).onFailure().invoke(failed -> {
+                                        logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
+                                                "Add Login failed...: ", failed.getMessage(),
+                                                ColorUtilConstants.RESET));
+                                        response.end(FAILURE);
+                                    }).subscribeAsCompletionStage();
+                                } catch (InterruptedException | ExecutionException e) {
+                                    e.printStackTrace();
+                                }
                             }
                             return Uni.createFrom().item(result);
                         }).onFailure().invoke(failed -> {
@@ -189,7 +220,7 @@ public class SpaRoutes {
                     } else {
                         routingContext.response().setStatusCode(500).end("Somethings wrong - Put");
                     }
-                } catch (UnsupportedEncodingException e) {
+                } catch (UnsupportedEncodingException | InterruptedException | ExecutionException | SQLException e) {
                     e.printStackTrace();
                 }
             });
@@ -278,7 +309,7 @@ public class SpaRoutes {
                                 "Unregister Login failed...: ", failed.getMessage(), ColorUtilConstants.RESET));
                         response.end(FAILURE);
                     }).subscribeAsCompletionStage();
-                } catch (UnsupportedEncodingException e) {
+                } catch (UnsupportedEncodingException | InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             } else {

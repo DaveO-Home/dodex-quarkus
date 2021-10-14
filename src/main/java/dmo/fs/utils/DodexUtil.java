@@ -204,4 +204,8 @@ public class DodexUtil {
 
         return SQLDialect.DEFAULT;
       }
+
+      public static boolean isNull(Object obj) {
+        return obj == null;
+    }
 }

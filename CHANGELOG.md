@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-10-06)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.2...v2.1.0)
+
+* Added Cassandra database via an `Akka` microservice, See; <https://www.npmjs.com/package/dodex-akka>.
+* Added Firebase(Firestore) database
+* Converted `mjson.Json` to vertx `JsonObject`
+* Added Cassandra/Firebase login in React SPA demo.
+* Upgraded to Quarkus 2.2.3 and Scala Sbt to 1.5.5
+* Added TcpEventBusBridge to communicate with `Akka`- see; DodexRoutes.java
+
 ## [v2.0.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-09-17)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.1...v2.0.2)

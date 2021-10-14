@@ -218,7 +218,7 @@ export default function (Start, Helpers, ReactDOM, React, StartC, LoginC, timer)
                 sessionStorage.setItem("credentials", `{"name":"abcde", "password":"945973053"}`);
                 login(loginButton, false)("DELETE", loginButton, "/userlogin/unregister").then(data => {
                     const credentials = sessionStorage.getItem("credentials");
-                    expect(data.status > 0).toBe(true);
+                    expect(data.status > -1).toBe(true);
                     expect(credentials).toBe(null);
                     done();
                 });

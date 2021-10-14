@@ -36,7 +36,7 @@ import io.vertx.sqlclient.PoolOptions;
 public class DbQuarkusTest  extends DbPostgres {
 	private static final Logger logger = LoggerFactory.getLogger(DbQuarkusTest.class.getName());
     @Disabled("Disabled until VertxExtension works with reactivex")
-    @Test
+    // @Test
     public void testTestEndpoint() {
         given()
           .when().get("/test")

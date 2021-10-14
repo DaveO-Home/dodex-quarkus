@@ -34,7 +34,7 @@ public class Server implements QuarkusApplication {
 
     @Override
     public int run(String... args) throws InterruptedException, ExecutionException, IOException {
-        Vertx vertx = CDI.current().select(Vertx.class).get();
+        Vertx vertx = Vertx.vertx();
         HttpServer server = vertx.createHttpServer();
         Config config = ConfigProvider.getConfig();
         boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
@@ -52,7 +52,7 @@ public class Server implements QuarkusApplication {
         }
 
         Router router = CDI.current().select(Router.class).get();
-        
+
         server.requestHandler(router).listen(port, host);
 
         if (!isProduction) {
@@ -70,12 +70,12 @@ public class Server implements QuarkusApplication {
                         logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT, methods, ColorUtilConstants.RESET);
                     }
                 }
-                logger.info("{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on port: ", port,
-                    ColorUtilConstants.RESET);
+                logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on : http://", host,
+                        ":", port, ColorUtilConstants.RESET);
             });
         } else {
-            logger.info("{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on port: ", port,
-                    ColorUtilConstants.RESET);
+            logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on http://", host, ":",
+                    port, ColorUtilConstants.RESET);
         }
 
         Quarkus.waitForExit();
