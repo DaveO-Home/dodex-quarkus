@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.reactive.DodexReactiveDatabase;
 import dmo.fs.db.reactive.DodexReactiveRouter;
+import dmo.fs.db.reactive.CubridReactiveRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.vertx.web.RouteFilter;
@@ -35,6 +36,7 @@ public class DodexRouter extends DodexRouterBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexRouter.class.getName());
     private boolean isUsingCassandra = false;
     private boolean isUsingFirebase = false;
+    private boolean isUsingCubrid = false;
 
     public DodexRouter() throws InterruptedException, IOException, SQLException {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
@@ -55,7 +57,9 @@ public class DodexRouter extends DodexRouterBase {
     public void onOpen(Session session) throws InterruptedException, IOException, SQLException {
         DodexReactiveDatabase dodexReactiveDatabase;
         DodexReactiveRouter[] dodexReactiveRouter = { null };
+        CubridReactiveRouter[] cubridReactiveRouter = { null };
         String currentRemoteAddress = remoteAddress;
+
         if (isUsingCassandra()) {
             CassandraRouter cassandraRouter = CDI.current().select(CassandraRouter.class).get();
             cassandraRouter.setRemoteAddress(currentRemoteAddress);
@@ -77,7 +81,11 @@ public class DodexRouter extends DodexRouterBase {
             return;
         } else {
             if (isReactive) {
-                dodexReactiveRouter[0] = new DodexReactiveRouter();
+                if(isUsingCubrid()) {
+                    cubridReactiveRouter[0] = new CubridReactiveRouter();
+                } else {
+                    dodexReactiveRouter[0] = new DodexReactiveRouter();
+                }
             }
 
             if (isReactive && !isInitialized) {
@@ -86,7 +94,11 @@ public class DodexRouter extends DodexRouterBase {
                 DodexReactiveDatabase.setVertx(io.vertx.reactivex.core.Vertx.vertx());
                 dbPromiseReactive = dodexReactiveDatabase.databaseSetup();
                 dbPromiseReactive.future().onComplete(jdbcPool -> {
-                    dodexReactiveRouter[0].setup();
+                    if(isUsingCubrid()) {
+                        cubridReactiveRouter[0].setup();
+                    } else {
+                        dodexReactiveRouter[0].setup();
+                    }
                 });
                 isInitialized = true;
             } else if (!isSetupDone && !isReactive) {
@@ -99,7 +111,11 @@ public class DodexRouter extends DodexRouterBase {
             @Override
             public void onMessage(String message) {
                 if (isReactive) {
-                    dodexReactiveRouter[0].doMessage(session, sessions, message);
+                    if(isUsingCubrid()) {
+                        cubridReactiveRouter[0].doMessage(session, sessions, message);
+                    } else {
+                        dodexReactiveRouter[0].doMessage(session, sessions, message);
+                    }
                 } else {
                     doMessage(session, message);
                 }
@@ -114,13 +130,21 @@ public class DodexRouter extends DodexRouterBase {
             if (!dbPromiseReactive.future().isComplete()) {
                 dbPromiseReactive.future().onSuccess(pool -> {
                     try {
-                        dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                        if(isUsingCubrid()) {
+                            cubridReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                        } else {
+                            dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                        }
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
                 });
             } else {
-                dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                if(isUsingCubrid()) {
+                    cubridReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                } else {
+                    dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                }
             }
         } else {
             doConnection(session);
@@ -164,6 +188,14 @@ public class DodexRouter extends DodexRouterBase {
 
     public void setUsingFirebase(boolean isUsingFirebase) {
         this.isUsingFirebase = isUsingFirebase;
+    }
+
+    public boolean isUsingCubrid() {
+        return isUsingCubrid;
+    }
+
+    public void setUsingCubrid(boolean isUsingCubrid) {
+        this.isUsingCubrid = isUsingCubrid;
     }
 
     @RouteFilter(500)

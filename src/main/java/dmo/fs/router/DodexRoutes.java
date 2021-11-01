@@ -15,6 +15,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexCassandra;
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.db.reactive.SpaRoutes;
@@ -181,6 +182,7 @@ public class DodexRoutes {
         DodexUtil du = new DodexUtil();
         String defaultDbName = du.getDefaultDb();
         Promise<Void> routesPromise = Promise.promise();
+        Promise<Router> routerPromise = Promise.promise();
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
                 ColorUtilConstants.RESET);
@@ -191,7 +193,8 @@ public class DodexRoutes {
             case "cubrid":
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
                 dodexRouter.setReactive(true);
-                new SpaRoutes(coreVertx, router, routesPromise);
+                dodexRouter.setUsingCubrid(true);
+                new SpaRoutes(coreVertx, router, routerPromise);
                 break;
             case "cassandra":
                 try {
@@ -200,7 +203,7 @@ public class DodexRoutes {
                     cassandraRouter.setEb(reactiveVertx.eventBus());
                     dodexRouter = CDI.current().select(DodexRouter.class).get();
                     dodexRouter.setUsingCassandra(true);
-                    new dmo.fs.spa.router.SpaRoutes(router, routesPromise);
+                    new dmo.fs.spa.router.SpaRoutes(router, routerPromise);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     throw ex;
@@ -212,18 +215,17 @@ public class DodexRoutes {
                     firestore = firebaseRouter.getDbf();
                     dodexRouter = CDI.current().select(DodexRouter.class).get();
                     dodexRouter.setUsingFirebase(true);
-                    new dmo.fs.spa.router.SpaRoutes(router, routesPromise, firestore);
+                    new dmo.fs.spa.router.SpaRoutes(router, routerPromise, firestore);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     throw ex;
                 }
                 break;
             default:
-                new dmo.fs.spa.router.SpaRoutes(router, routesPromise); // Supported SqlClients for async db's - mutiny
+                new dmo.fs.spa.router.SpaRoutes(router, routerPromise); // Supported SqlClients for async db's - mutiny
                 break;
         }
-
-        Server.setRoutesPromise(routesPromise);
+        Server.setRoutesPromise(routerPromise);
     }
 
     private void setupEventBridge(CassandraRouter cassandraRouter) {

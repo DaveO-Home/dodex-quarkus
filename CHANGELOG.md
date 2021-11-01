@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-11-01)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.1.0...v2.2.0)
+
+* Upgraded Quarkus to v2.3.1
+* Upgraded the React demo app dependencies
+* Fixed Cubrid null pointer with work around(query generated key)
+
 ## [v2.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-10-06)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.2...v2.1.0)

@@ -26,7 +26,7 @@ import io.vertx.ext.web.Router;
 public class Server implements QuarkusApplication {
     private static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
     private static Promise<HttpServer> serverPromise = Promise.promise();
-    private static Promise<Void> routesPromise = Promise.promise();
+    private static Promise<Router> routesPromise = Promise.promise();
 
     public static void main(String... args) {
         Quarkus.run(Server.class, args);
@@ -37,12 +37,12 @@ public class Server implements QuarkusApplication {
         Vertx vertx = Vertx.vertx();
         HttpServer server = vertx.createHttpServer();
         Config config = ConfigProvider.getConfig();
-        boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+        final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
         serverPromise.complete(server); // passing HttpServer instance to "DodexRoutes" for reactivex setup
         String host = isProduction ? config.getValue("quarkus.http.host", String.class)
-                : config.getValue("%dev.quarkus.http.port", String.class); // see application.properties
-        Integer port = isProduction ? config.getValue("quarkus.http.host", Integer.class)
+                : config.getValue("%dev.quarkus.http.host", String.class); // see application.properties
+        Integer port = isProduction ? config.getValue("quarkus.http.port", Integer.class)
                 : config.getValue("%dev.quarkus.http.port", Integer.class);
         boolean color = isProduction ? config.getValue("quarkus.log.console.color", Boolean.class)
                 : config.getValue("%dev.quarkus.log.console.color", Boolean.class);
@@ -51,16 +51,12 @@ public class Server implements QuarkusApplication {
             ColorUtilConstants.colorOff();
         }
 
-        Router router = CDI.current().select(Router.class).get();
-
-        server.requestHandler(router).listen(port, host);
-
-        if (!isProduction) {
-            router.get("/bye").handler(rc -> {
-                rc.response().end("bye");
-                Quarkus.asyncExit();
-            });
-            routesPromise.future().onSuccess(none -> {
+        routesPromise.future().onSuccess(router -> {
+            if (!isProduction) {
+                router.get("/bye").handler(rc -> {
+                    rc.response().end("bye");
+                    Quarkus.asyncExit();
+                });
                 List<Route> routesList = router.getRoutes();
 
                 for (Route r : routesList) {
@@ -72,12 +68,12 @@ public class Server implements QuarkusApplication {
                 }
                 logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on : http://", host,
                         ":", port, ColorUtilConstants.RESET);
-            });
-        } else {
-            logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on http://", host, ":",
-                    port, ColorUtilConstants.RESET);
-        }
-
+                // });
+            } else {
+                logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on http://", host, ":",
+                        port, ColorUtilConstants.RESET);
+            }
+        });
         Quarkus.waitForExit();
 
         server.close();
@@ -99,7 +95,7 @@ public class Server implements QuarkusApplication {
         return serverPromise;
     }
 
-    public static void setRoutesPromise(Promise<Void> promise) {
+    public static void setRoutesPromise(Promise<Router> promise) {
         routesPromise = promise;
     }
 }

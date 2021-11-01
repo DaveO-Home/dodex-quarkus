@@ -78,6 +78,7 @@ public abstract class DbDefinitionBase {
     private static String GETMARIAINSERTUSER;
     private static String GETMARIAADDMESSAGE;
     private static String GETMARIADELETEUSER;
+    private static String GETMESSAGEIDBYHANDLEDATE;
     private Boolean isTimestamp;
     protected Pool pool;
     private boolean qmark = true;
@@ -122,6 +123,8 @@ public abstract class DbDefinitionBase {
         GETREMOVEUSERS = qmark ? setupRemoveUsers().replaceAll("\\$\\d", "?") : setupRemoveUsers();
         GETCUSTOMDELETEMESSAGES = setupCustomDeleteMessage();
         GETCUSTOMDELETEUSERS = setupCustomDeleteUsers();
+        GETMESSAGEIDBYHANDLEDATE = qmark ? setupMessageByHandleDate().replaceAll("\\$\\d", "?") : setupRemoveUsers();
+
     }
 
     private static String setupAllUsers() {
@@ -134,6 +137,16 @@ public abstract class DbDefinitionBase {
         return GETALLUSERS;
     }
 
+    private static String setupMessageByHandleDate() {
+        return create.renderNamedParams(
+                select(field("ID"))
+                        .from(table("MESSAGES")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
+    }
+
+    public String getMessageIdByHandleDate() {
+        return GETMESSAGEIDBYHANDLEDATE;
+    }
+    
     private static String setupUserByName() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))

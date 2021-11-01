@@ -35,7 +35,7 @@ public class SpaRoutes {
     protected SessionStore sessionStore = null;
     protected static final SpaDatabaseReactive spaDatabaseReactive = SpaDbConfiguration.getSpaDb();
 
-    public SpaRoutes(Vertx vertx, Router router, Promise<Void> routesPromise) throws InterruptedException, SQLException {
+    public SpaRoutes(Vertx vertx, Router router, Promise<Router> routesPromise) throws InterruptedException, SQLException {
         this.vertx = vertx;
         this.router = router;
         sessionStore = LocalSessionStore.create(vertx);
@@ -44,7 +44,7 @@ public class SpaRoutes {
             setPutLoginRoute();
             setLogoutRoute();
             setUnregisterLoginRoute();
-            routesPromise.complete();
+            routesPromise.complete(router);
         });
     }
 

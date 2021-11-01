@@ -43,16 +43,16 @@ public class SpaRoutes {
     protected SessionStore sessionStore;
     protected Firestore firestore;
 
-    public SpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise) {
+    public SpaRoutes(Router router, io.vertx.core.Promise<Router> routesPromise) {
         setSpaRoutes(router, routesPromise);
     }
 
-    public SpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise, Firestore firestore) {
+    public SpaRoutes(Router router, io.vertx.core.Promise<Router> routesPromise, Firestore firestore) {
         this.firestore = firestore;
         setSpaRoutes(router, routesPromise);
     }
 
-    private void setSpaRoutes(Router router, io.vertx.core.Promise<Void> routesPromise) {
+    private void setSpaRoutes(Router router, io.vertx.core.Promise<Router> routesPromise) {
         this.router = router;
         sessionStore = LocalSessionStore.create(io.vertx.core.Vertx.vertx());
 
@@ -61,7 +61,7 @@ public class SpaRoutes {
             setPutLoginRoute();
             setLogoutRoute();
             setUnregisterLoginRoute();
-            routesPromise.complete();
+            routesPromise.complete(router);
         } else {
             spaDatabase = SpaDbConfiguration.getSpaDb();
             if (spaDatabase != null) {
@@ -70,7 +70,7 @@ public class SpaRoutes {
                     setPutLoginRoute();
                     setLogoutRoute();
                     setUnregisterLoginRoute();
-                    routesPromise.complete();
+                    routesPromise.complete(router);
                 });
             }
         }

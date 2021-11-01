@@ -81,7 +81,7 @@ before(async () => {
   });
   
   await testEnv.clearFirestore();
-  db = await getAdminFirestore();
+  db = getAdminFirestore();
 });
 
 describe("Dodex Firebase Model & Rules", () => {

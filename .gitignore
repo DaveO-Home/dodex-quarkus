@@ -1,4 +1,5 @@
 #Dodex
+copyjs.sh
 *.log*
 dist*
 .cache

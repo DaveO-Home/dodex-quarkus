@@ -74,6 +74,7 @@ public abstract class DbReactiveSqlBase {
     private static String GETMARIAINSERTUSER;
     private static String GETMARIAADDMESSAGE;
     private static String GETMARIADELETEUSER;
+    private static String GETMESSAGEIDBYHANDLEDATE;
     private Boolean isTimestamp;
     protected Vertx vertx;
     protected static Pool pool;
@@ -111,6 +112,7 @@ public abstract class DbReactiveSqlBase {
         GETREMOVEUSERS = qmark ? setupRemoveUsers().replaceAll("\\$\\d", "?") : setupRemoveUsers();
         GETCUSTOMDELETEMESSAGES = setupCustomDeleteMessage();
         GETCUSTOMDELETEUSERS = setupCustomDeleteUsers();
+        GETMESSAGEIDBYHANDLEDATE = qmark ? setupMessageByHandleDate().replaceAll("\\$\\d", "?") : setupRemoveUsers();
     }
 
     private static String setupAllUsers() {
@@ -121,6 +123,16 @@ public abstract class DbReactiveSqlBase {
 
     public static String getAllUsers() {
         return GETALLUSERS;
+    }
+
+    private static String setupMessageByHandleDate() {
+        return create.renderNamedParams(
+                select(field("ID"))
+                        .from(table("MESSAGES")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
+    }
+
+    public String getMessageIdByHandleDate() {
+        return GETMESSAGEIDBYHANDLEDATE;
     }
 
     private static String setupUserByName() {
@@ -322,7 +334,7 @@ public abstract class DbReactiveSqlBase {
     public static String getUserNames() {
         return GETUSERNAMES;
     }
-
+    
     public Future<MessageUser> addUser(Session ws, MessageUser messageUser) {
         Promise<MessageUser> promise = Promise.promise();
         Timestamp current = new Timestamp(new Date().getTime());
