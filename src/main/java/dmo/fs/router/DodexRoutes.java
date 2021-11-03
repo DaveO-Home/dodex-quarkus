@@ -188,12 +188,13 @@ public class DodexRoutes {
                 ColorUtilConstants.RESET);
         DodexRouter dodexRouter = null;
         switch (defaultDbName) {
-            case "sqlite3": // non mutiny supported db's - uses Vertx reactivex instead
-            case "h2":
             case "cubrid":
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
-                dodexRouter.setReactive(true);
                 dodexRouter.setUsingCubrid(true);
+            case "sqlite3": // non mutiny supported db's - uses Vertx reactivex instead
+            case "h2":
+                dodexRouter = CDI.current().select(DodexRouter.class).get();
+                dodexRouter.setReactive(true);
                 new SpaRoutes(coreVertx, router, routerPromise);
                 break;
             case "cassandra":

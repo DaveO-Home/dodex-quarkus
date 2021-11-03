@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-11-01)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.2.0...v2.3.0)
+
+* Upgraded Quarkus to v2.4.1
+* Fixed connection issue with sqlite/h2 connection caused by cubrid override
+
 ## [v2.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-11-01)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.1.0...v2.2.0)
