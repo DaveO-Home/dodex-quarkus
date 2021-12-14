@@ -31,8 +31,8 @@ const run = function (mode, configure, debug, cb) {
     } 
     // remote(default) puts the application in the vertx classpath and can be accessed in the resulting vertx verticle.
     else {
-        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/static/dist/react-fusebox") :
-            mode === "preview" ? path.join(__dirname, "../../main/resources/static/dist/react-fusebox") : path.join(__dirname, "../../main/resources/static/dist_test/react-fusebox");
+        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") :
+            mode === "preview" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") : path.join(__dirname, "../../main/resources/META-INF/resources/dist_test/react-fusebox");
     }
     
     isProduction = mode !== "test";
@@ -49,7 +49,7 @@ const run = function (mode, configure, debug, cb) {
     });
 
     task("cleanTest", context => {
-        rm(path.join(__dirname, "../../main/resources/static/dist_test"));
+        rm(path.join(__dirname, "../../main/resources/META-INF/resources/dist_test"));
     });
 
     task("cache", context => {

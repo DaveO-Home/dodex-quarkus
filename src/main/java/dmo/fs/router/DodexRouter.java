@@ -37,6 +37,7 @@ public class DodexRouter extends DodexRouterBase {
     private boolean isUsingCassandra = false;
     private boolean isUsingFirebase = false;
     private boolean isUsingCubrid = false;
+    private static boolean isUsingNeo4j = false;
 
     public DodexRouter() throws InterruptedException, IOException, SQLException {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
@@ -79,6 +80,15 @@ public class DodexRouter extends DodexRouterBase {
             }
             isInitialized = true;
             return;
+        }  else if (isUsingNeo4j()) {
+            Neo4jRouter neo4jRouter = CDI.current().select(Neo4jRouter.class).get();
+            neo4jRouter.setRemoteAddress(currentRemoteAddress);
+            neo4jRouter.setNeo4jHandler(session);
+            if (!isInitialized) {
+                broadcast(session, "User " + session.getRequestParameterMap().get("handle").get(0) + " joined");
+            }
+            isInitialized = true;
+            return;
         } else {
             if (isReactive) {
                 if(isUsingCubrid()) {
@@ -101,6 +111,8 @@ public class DodexRouter extends DodexRouterBase {
                     }
                 });
                 isInitialized = true;
+            } else if(isUsingNeo4j()) {
+                // 
             } else if (!isSetupDone && !isReactive) {
                 setup();
             }
@@ -116,6 +128,8 @@ public class DodexRouter extends DodexRouterBase {
                     } else {
                         dodexReactiveRouter[0].doMessage(session, sessions, message);
                     }
+                } else if(isUsingNeo4j()) {
+                    // 
                 } else {
                     doMessage(session, message);
                 }
@@ -146,6 +160,8 @@ public class DodexRouter extends DodexRouterBase {
                     dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
                 }
             }
+        } else if(isUsingNeo4j()) {
+            // 
         } else {
             doConnection(session);
         }
@@ -198,10 +214,18 @@ public class DodexRouter extends DodexRouterBase {
         this.isUsingCubrid = isUsingCubrid;
     }
 
+    public void setUsingNeo4j(boolean isUsingNeo4j) {
+        DodexRouter.isUsingNeo4j = isUsingNeo4j;
+    }
+
+    public static boolean isUsingNeo4j() {
+        return isUsingNeo4j;
+    }
+
     @RouteFilter(500)
     void getRemoteAddress(RoutingContext rc) {
         if (rc != null) {
-            if (rc.request() != null) {
+            if (rc.request() != null && rc.request().remoteAddress() != null) {
                 remoteAddress = rc.request().remoteAddress().toString();
             }
             rc.next();

@@ -1,13 +1,22 @@
 # Changelog
 
-## [v2.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-11-01)
+## [v2.4.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.4.0) (2021-12-13)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.3.0...v2.4.0)
+
+* Upgraded Quarkus to v2.5.2
+* Moved resources/static/* to resources/META-INF/resources in compliance with v2.5 - `dodex` install is now at this location
+* Made modifications in routes and spa-react/devl to reflect static location change
+* Added Neo4j database - See README.md
+
+## [v2.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.3.0) (2021-11-01)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.2.0...v2.3.0)
 
 * Upgraded Quarkus to v2.4.1
 * Fixed connection issue with sqlite/h2 connection caused by cubrid override
 
-## [v2.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-11-01)
+## [v2.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.2.0) (2021-11-01)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.1.0...v2.2.0)
 
@@ -15,7 +24,7 @@
 * Upgraded the React demo app dependencies
 * Fixed Cubrid null pointer with work around(query generated key)
 
-## [v2.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.0.2) (2021-10-06)
+## [v2.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.1.0) (2021-10-06)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.0.2...v2.1.0)
 

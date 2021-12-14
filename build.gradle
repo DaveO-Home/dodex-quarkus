@@ -24,6 +24,7 @@ ext {
 }
 
 dependencies {
+    implementation 'io.quarkus:quarkus-vertx-http'
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     
     implementation 'io.quarkus:quarkus-websockets'
@@ -34,6 +35,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-reactive-mysql-client'
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation 'io.quarkus:quarkus-reactive-db2-client'
+    implementation 'io.quarkus:quarkus-neo4j'
     // implementation "io.quarkus:quarkus-vertx-core:${quarkusPlatformVersion}"
     // implementation "io.quarkus:quarkus-reactive-routes:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"

@@ -16,10 +16,12 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.router.CassandraRouter;
 import dmo.fs.router.FirebaseRouter;
+import dmo.fs.router.Neo4jRouter;
 import dmo.fs.spa.db.SpaCassandra;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SpaDbConfiguration;
 import dmo.fs.spa.db.SpaFirebase;
+import dmo.fs.spa.db.SpaNeo4j;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import io.vertx.core.Future;
@@ -37,7 +39,9 @@ public class SpaApplication {
     private SpaCassandra spaCassandra;
     private Boolean isCassandra = false;
     private Boolean isFirebase = false;
+    private Boolean isNeo4j = false;
     private SpaFirebase spaFirebase;
+    private SpaNeo4j spaNeo4j;
 
     public SpaApplication() throws InterruptedException, IOException, SQLException {
         Object spaDb =  SpaDbConfiguration.getSpaDb();
@@ -53,13 +57,19 @@ public class SpaApplication {
             FirebaseRouter firebaseRouter = CDI.current().select(FirebaseRouter.class).get();
             spaFirebase.setDbf(firebaseRouter.getDbf());
             isFirebase = true;
+        } else if(spaDb instanceof SpaNeo4j) {
+            spaNeo4j = SpaDbConfiguration.getSpaDb();
+            Neo4jRouter neo4jRouter = CDI.current().select(Neo4jRouter.class).get();
+            spaNeo4j.setDriver(neo4jRouter.getDriver());
+            isNeo4j = true;
         } else {
             throw new InterruptedException(String.format("%s - %s","Database not supported", SpaDbConfiguration.getSpaDb()));
         }
     }
 
     public Future<Void> setDatabase(SpaDatabase spaDatabase) {
-        if (DbConfiguration.isUsingCassandra() || DbConfiguration.isUsingFirebase()) {
+        if (DbConfiguration.isUsingCassandra() || DbConfiguration.isUsingFirebase()
+            || DbConfiguration.isUsingNeo4j()) {
             io.vertx.core.Promise<Void> setupPromise = io.vertx.core.Promise.promise();
             setupPromise.complete();
             return setupPromise.future();
@@ -88,6 +98,8 @@ public class SpaApplication {
             return spaCassandra.getLogin(spaLogin, eb);
         } else if (isFirebase.equals(true)) {
             return spaFirebase.getLogin(spaLogin);
+        } else if (isNeo4j.equals(true)) {
+            return spaNeo4j.getLogin(spaLogin);
         }
         return spaDatabase.getLogin(spaLogin);
     }
@@ -119,11 +131,15 @@ public class SpaApplication {
         spaLogin.setId(0l);
         spaLogin.setLastLogin(new Date());
         spaLogin.setStatus("0");
+
         if (isCassandra.equals(true)) {
             return spaCassandra.addLogin(spaLogin, eb);
         } else if (isFirebase.equals(true)) {
             spaLogin.setId("0");
             return spaFirebase.addLogin(spaLogin);
+        } else if (isNeo4j.equals(true)) {
+            spaLogin.setId("0");
+            return spaNeo4j.addLogin(spaLogin);
         }
 
         return spaDatabase.addLogin(spaLogin);
@@ -143,6 +159,8 @@ public class SpaApplication {
             return spaCassandra.removeLogin(spaLogin, eb);
         } else if (isFirebase.equals(true)) {
             return spaFirebase.removeLogin(spaLogin);
+        } else if (isNeo4j.equals(true)) {
+            return spaNeo4j.removeLogin(spaLogin);
         }
         return spaDatabase.removeLogin(spaLogin);
     }

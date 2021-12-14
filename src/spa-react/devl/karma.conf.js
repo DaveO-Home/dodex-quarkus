@@ -3,7 +3,7 @@ const path = require("path");
 const bundler = "react-fusebox";
 const spa = "spa-react";
 let mocha = ["mocha"];
-let distDir = "main/resources/static/dist_test/";
+let distDir = "main/resources/META-INF/resources/dist_test/";
 let base = "http://localhost:8089/dist_test/" + bundler;
 let startupHtml = "http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html";
 try {
@@ -46,7 +46,7 @@ module.exports = function (config) {
             "/dodex/data/": base + "/appl/dodex/data/",
             "/dist_test/react-fusebox/appl/assets/": base + "/appl/assets/",
             "/base/dist_test/react-fusebox/appl/": base + "/appl/",
-            "/README.md": base + "/README.md",
+            "/README.md": "http://localhost:8089/dist_test/README.md",
             "/images/": base + "/images/",
             "/userlogin/unregister": "http://localhost:8089/userlogin/unregister",
             "/userlogin": "http://localhost:8089/userlogin",

@@ -29,12 +29,14 @@ public abstract class DbConfiguration {
     protected static Boolean isUsingCubrid = false;
     protected static Boolean isUsingCassandra = false;
     protected static Boolean isUsingFirebase = false;
+    protected static Boolean isUsingNeo4j = false;
     private static String defaultDb = "sqlite3";
     private static boolean overrideDefaultDb = false;
     private static DodexUtil dodexUtil = new DodexUtil();
     private static DodexDatabase dodexDatabase;
     protected static DodexCassandra dodexCassandra;
     private static DodexFirebase dodexFirebase;
+    private static DodexNeo4j dodexNeo4j;
     private static DodexReactiveDatabase dodexReactiveDatabase;
     private static final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
@@ -46,6 +48,7 @@ public abstract class DbConfiguration {
         H2("h2"),
         CASSANDRA("cassandra"),
         CUBRID("cubrid"),
+        NEO4J("neo4j"),
         FIREBASE("firebase");
 
         String db;
@@ -87,11 +90,15 @@ public abstract class DbConfiguration {
         return isUsingH2;
     }
 
+    public static boolean isUsingNeo4j() {
+        return isUsingNeo4j;
+    }
+
     public static boolean isProduction() {
         return isProduction;
     }
 
-    @SuppressWarnings("unchecked")
+    // @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(String db) throws InterruptedException, IOException, SQLException {
         defaultDb = db;
         overrideDefaultDb = true;
@@ -137,6 +144,10 @@ public abstract class DbConfiguration {
             dodexFirebase = dodexFirebase == null? new DodexDatabaseFirebase(): dodexFirebase;
             isUsingFirebase = true;
             return (T) dodexFirebase;
+        } else if(defaultDb.equals(DbTypes.NEO4J.db)) {
+            dodexNeo4j = new DodexDatabaseNeo4j();
+            isUsingNeo4j = true;
+            return (T) dodexNeo4j;
         }
     
         return (T) dodexDatabase;
@@ -175,9 +186,13 @@ public abstract class DbConfiguration {
                 dodexReactiveDatabase = new DodexDatabaseCubrid(overrideMap, overrideProps);
                 isUsingCubrid = true;
             } else if(defaultDb.equals(DbTypes.FIREBASE.db)) {
-                dodexFirebase = dodexFirebase == null? new DodexDatabaseFirebase(): dodexFirebase;
+                dodexFirebase = dodexFirebase == null? new DodexDatabaseFirebase(overrideMap, overrideProps): dodexFirebase;
                 isUsingFirebase = true;
                 return (T) dodexFirebase;
+            } else if(defaultDb.equals(DbTypes.NEO4J.db)) {
+                dodexNeo4j = new DodexDatabaseNeo4j(overrideMap, overrideProps);
+                isUsingNeo4j = true;
+                return (T) dodexNeo4j;
             }
            
         return (T) dodexDatabase;

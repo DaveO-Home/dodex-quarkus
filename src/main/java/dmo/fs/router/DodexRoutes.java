@@ -15,7 +15,6 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexCassandra;
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.db.reactive.SpaRoutes;
@@ -31,7 +30,6 @@ import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.Route.HttpMethod;
 import io.quarkus.vertx.web.RoutingExchange;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.ext.bridge.BridgeOptions;
@@ -43,6 +41,7 @@ import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.TimeoutHandler;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.eventbus.EventBus;
+import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.ext.eventbus.bridge.tcp.TcpEventBusBridge;
 
 @Unremovable
@@ -122,7 +121,7 @@ public class DodexRoutes {
 
             response.sendFile(file);
         } else {
-            response.setStatusCode(404).end("not found");
+            response.setStatusCode(404).end("<h3>Not found-try production mode</h3>");
         }
     }
 
@@ -154,10 +153,10 @@ public class DodexRoutes {
             HttpServerResponse response = ctx.response();
             String acceptableContentType = ctx.getAcceptableContentType();
             response.putHeader("content-type", acceptableContentType);
-            response.sendFile("static/dist_test/README.md");
+            response.sendFile("dist_test/README.md");
         });
 
-        staticHandler.setWebRoot("static");
+        staticHandler.setWebRoot("");
 
         router.route("/*").produces("text/plain").produces("text/html").produces("text/markdown").produces("image/*")
                 .handler(staticHandler).handler(TimeoutHandler.create(2000));
@@ -178,10 +177,10 @@ public class DodexRoutes {
         router.route().handler(faviconHandler);
     }
 
-    public void setDodexRoute(HttpServer server, Router router) throws InterruptedException, IOException, SQLException {
+    public <DodexDatabaseNeo4j> void setDodexRoute(HttpServer server, Router router) throws InterruptedException, IOException, SQLException {
         DodexUtil du = new DodexUtil();
         String defaultDbName = du.getDefaultDb();
-        Promise<Void> routesPromise = Promise.promise();
+        // Promise<Void> routesPromise = Promise.promise();
         Promise<Router> routerPromise = Promise.promise();
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
@@ -222,6 +221,10 @@ public class DodexRoutes {
                     throw ex;
                 }
                 break;
+            case "neo4j":
+                // Neo4jRouter neo4jRouter = CDI.current().select(Neo4jRouter.class).get();
+                dodexRouter = CDI.current().select(DodexRouter.class).get();
+                dodexRouter.setUsingNeo4j(true);
             default:
                 new dmo.fs.spa.router.SpaRoutes(router, routerPromise); // Supported SqlClients for async db's - mutiny
                 break;

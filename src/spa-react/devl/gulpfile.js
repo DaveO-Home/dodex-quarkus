@@ -352,14 +352,14 @@ function fuseboxConfig(mode, props) {
     } 
     // remote(default) puts the application in the vertx classpath and can be accessed in the resulting vertx verticle.
     else {
-        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/static/dist/react-fusebox") :
-            mode === "preview" ? path.join(__dirname, "../../main/resources/static/dist/react-fusebox") : path.join(__dirname, "../../main/resources/static/dist_test/react-fusebox");
+        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") :
+            mode === "preview" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") : path.join(__dirname, "../../main/resources/META-INF/resources/dist_test/react-fusebox");
     }
 
     let defaultServer = props.useServer;
     let devServe = {
         httpServer: {
-            root: local ? "../.." : "../../main/resources/static/",
+            root: local ? "../.." : "../../main/resources/META-INF/resources/",
             port: 3087,
             open: false,
         },

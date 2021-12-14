@@ -23,6 +23,7 @@ public class SpaDbConfiguration extends DbConfiguration {
     private static SpaCassandra spaCassandra;
     private static SpaDatabaseReactive spaDatabaseReactive;
     private static SpaDatabaseFirebase spaFirebase;
+    private static SpaDatabaseNeo4j spaNeo4j;
 
     private enum DbTypes {
         POSTGRES("postgres"),
@@ -32,6 +33,7 @@ public class SpaDbConfiguration extends DbConfiguration {
         H2("h2"),
         CASSANDRA("cassandra"),
         FIREBASE("firebase"),
+        NEO4J("neo4j"),
         IBMDB2("ibmdb2");
 
         String db;
@@ -79,6 +81,10 @@ public class SpaDbConfiguration extends DbConfiguration {
                 spaFirebase = new SpaDatabaseFirebase();
                 isUsingFirebase = true;
                 return (T) spaFirebase;
+            } else if(defaultDb.equals(DbTypes.NEO4J.db) && spaNeo4j == null) {
+                spaNeo4j = new SpaDatabaseNeo4j();
+                isUsingNeo4j = true;
+                return (T) spaNeo4j;
             }
         } catch (InterruptedException | IOException | SQLException e) {
             e.printStackTrace();
@@ -90,6 +96,8 @@ public class SpaDbConfiguration extends DbConfiguration {
             return (T) spaCassandra;
         } else if (spaFirebase != null) {
             return (T) spaFirebase;
+        } else if (spaNeo4j != null) {
+            return (T) spaNeo4j;
         }
         return (T) spaDatabase;
     }
@@ -124,11 +132,15 @@ public class SpaDbConfiguration extends DbConfiguration {
                 spaCassandra = new SpaDatabaseCassandra(overrideMap, overrideProps);
                 isUsingCassandra = true;
                 return (T) dodexCassandra;
-            }  else if(defaultDb.equals(DbTypes.FIREBASE.db) && spaFirebase == null) {
+            } else if(defaultDb.equals(DbTypes.FIREBASE.db) && spaFirebase == null) {
                 spaFirebase = new SpaDatabaseFirebase(overrideMap, overrideProps);
                 isUsingFirebase = true;
                 return (T) spaFirebase;
-            } 
+            } else if(defaultDb.equals(DbTypes.NEO4J.db) && spaNeo4j == null) {
+                spaNeo4j = new SpaDatabaseNeo4j(overrideMap, overrideProps);
+                isUsingNeo4j = true;
+                return (T) spaNeo4j;
+            }  
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -139,6 +151,8 @@ public class SpaDbConfiguration extends DbConfiguration {
             return (T) spaCassandra;
         } else if (spaFirebase != null) {
             return (T) spaFirebase;
+        } else if (spaNeo4j != null) {
+            return (T) spaNeo4j;
         }
         return (T) spaDatabase;
     }

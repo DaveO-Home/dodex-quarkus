@@ -30,7 +30,7 @@ export default App.controllers.Start ||
 
             let markdownUrl = "../../README.md"; // prod
             /* develblock:start */
-            markdownUrl = "../README.md"; // dev
+            markdownUrl = "../../README.md"; // dev
             /* develblock:end */
 
             this.view({

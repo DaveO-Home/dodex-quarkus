@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.spa.SpaApplication;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SpaDbConfiguration;
+import dmo.fs.spa.db.SpaNeo4j;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaUtil;
 import dmo.fs.utils.ColorUtilConstants;
@@ -37,6 +38,7 @@ public class SpaRoutes {
     private static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
     private static final String FAILURE = "{\"status\":\"-99\"}";
     protected SpaDatabase spaDatabase;
+    protected SpaNeo4j spaNeo4j;
 
     protected Vertx vertx = Vertx.vertx();
     protected Router router;
@@ -56,7 +58,12 @@ public class SpaRoutes {
         this.router = router;
         sessionStore = LocalSessionStore.create(io.vertx.core.Vertx.vertx());
 
-        if (SpaDbConfiguration.isUsingCassandra() || SpaDbConfiguration.isUsingFirebase()) {
+        if (SpaDbConfiguration.isUsingCassandra() || SpaDbConfiguration.isUsingFirebase()
+            || SpaDbConfiguration.isUsingNeo4j()) {
+            if(SpaDbConfiguration.isUsingNeo4j()) {
+                spaNeo4j = SpaDbConfiguration.getSpaDb();
+                spaNeo4j.databaseSetup();
+            }
             setGetLoginRoute();
             setPutLoginRoute();
             setLogoutRoute();
@@ -89,7 +96,9 @@ public class SpaRoutes {
                 SpaApplication spaApplication = null;
                 try {
                     spaApplication = new SpaApplication();
-                    spaApplication.setDatabase(spaDatabase);
+                    if(spaDatabase != null) {
+                        spaApplication.setDatabase(spaDatabase);
+                    }
                 } catch (InterruptedException | IOException | SQLException e1) {
                     e1.printStackTrace();
                 }
@@ -124,13 +133,13 @@ public class SpaRoutes {
                             if (result.getId() == null) {
                                 result.setId(0l);
                             }
-
                             session.put("login", new JsonObject(result.getMap()));
                             response.end(new JsonObject(result.getMap()).encode());
                             return Uni.createFrom().item(result);
                         }).onFailure().invoke(failed -> {
+                            failed.printStackTrace();
                             logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                                    "Get Login Failed: ", failed.getMessage(), ColorUtilConstants.RESET));
+                                    "Get Login Failed: ", failed, ColorUtilConstants.RESET));
                             response.end(FAILURE);
                         }).subscribeAsCompletionStage();
                     } catch (InterruptedException | ExecutionException | SQLException e) {
@@ -156,7 +165,9 @@ public class SpaRoutes {
                 SpaApplication spaApplication = null;
                 try {
                     spaApplication = new SpaApplication();
-                    spaApplication.setDatabase(spaDatabase);
+                    if(spaDatabase != null) {
+                        spaApplication.setDatabase(spaDatabase);
+                    }
                 } catch (InterruptedException | IOException | SQLException e1) {
                     e1.printStackTrace();
                 }
@@ -189,7 +200,9 @@ public class SpaRoutes {
                                 SpaApplication spaApplicationAdd = null;
                                 try {
                                     spaApplicationAdd = new SpaApplication();
-                                    spaApplicationAdd.setDatabase(spaDatabase);
+                                    if(spaDatabase != null) {
+                                        spaApplicationAdd.setDatabase(spaDatabase);
+                                    }
                                 } catch (InterruptedException | IOException | SQLException e) {
                                     e.printStackTrace();
                                 }
@@ -213,8 +226,9 @@ public class SpaRoutes {
                             }
                             return Uni.createFrom().item(result);
                         }).onFailure().invoke(failed -> {
+                            failed.printStackTrace();
                             logger.error(String.format("%s%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                                    "Check Login failed...: ", failed.getMessage(), ColorUtilConstants.RESET));
+                                    "Check Login failed...: ", failed, ColorUtilConstants.RESET));
                             response.end(FAILURE);
                         }).subscribeAsCompletionStage();
                     } else {
@@ -278,7 +292,9 @@ public class SpaRoutes {
             SpaApplication spaApplication = null;
             try {
                 spaApplication = new SpaApplication();
-                spaApplication.setDatabase(spaDatabase);
+                if(spaDatabase != null) {
+                    spaApplication.setDatabase(spaDatabase);
+                }
             } catch (InterruptedException | IOException | SQLException e1) {
                 e1.printStackTrace();
             }

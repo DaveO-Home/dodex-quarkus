@@ -8,10 +8,12 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 2. Gradle 6+ installed. If you have sdkman installed, execute ```sdk install gradle 6.9``` otherwise executing gradlew should install gradle.
 3. The `npm` javascript package manager installed.
 
+__Note:__ The static directory was changed from `src/main/resources/static` to `src/main/resources/META-INF/resources` in compliance with v2.5.
+
 ## Getting Started
 
 1. `npm install dodex-quarkus` or download from <https://github.com/DaveO-Home/dodex-quarkus>. If you use npm install, move node_modules/dodex-quarkus to an appropriate directory.
-2. `cd <install directory>/dodex-quarkus/src/main/resources/static` and execute `npm install --save` to install the dodex modules.
+2. `cd <install directory>/dodex-quarkus/src/main/resources/META-INF/resources` and execute `npm install --save` to install the dodex modules.
 3. `cd <install directory>/dodex-quarkus` and execute `gradlew quarkusDev`. This should install java dependencies and startup the server in development mode against the default sqlite3 database. In this mode, any modifications to java source will be recompiled(refresh browser page to recompile).
 4. Execute url `http://localhost:8089/test` in a browser.
 5. You can also run `http://localhost:8089/test/bootstrap.html` for a bootstrap example.
@@ -31,10 +33,10 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
     1. Before running the Uber jar for production, do: (graalvm requires the Uber jar)
         * Make sure that the spa react javascript is installed. Execute `npm install` in the `src/spa-react` directory.
         * cd to src/spa-react/devl & execute gulp prod or gulp prd (bypasses tests)
-        * ~~rm src/main/resources/static/node_modules (makes a smaller uber jar)~~
+        * ~~rm src/main/resources/META-INF/resources/node_modules (makes a smaller uber jar)~~
     1. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar.
 
-    ~~__Note__; The `node_modules` directory can be re-added by executing `npm install` in `src/main/resources/static`.~~ However, the node_modules directory can be removed when running `graalvm`.
+    ~~__Note__; The `node_modules` directory can be re-added by executing `npm install` in `src/main/resources/META-INF/resources`.~~ However, the node_modules directory can be removed when running `graalvm`.
 
 1. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
 1. Execute url `http://localhost:8088/ddex` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.
@@ -96,7 +98,7 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will
     1. cd to the `dodex-quarkus` install directory
     1. make sure `dodex` and the `spa-react` node_modules and application are installed
 
-        * in `src/main/resources/static` execute __`npm install`__
+        * in `src/main/resources/META-INF/resources` execute __`npm install`__
         * in `src/spa-react` execute __`npm install`__
         * startup Quarkus in dev mode - __`gradlew quarkusDev`__
         * in `src/spa-react/devl` execute __`gulp prod`__ or __`gulp prd`__
@@ -145,12 +147,36 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will
 * If you want a different project name, change `.firebaserc`.
 * Gradle for development can set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable if you exec `gradlew run` instead of `gradlew quarkusDev`. Don't forget to modify the build.gradle file with the location of your  `Service-Account-Key.json` file.
 
- #### Testing
+ #### Firebase Testing
 
   * To make sure your project is created and the setup works, you should run the tests. __Note;__ They are written in Typescript.
   * cd `../dodex-vertx/src/firebase` and run `npm install`
   * execute `npm run emulators` to startup the emulators for testing.
   * To test the model and rules after starting the emulators, in a different terminal window, run `npm test`.
+
+### Neo4j
+
+* See <http://quarkus.io/guides/neo4j> for usage.
+* To use a docker with `apoc` you can try: __Note:__ this has `--privileged` set.
+    ```
+    docker run \
+    -p 7474:7474 -p 7687:7687 \
+    -v $PWD/neo4j/data:/neo4j/data -v $PWD/neo4j/plugins:/neo4j/plugins \
+    --name neo4j-apoc \
+    --privileged \
+    -e 'NEO4J_AUTH=neo4j/secret' \
+    -e NEO4J_apoc_export_file_enabled=true \
+    -e NEO4J_apoc_import_file_enabled=true \
+    -e NEO4J_apoc_import_file_use__neo4j__config=true \
+    -e NEO4JLABS_PLUGINS=\[\"apoc\"\] \
+    -e NEO4J_dbms_security_procedures_unrestricted=apoc.\\\* \
+    neo4j:4.3
+    ```
+To restart and stop: `docker start neo4j-apoc` and `docker stop neo4j-apoc`
+
+The Neo4j was tested with the `apoc` install, however the database should work without it.
+
+Simply execute `export DEFAULT_DB=neo4j` to use, after database setup.
 
 ## ChangeLog
 
