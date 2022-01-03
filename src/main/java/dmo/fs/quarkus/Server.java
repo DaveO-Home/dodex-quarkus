@@ -2,6 +2,7 @@ package dmo.fs.quarkus;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.config.Config;
@@ -28,6 +29,7 @@ public class Server implements QuarkusApplication {
 
     public static void main(String... args) {
         Quarkus.run(Server.class, args);
+        Locale.setDefault(new Locale("US"));
     }
 
     @Override

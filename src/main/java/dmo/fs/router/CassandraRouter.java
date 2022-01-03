@@ -14,7 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -29,6 +28,7 @@ import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexCassandra;
 import dmo.fs.db.MessageUser;
+import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
@@ -49,7 +49,6 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 @ApplicationScoped
 public class CassandraRouter {
     private static final Logger logger = LoggerFactory.getLogger(CassandraRouter.class.getName());
-    private Map<String, Session> clients = new ConcurrentHashMap<>();
     private DodexCassandra dodexCassandra;
     private Vertx vertx = Vertx.vertx();
     private EventBus eb = vertx.eventBus();
@@ -57,8 +56,9 @@ public class CassandraRouter {
     private String remoteAddress;
     private Promise<Void> databasePromise = Promise.promise();
     protected Map<String, Session> sessions;
-    final SharedData sd = Vertx.vertx().sharedData();
-    final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
+    static final SharedData sd = Vertx.vertx().sharedData();
+    static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     protected CassandraRouter() {
     }
@@ -106,13 +106,11 @@ public class CassandraRouter {
     public void setCassandraHandler(Session session) throws UnsupportedEncodingException {
         wsChatSessions.put(session.getId(),
                 URLDecoder.decode(session.getRequestURI().toString(), StandardCharsets.UTF_8.name()));
-        clients.put(session.getId(), session);
         final MessageUser messageUser = dodexCassandra.createMessageUser();
 
         session.addMessageHandler(new MessageHandler.Whole<String>() {
             @Override
             public void onMessage(String data) {
-
                 try {
                     String handle = URLDecoder.decode(
                             ParseQueryUtilHelper.getQueryMap(session.getQueryString()).get("handle"),
@@ -156,18 +154,17 @@ public class CassandraRouter {
                     } else {
                         completed = promise.future();
                     }
-
                     if (completed != null) {
                         completed.onSuccess(result -> {
                             String selectedUsers = "";
                             if (computedMessage[0].length() > 0) {
                                 // private users to send message
                                 selectedUsers = returnObject.get("selectedUsers");
-                                final Set<String> websockets = clients.keySet();
+                                final Set<String> websockets = sessions.keySet();
                                 Map<String, String> query = null;
 
                                 for (final String websocket : websockets) {
-                                    final Session webSocket = clients.get(websocket);
+                                    final Session webSocket = sessions.get(websocket);
                                     if (webSocket.isOpen()) {
                                         if (!websocket.equals(session.getId())) {
                                             // broadcast message
@@ -177,7 +174,10 @@ public class CassandraRouter {
                                             if (selectedUsers.length() == 0 && command[0].length() == 0) {
                                                 webSocket.getAsyncRemote()
                                                         .sendObject(messageUser.getName() + ": " + computedMessage[0]);
-                                                // private message
+                                                if (ke != null) {
+                                                    ke.setValue(1);
+                                                }
+                                            // private message
                                             } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                                                 boolean isMatched = false;
                                                 if (!isMatched) {
@@ -216,11 +216,19 @@ public class CassandraRouter {
                                             if (key != null) {
                                                 logger.info("Message processes: {}", key);
                                             }
+                                            if(ke != null) {
+                                                ke.setValue("undelivered", disconnectedUsers.size());
+                                            }
                                         }).onFailure(exe -> {
                                             exe.printStackTrace();
                                         });
                                     } catch (final SQLException | InterruptedException e) {
                                         e.printStackTrace();
+                                    }
+                                }
+                                if(!onlineUsers.isEmpty()) {
+                                    if(ke != null) {
+                                        ke.setValue("private", onlineUsers.size());
                                     }
                                 }
                             }
@@ -274,6 +282,9 @@ public class CassandraRouter {
                                     logger.info(String.format("%sMessages Delivered: %d to %s%s",
                                             ColorUtilConstants.BLUE_BOLD_BRIGHT, size, mUser.getName(),
                                             ColorUtilConstants.RESET));
+                                    if(ke != null) {
+                                        ke.setValue("delivered", size);
+                                    }
                                 }
                                 dodexCassandra.deleteDelivered(session, eb, mUser).onComplete(result -> {
                                     //
@@ -327,5 +338,9 @@ public class CassandraRouter {
 
     public Promise<Void> getDatabasePromise() {
         return databasePromise;
+    }
+
+    public static void removeWsChatSession(Session session) {
+        wsChatSessions.remove(session.getId());
     }
 }

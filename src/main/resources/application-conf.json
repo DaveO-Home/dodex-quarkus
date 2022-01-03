@@ -5,5 +5,9 @@
   "clean.period": 7,
   "clean.age": 90,
   "bridge.port": 7032,
-  "prod.bridge.port": 7032
+  "prod.bridge.port": 7032,
+  "dodex.events.partitions": 2,
+  "dodex.events.topic": "dodex-events",
+  "dodex.events.limit": 25,
+  "dodex.events.remove": false
 }

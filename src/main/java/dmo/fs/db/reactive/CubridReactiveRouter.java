@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.kafka.KafkaEmitterDodex;
+import dmo.fs.router.DodexRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
@@ -30,12 +32,13 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 
 public class CubridReactiveRouter extends DbCubridOverride {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
-    Vertx vertxReactive = Vertx.vertx();
+    private static Vertx vertxReactive = Vertx.vertx();
     private static DodexReactiveDatabase dodexDatabase = null;
     private static final String LOGFORMAT = "{}{}{}";
-    final SharedData sd = vertxReactive.sharedData();
-    final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
+    private static SharedData sd = vertxReactive.sharedData();
+    private static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private String remoteAddress = null;
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public void doConnection(Session session, String remoteAddress) throws UnsupportedEncodingException {
         this.remoteAddress = remoteAddress;
@@ -69,6 +72,9 @@ public class CubridReactiveRouter extends DbCubridOverride {
                         logger.info(
                             String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
                                     messageCount, mUser.getName(), ColorUtilConstants.RESET));
+                        if(ke != null) {
+                            ke.setValue("delivered", messageCount);
+                        }
                     }
                 });
             });
@@ -123,6 +129,9 @@ public class CubridReactiveRouter extends DbCubridOverride {
                 session.getAsyncRemote().sendObject("Private user not selected");
             } else {
                 session.getAsyncRemote().sendObject("ok");
+                if (ke != null && "".equals(selectedUsers) && "".equals(command)) {
+                    ke.setValue(1);
+                } 
             }
         }
 
@@ -137,7 +146,15 @@ public class CubridReactiveRouter extends DbCubridOverride {
                 future = addMessage(session, messageUser, computedMessage);
                 future.onSuccess(key -> {
                     addUndelivered(session, disconnectedUsers, key);
+                    if(ke != null) {
+                        ke.setValue("undelivered", disconnectedUsers.size());
+                    }
                 });
+            }
+            if(!onlineUsers.isEmpty()) {
+                if(ke != null) {
+                    ke.setValue("private", onlineUsers.size());
+                }
             }
         }
     }
@@ -195,5 +212,9 @@ public class CubridReactiveRouter extends DbCubridOverride {
     @Override
     public MessageUser createMessageUser() {
         return new MessageUserImpl();
+    }
+
+    public static void removeWsChatSession(Session session) {
+        wsChatSessions.remove(session.getId());
     }
 }

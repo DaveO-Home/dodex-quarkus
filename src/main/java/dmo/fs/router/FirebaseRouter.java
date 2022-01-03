@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexFirebase;
 import dmo.fs.db.MessageUser;
+import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.FirebaseUser;
@@ -46,15 +47,17 @@ import io.vertx.reactivex.core.Promise;
 @ApplicationScoped
 public class FirebaseRouter {
     private static final Logger logger = LoggerFactory.getLogger(FirebaseRouter.class.getName());
-    Vertx vertx = Vertx.vertx();
+    private static Vertx vertx = Vertx.vertx();
     private Map<String, Session> clients = new ConcurrentHashMap<>();
     private DodexFirebase dodexFirebase;
     private static final String DODEX_PROJECT_ID = "dodex-firebase";
     Firestore dbf;
     private FirestoreOptions firestoreOptions;
     private static final String LOGFORMAT = "{}{}{}";
-    final SharedData sd = vertx.sharedData();
+    private static final SharedData sd = vertx.sharedData();
+    private static final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private String remoteAddress;
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public FirebaseRouter(final Vertx vertx) {
         this.vertx = vertx;
@@ -105,7 +108,6 @@ public class FirebaseRouter {
         if (!"/dodex".equals(session.getRequestURI().getPath())) {
             session.close();
         } else {
-            final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
             final MessageUser messageUser = dodexFirebase.createMessageUser();
             try {
                 wsChatSessions.put(session.getId(),
@@ -164,7 +166,10 @@ public class FirebaseRouter {
                                             if (selectedUsers.length() == 0 && command[0].length() == 0) {
                                                 webSocket.getAsyncRemote()
                                                         .sendText(messageUser.getName() + ": " + computedMessage[0]);
-                                                // private message
+                                                if (ke != null) {
+                                                    ke.setValue(1);
+                                                }
+                                            // private message
                                             } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                                                 boolean isMatched = false;
                                                 if (!isMatched) {
@@ -199,11 +204,19 @@ public class FirebaseRouter {
 
                                         dodexFirebase.addMessage(session, messageUser, computedMessage[0],
                                                 disconnectedUsers);
+                                        if(ke != null) {
+                                            ke.setValue("undelivered", disconnectedUsers.size());
+                                        }
 
                                     } catch (ExecutionException | InterruptedException e) {
                                         e.printStackTrace();
                                         session.getAsyncRemote()
                                                 .sendText("Message delivery failure: " + e.getMessage());
+                                    }
+                                }
+                                if(!onlineUsers.isEmpty()) {
+                                    if(ke != null) {
+                                        ke.setValue("private", onlineUsers.size());
                                     }
                                 }
                             }
@@ -245,6 +258,9 @@ public class FirebaseRouter {
                                         logger.info(String.format("%sMessages Delivered: %d to %s%s",
                                                 ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount,
                                                 firebaseUser.getName(), ColorUtilConstants.RESET));
+                                        if(ke != null) {
+                                            ke.setValue("delivered", messageCount);
+                                        }
                                     }
                                 });
                             } catch (Exception e) {
@@ -280,5 +296,9 @@ public class FirebaseRouter {
 
     public void setRemoteAddress(String remoteAddress) {
         this.remoteAddress = remoteAddress;
+    }
+
+    public static void removeWsChatSession(Session session) {
+        wsChatSessions.remove(session.getId());
     }
 }

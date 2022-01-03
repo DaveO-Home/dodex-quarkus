@@ -1,5 +1,14 @@
 # Changelog
 
+## [v2.5.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.0) (2022-01-04)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.4.0...v2.5.0)
+
+* Upgraded Quarkus to v2.6.1
+* Added dodex monitoring tool - see README.md
+* Added kafka to facilitate monitoring
+* Fixed removing session data on close
+
 ## [v2.4.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.4.0) (2021-12-13)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.3.0...v2.4.0)

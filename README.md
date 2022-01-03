@@ -178,6 +178,34 @@ The Neo4j was tested with the `apoc` install, however the database should work w
 
 Simply execute `export DEFAULT_DB=neo4j` to use, after database setup.
 
+### Dodex Monitoring
+
+#### Getting Started
+
+* Apache Kafka must be installed.
+    *  [Kafka Quickstart](https://kafka.apache.org/quickstart) - A container should also work
+    *  .../config/server.properties should be modified if using a local install
+        * advertised.listeners=PLAINTEXT://localhost:9092
+        * num.partitions=2   # at least 2
+    * local startup
+        *  ./bin/zookeeper-server-start.sh config/zookeeper.properties
+        *  ./bin/kafka-server-start.sh config/server.properties
+
+* Setup Quarkus for Kafka
+    *  __set environment variable `DODEX_KAFKA=true`__
+    * Modify Quarkus applicatin.properties file
+        *  __uncomment the `mp.messaging` entries__
+        *  modify the server entries if necessary
+    *  startup Quarkus - the monitor should work with any of the databases
+    *  the monitor configuation can be found in `application-conf.json`
+
+* Monitor Dodex
+    * in a browser enter `localhost:8089/monitor`
+    * as dodex messaging executes the events should be recorded.
+    * in the browser's `developer tools` console execute `stop();` and `start();` to stop/start the polling. Polling is started by default.
+    
+    __Note;__ you and open the messaging dialog with `ctrl-doubleclick` on the dials
+
 ## ChangeLog
 
 <https://github.com/DaveO-Home/dodex-quarkus/blob/master/CHANGELOG.md>

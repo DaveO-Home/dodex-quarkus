@@ -76,6 +76,9 @@ public class DodexRoutes {
             logger.info(String.format("%sStopping Quarkus%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
                     ColorUtilConstants.RESET));
         }
+        if(bridge != null) {
+            bridge.close();
+        }
     }
 
     // /* Just a way to gracefully shutdown the dev server */
@@ -125,6 +128,18 @@ public class DodexRoutes {
         }
     }
 
+    @Route(regex = "/monitor[/]?|/monitor/.*\\.html", methods = HttpMethod.GET)
+    void monitor(RoutingExchange ex) {
+        HttpServerResponse response = ex.response();
+        response.putHeader("content-type", "text/html");
+
+        int length = ex.context().request().path().length();
+        String path = ex.context().request().path();
+        String file = length < 10 ? "monitor/index.html" : path.substring(1);
+
+        response.sendFile(file);
+    }
+
     // static content and Spa Routes
     public void init(@Observes Router router) {
         String value = System.getenv("VERTXWEB_ENVIRONMENT");
@@ -138,11 +153,11 @@ public class DodexRoutes {
             staticHandler.setCachingEnabled(false);
         }
         router.route().failureHandler(ctx -> {
-            ctx.next();
             if (logger.isInfoEnabled()) {
                 logger.error(String.format("%sFAILURE in static route: %d%s", ColorUtilConstants.RED_BOLD_BRIGHT,
                         ctx.statusCode(), ColorUtilConstants.RESET));
             }
+            ctx.next();
         });
 
         String readme = "/dist_test/react-fusebox";
@@ -177,10 +192,9 @@ public class DodexRoutes {
         router.route().handler(faviconHandler);
     }
 
-    public <DodexDatabaseNeo4j> void setDodexRoute(HttpServer server, Router router) throws InterruptedException, IOException, SQLException {
+    public void setDodexRoute(HttpServer server, Router router) throws InterruptedException, IOException, SQLException {
         DodexUtil du = new DodexUtil();
         String defaultDbName = du.getDefaultDb();
-        // Promise<Void> routesPromise = Promise.promise();
         Promise<Router> routerPromise = Promise.promise();
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
@@ -222,7 +236,6 @@ public class DodexRoutes {
                 }
                 break;
             case "neo4j":
-                // Neo4jRouter neo4jRouter = CDI.current().select(Neo4jRouter.class).get();
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
                 dodexRouter.setUsingNeo4j(true);
             default:
@@ -238,7 +251,7 @@ public class DodexRoutes {
 
         int eventBridgePort = isProduction ? Integer.parseInt(config.getConfigValue("prod.bridge.port").getValue())
                 : Integer.parseInt(config.getConfigValue("dev.bridge.port").getValue());
-
+        
         bridge = TcpEventBusBridge.create(reactiveVertx,
                 new BridgeOptions().addInboundPermitted(new PermittedOptions().setAddress("vertx"))
                         .addOutboundPermitted(new PermittedOptions().setAddress("akka"))

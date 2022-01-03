@@ -1,6 +1,6 @@
 {
   "name": "dodex-quarkus",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "A java asynchronous server for Dodex using quarkus",
   "main": "index.js",
   "scripts": {
@@ -11,11 +11,28 @@
     "url": "git+https://github.com/DaveO-Home/dodex-quarkus.git"
   },
   "keywords": [
-    "Java",
+    "java",
     "reactivex",
     "vertx",
     "quarkus",
-    "mutiny"
+    "mutiny",
+    "kafka",
+    "sqlite2",
+    "postgresql",
+    "mariadb",
+    "cubrid",
+    "neo4j",
+    "db2",
+    "firebase",
+    "cassandra",
+    "h2",
+    "akka",
+    "javascrip",
+    "fuse-box",
+    "react",
+    "karma",
+    "jasmine",
+    "dodex"
   ],
   "author": "DaveO",
   "license": "MIT",

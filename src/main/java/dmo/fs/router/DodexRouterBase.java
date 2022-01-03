@@ -27,6 +27,7 @@ import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexDatabase;
 import dmo.fs.db.MessageUser;
+import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.runtime.configuration.ProfileManager;
@@ -49,6 +50,7 @@ public abstract class DodexRouterBase {
     protected final Promise<Pool> cleanupPromise = Promise.promise();
     protected Map<String, Session> sessions = new ConcurrentHashMap<>();
     protected String remoteAddress = null;
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     @Inject
     Vertx vertx;
@@ -107,6 +109,9 @@ public abstract class DodexRouterBase {
                                 logger.info(String.format("%sMessages Delivered: %d to %s%s",
                                         ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount, resultUser.getName(),
                                         ColorUtilConstants.RESET));
+                                if(ke != null) {
+                                    ke.setValue("delivered", messageCount);
+                                }
                             }
                         }).subscribeAsCompletionStage();
                     } catch (InterruptedException | SQLException e) {
@@ -146,7 +151,10 @@ public abstract class DodexRouterBase {
                     // broadcast
                     if ("".equals(selectedUsers) && "".equals(command)) {
                         s.getAsyncRemote().sendObject(messageUser.getName() + ": " + computedMessage);
-                        // private message
+                        if (ke != null) {
+                            ke.setValue(1);
+                        }
+                    // private message
                     } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                         boolean isMatched = false;
                         if (!isMatched) {
@@ -172,6 +180,11 @@ public abstract class DodexRouterBase {
                 session.getAsyncRemote().sendObject("Private user not selected");
             } else {
                 session.getAsyncRemote().sendObject("ok");
+                if(!onlineUsers.isEmpty()) {
+                    if(ke != null) {
+                        ke.setValue("private", onlineUsers.size());
+                    }
+                }
             }
         }
 
@@ -190,6 +203,9 @@ public abstract class DodexRouterBase {
                     }).subscribeAsCompletionStage().thenComposeAsync(id -> {
                         try {
                             dodexDatabase.addUndelivered(session, disconnectedUsers, id);
+                            if(ke != null) {
+                                ke.setValue("undelivered", disconnectedUsers.size());
+                            }
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }

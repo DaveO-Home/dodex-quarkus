@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.DodexNeo4j;
 import dmo.fs.db.MessageUser;
+import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
@@ -42,14 +43,16 @@ import io.vertx.mutiny.core.shareddata.SharedData;
 @ApplicationScoped
 public class Neo4jRouter {
     private static final Logger logger = LoggerFactory.getLogger(Neo4jRouter.class.getName());
-    Vertx vertx = Vertx.vertx();
+    private static Vertx vertx = Vertx.vertx();
     private Map<String, Session> clients = new ConcurrentHashMap<>();
     private DodexNeo4j dodexNeo4j;
     protected Promise<Driver> dbPromise;
     private static final String LOGFORMAT = "{}{}{}";
-    final SharedData sd = vertx.sharedData();
+    private static final SharedData sd = vertx.sharedData();
+    private static final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private String remoteAddress;
     private Driver driver = null;
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public Neo4jRouter(final Vertx vertx) {
         this.vertx = vertx;
@@ -95,7 +98,6 @@ public class Neo4jRouter {
         if (!"/dodex".equals(session.getRequestURI().getPath())) {
             session.close();
         } else {
-            final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
             final MessageUser messageUser = dodexNeo4j.createMessageUser();
             try {
                 wsChatSessions.put(session.getId(),
@@ -154,7 +156,10 @@ public class Neo4jRouter {
                                             if (selectedUsers.length() == 0 && command[0].length() == 0) {
                                                 webSocket.getAsyncRemote()
                                                         .sendText(messageUser.getName() + ": " + computedMessage[0]);
-                                                // private message
+                                                if (ke != null) {
+                                                    ke.setValue(1);
+                                                }
+                                            // private message
                                             } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                                                 boolean isMatched = false;
                                                 if (!isMatched) {
@@ -189,11 +194,19 @@ public class Neo4jRouter {
 
                                         dodexNeo4j.addMessage(session, messageUser, computedMessage[0],
                                                 disconnectedUsers);
+                                        if(ke != null) {
+                                            ke.setValue("undelivered", disconnectedUsers.size());
+                                        }
 
                                     } catch (ExecutionException | InterruptedException e) {
                                         e.printStackTrace();
                                         session.getAsyncRemote()
                                                 .sendText("Message delivery failure: " + e.getMessage());
+                                    }
+                                }
+                                if(!onlineUsers.isEmpty()) {
+                                    if(ke != null) {
+                                        ke.setValue("private", onlineUsers.size());
                                     }
                                 }
                             }
@@ -236,6 +249,9 @@ public class Neo4jRouter {
                                         logger.info(String.format("%sMessages Delivered: %d to %s%s",
                                                 ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount,
                                                 messageUser.getName(), ColorUtilConstants.RESET));
+                                        if(ke != null) {
+                                            ke.setValue("delivered", messageCount);
+                                        }
                                     }
                                     return null;
                                 }).subscribeAsCompletionStage();
@@ -278,5 +294,9 @@ public class Neo4jRouter {
 
     public void setRemoteAddress(String remoteAddress) {
         this.remoteAddress = remoteAddress;
+    }
+
+    public static void removeWsChatSession(Session session) {
+        wsChatSessions.remove(session.getId());
     }
 }

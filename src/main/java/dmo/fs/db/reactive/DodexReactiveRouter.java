@@ -18,26 +18,30 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.kafka.KafkaEmitterDodex;
+import dmo.fs.router.DodexRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Context;
+import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.shareddata.LocalMap;
 import io.vertx.reactivex.core.shareddata.SharedData;
 
 public class DodexReactiveRouter extends DbReactiveSqlBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
-    Vertx vertxReactive = Vertx.vertx();
+    private static Vertx vertxReactive = Vertx.vertx();
     private static DodexReactiveDatabase dodexDatabase = null;
     private static final String LOGFORMAT = "{}{}{}";
-    final SharedData sd = vertxReactive.sharedData();
-    final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
+    private static final SharedData sd = vertxReactive.sharedData();
+    private static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private String remoteAddress = null;
+    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
-    public void doConnection(Session session, String remoteAddress) throws UnsupportedEncodingException {
+    public void doConnection(Session session, String remoteAddress, Map<String, Session> sessions) throws UnsupportedEncodingException {
         this.remoteAddress = remoteAddress;
         String handle = "";
         String id = "";
@@ -55,7 +59,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         messageUser.setIp(remoteAddress == null ? "unknown" : remoteAddress);
 
         final Future<MessageUser> future = selectUser(messageUser, session);
-
+        final Promise<Integer> promise = Promise.promise();
         future.onSuccess(mUser -> {
             final Future<StringBuilder> userJson = buildUsersJson(mUser);
             userJson.onSuccess(json -> {
@@ -69,11 +73,13 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
                         logger.info(
                             String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
                                     messageCount, mUser.getName(), ColorUtilConstants.RESET));
-                    }
+                        if(ke != null) {
+                            ke.setValue("delivered", messageCount);
+                        }
+                    } 
                 });
             });
         });
-
     }
 
     public void doMessage(Session session, Map<String, Session> sessions, String message) {
@@ -118,11 +124,14 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
                         onlineUsers.add(handle);
                     }
                 });
-
+                
             if ("".equals(selectedUsers) && !"".equals(command)) {
                 session.getAsyncRemote().sendObject("Private user not selected");
             } else {
                 session.getAsyncRemote().sendObject("ok");
+                if (ke != null && "".equals(selectedUsers) && "".equals(command)) {
+                    ke.setValue(1);
+                }    
             }
         }
 
@@ -137,7 +146,15 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
                 future = addMessage(session, messageUser, computedMessage);
                 future.onSuccess(key -> {
                     addUndelivered(session, disconnectedUsers, key);
+                    if(ke != null) {
+                        ke.setValue("undelivered", disconnectedUsers.size());
+                    }
                 });
+            }
+            if(!onlineUsers.isEmpty()) {
+                if(ke != null) {
+                    ke.setValue("private", onlineUsers.size());
+                }
             }
         }
     }
@@ -195,5 +212,9 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
     @Override
     public MessageUser createMessageUser() {
         return new MessageUserImpl();
+    }
+
+    public static void removeWsChatSession(Session session) {
+        wsChatSessions.remove(session.getId());
     }
 }

@@ -24,39 +24,41 @@ ext {
 }
 
 dependencies {
-    implementation 'io.quarkus:quarkus-vertx-http'
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     
-    implementation 'io.quarkus:quarkus-websockets'
+    implementation "io.quarkus:quarkus-websockets"
     implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-resteasy-mutiny:${quarkusPlatformVersion}"
 
     implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
-    implementation 'io.quarkus:quarkus-reactive-mysql-client'
+    implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
-    implementation 'io.quarkus:quarkus-reactive-db2-client'
-    implementation 'io.quarkus:quarkus-neo4j'
-    // implementation "io.quarkus:quarkus-vertx-core:${quarkusPlatformVersion}"
-    // implementation "io.quarkus:quarkus-reactive-routes:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-reactive-db2-client"
+    implementation group: 'io.quarkiverse.neo4j', name: 'quarkus-neo4j', version: '1.0.2'
+    
     implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     
+    implementation "io.quarkus:quarkus-vertx-http"
     implementation "io.quarkus:quarkus-resteasy-jackson:${quarkusPlatformVersion}"
-    implementation 'io.quarkiverse.jooq:quarkus-jooq:0.2.2'
+    implementation "io.quarkus:quarkus-smallrye-reactive-messaging-kafka"
+    implementation group:"org.apache.kafka", name: "kafka-clients", version: "3.0.0"
+
+    implementation "io.quarkiverse.jooq:quarkus-jooq:0.2.2"
     implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
     implementation "io.vertx:vertx-rx-java2:$version"
-    implementation 'io.quarkus:quarkus-smallrye-health'
+    implementation "io.quarkus:quarkus-smallrye-health"
     implementation "io.vertx:vertx-tcp-eventbus-bridge:$version"
     implementation "com.google.firebase:firebase-admin:8.1.0"
     
     implementation group:"org.xerial", name:"sqlite-jdbc", version:"3.31.1"
-    implementation group: 'cubrid', name: 'cubrid-jdbc', version: '11.0.1.0286'
+    implementation group: "cubrid", name: "cubrid-jdbc", version: "11.0.5.0299"
 
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
-    testImplementation 'io.rest-assured:rest-assured'
+    testImplementation "io.rest-assured:rest-assured"
 
 }
 

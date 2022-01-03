@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.reactive.DodexReactiveDatabase;
 import dmo.fs.db.reactive.DodexReactiveRouter;
+import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.db.reactive.CubridReactiveRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
@@ -38,13 +39,15 @@ public class DodexRouter extends DodexRouterBase {
     private boolean isUsingFirebase = false;
     private boolean isUsingCubrid = false;
     private static boolean isUsingNeo4j = false;
+    private static final KafkaEmitterDodex ke = CDI.current().select(KafkaEmitterDodex.class).isUnsatisfied() ? null :
+            CDI.current().select(KafkaEmitterDodex.class).get();
 
     public DodexRouter() throws InterruptedException, IOException, SQLException {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
         System.setProperty("dmo.fs.level", "INFO");
         System.setProperty("org.jooq.no-logo", "true");
         String value = System.getenv("VERTXWEB_ENVIRONMENT");
-
+        
         Locale.setDefault(new Locale("US"));
         if (isProduction) {
             DodexUtil.setEnv("prod");
@@ -60,7 +63,10 @@ public class DodexRouter extends DodexRouterBase {
         DodexReactiveRouter[] dodexReactiveRouter = { null };
         CubridReactiveRouter[] cubridReactiveRouter = { null };
         String currentRemoteAddress = remoteAddress;
-
+        sessions.put(session.getId(), session);
+        if(ke != null) {
+            ke.setValue("sessions", sessions.size());
+        }
         if (isUsingCassandra()) {
             CassandraRouter cassandraRouter = CDI.current().select(CassandraRouter.class).get();
             cassandraRouter.setRemoteAddress(currentRemoteAddress);
@@ -117,7 +123,7 @@ public class DodexRouter extends DodexRouterBase {
                 setup();
             }
         }
-        sessions.put(session.getId(), session);
+        // sessions.put(session.getId(), session);
 
         session.addMessageHandler(new MessageHandler.Whole<String>() {
             @Override
@@ -147,7 +153,7 @@ public class DodexRouter extends DodexRouterBase {
                         if(isUsingCubrid()) {
                             cubridReactiveRouter[0].doConnection(session, currentRemoteAddress);
                         } else {
-                            dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                            dodexReactiveRouter[0].doConnection(session, currentRemoteAddress, sessions);
                         }
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
@@ -157,7 +163,7 @@ public class DodexRouter extends DodexRouterBase {
                 if(isUsingCubrid()) {
                     cubridReactiveRouter[0].doConnection(session, currentRemoteAddress);
                 } else {
-                    dodexReactiveRouter[0].doConnection(session, currentRemoteAddress);
+                    dodexReactiveRouter[0].doConnection(session, currentRemoteAddress, sessions);
                 }
             }
         } else if(isUsingNeo4j()) {
@@ -171,6 +177,20 @@ public class DodexRouter extends DodexRouterBase {
     @OnClose
     public void onClose(Session session) {
         sessions.remove(session.getId());
+        if (isUsingCassandra()) {
+            CassandraRouter.removeWsChatSession(session);
+        } else if (isUsingCubrid()) {
+            CubridReactiveRouter.removeWsChatSession(session);
+        } else if (isUsingNeo4j()) {
+            Neo4jRouter.removeWsChatSession(session);
+        } 
+        if (isReactive) {
+            DodexReactiveRouter.removeWsChatSession(session);
+        }
+
+        if(ke != null) {
+            ke.setValue("sessions", sessions.size());
+        }
         if (logger.isInfoEnabled()) {
             logger.info(String.format("%sClosing ws-connection to client: %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
                     session.getRequestParameterMap().get("handle").get(0), ColorUtilConstants.RESET));
@@ -182,6 +202,9 @@ public class DodexRouter extends DodexRouterBase {
     @OnError
     public void onError(Session session, Throwable throwable) {
         sessions.remove(session.getId());
+        if(ke != null) {
+            ke.setValue("sessions", sessions.size());
+        }
         throwable.printStackTrace();
         if (logger.isInfoEnabled()) {
             logger.info(String.format("%sWebsocket-failure...User %s%s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
@@ -222,6 +245,9 @@ public class DodexRouter extends DodexRouterBase {
         return isUsingNeo4j;
     }
 
+    public static KafkaEmitterDodex getKafkaEmitterDodex() {
+        return ke;
+    }
     @RouteFilter(500)
     void getRemoteAddress(RoutingContext rc) {
         if (rc != null) {
