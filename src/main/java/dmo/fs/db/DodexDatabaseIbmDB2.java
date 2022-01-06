@@ -57,7 +57,8 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
-
+	
+    @Override
 	public Promise<Pool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);

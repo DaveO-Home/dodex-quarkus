@@ -31,7 +31,7 @@ public abstract class DbConfiguration {
     protected static Boolean isUsingFirebase = false;
     protected static Boolean isUsingNeo4j = false;
     private static String defaultDb = "sqlite3";
-    private static boolean overrideDefaultDb = false;
+    private static boolean overrideDefaultDb;
     private static DodexUtil dodexUtil = new DodexUtil();
     private static DodexDatabase dodexDatabase;
     protected static DodexCassandra dodexCassandra;

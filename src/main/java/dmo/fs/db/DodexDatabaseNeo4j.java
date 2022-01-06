@@ -73,6 +73,7 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		return new MessageUserImpl();
 	}
 
+	@Override
 	public Promise<Driver> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			// dbMap.put("dbname", "myDbname"); // this wiil be merged into the default map
@@ -139,7 +140,7 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 					});
 				} else {
 					promise.complete(driver);
-				};
+				}
 			});
 
 		return promise;

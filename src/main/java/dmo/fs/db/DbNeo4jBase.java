@@ -25,12 +25,12 @@ import io.vertx.mutiny.core.Promise;
 
 public abstract class DbNeo4jBase {
 	private static final Logger logger = LoggerFactory.getLogger(DbNeo4jBase.class.getName());
-    private Driver driver = null;
+    private Driver driver;
 
 	public abstract MessageUser createMessageUser();
 
     public Timestamp addUser(MessageUser messageUser) {
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("name", messageUser.getName());
         params.put("password", messageUser.getPassword());
         params.put("ip", messageUser.getIp());
@@ -53,7 +53,7 @@ public abstract class DbNeo4jBase {
     }
 
 	public MessageUser updateUser(MessageUser messageUser) {
-        Map<String,Object> params = new HashMap<>();
+        Map<String,Object> params = new ConcurrentHashMap<>();
         params.put("name", messageUser.getName());
         params.put("password", messageUser.getPassword());
         params.put("zone", TimeZone.getDefault().getID());
@@ -111,7 +111,7 @@ public abstract class DbNeo4jBase {
 	}
 
     public void removeMessages(String user) {
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("user", user);
 
         Multi.createFrom().resource(driver::rxSession,
@@ -132,7 +132,7 @@ public abstract class DbNeo4jBase {
 	public Promise<MessageUser> deleteUser(javax.websocket.Session ws, MessageUser messageUser)
 			throws InterruptedException, ExecutionException {
         Promise<MessageUser> promise = Promise.promise();
-        Map<String,Object> params = new HashMap<>();
+        Map<String,Object> params = new ConcurrentHashMap<>();
         params.put("name", messageUser.getName());
         
         Multi.createFrom().resource(driver::rxSession,
@@ -154,7 +154,7 @@ public abstract class DbNeo4jBase {
     public Promise<MessageUser> addMessage(javax.websocket.Session ws, MessageUser messageUser, String message,
 			List<String> undelivered) throws InterruptedException, ExecutionException {
         Promise<MessageUser> promise = Promise.promise();
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("message", message);
         params.put("fromHandle", messageUser.getName());
         params.put("zone", TimeZone.getDefault().getID());
@@ -177,7 +177,7 @@ public abstract class DbNeo4jBase {
 	public Promise<MessageUser> selectUser(MessageUser messageUser, javax.websocket.Session ws)
 			throws InterruptedException, SQLException, ExecutionException {
 		Promise<MessageUser> promise = Promise.promise();
-        Map<String,Object> params = new HashMap<>();
+        Map<String,Object> params = new ConcurrentHashMap<>();
         params.put("name", messageUser.getName());
         params.put("password", messageUser.getPassword());
         Uni.createFrom().item(driver::rxSession).call(session -> {  
@@ -202,7 +202,7 @@ public abstract class DbNeo4jBase {
 			throws InterruptedException {
         Promise<StringBuilder> promise = Promise.promise();
         JsonArray ja = new JsonArray();
-        Map<String,Object> params = new HashMap<>();
+        Map<String,Object> params = new ConcurrentHashMap<>();
         params.put("name", messageUser.getName());
         
         Multi.createFrom().resource(driver::rxSession,

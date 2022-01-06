@@ -62,6 +62,7 @@ public class DodexDatabaseH2 extends DbH2 {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
+	@Override
 	public Promise<JDBCPool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);

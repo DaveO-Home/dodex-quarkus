@@ -65,6 +65,7 @@ public class SpaDatabaseH2 extends DbH2 {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
+	@Override
 	public Future<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);

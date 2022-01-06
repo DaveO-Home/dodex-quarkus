@@ -42,7 +42,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
     private static Integer age;
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private Promise<Pool> promise;
-    private SqlClient client = null;
+    private SqlClient client;
     
     public void startClean(JsonObject config) {
 

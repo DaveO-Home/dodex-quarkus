@@ -70,11 +70,12 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
-	// @Override
+	@Override
 	public SpaLogin createSpaLogin() {
 		return new SpaLoginImpl();
 	}
 
+	@Override
 	public Promise<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			// dbMap.put("dbname", "myDbname"); // this wiil be merged into the default map
@@ -141,7 +142,7 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 					});
 				} else {
 					promise.complete();
-				};
+				}
 			});
 		
 		return promise;

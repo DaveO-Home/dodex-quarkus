@@ -65,6 +65,7 @@ public class SpaDatabaseCubrid extends DbCubrid {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
+	@Override
 	public Future<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);

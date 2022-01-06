@@ -52,7 +52,6 @@ public class FirebaseRouter {
     private DodexFirebase dodexFirebase;
     private static final String DODEX_PROJECT_ID = "dodex-firebase";
     Firestore dbf;
-    private FirestoreOptions firestoreOptions;
     private static final String LOGFORMAT = "{}{}{}";
     private static final SharedData sd = vertx.sharedData();
     private static final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
@@ -60,7 +59,8 @@ public class FirebaseRouter {
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public FirebaseRouter(final Vertx vertx) {
-        this.vertx = vertx;
+        FirebaseRouter.vertx = vertx;
+        FirestoreOptions firestoreOptions;
         try {
             firestoreOptions = FirestoreOptions.getDefaultInstance().toBuilder().setProjectId(DODEX_PROJECT_ID)
                 .setCredentials(GoogleCredentials.getApplicationDefault())

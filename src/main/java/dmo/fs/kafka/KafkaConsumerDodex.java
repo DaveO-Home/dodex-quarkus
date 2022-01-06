@@ -3,7 +3,6 @@ package dmo.fs.kafka;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -13,6 +12,7 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -37,7 +37,6 @@ import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.router.DodexRouter;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.common.annotation.NonBlocking;
 import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
@@ -120,7 +119,7 @@ public class KafkaConsumerDodex {
 
         Long totalCount = 0l;
 
-        try (final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             List<TopicPartition> ll = new LinkedList<>();
             ll.add (new TopicPartition(topic, partition));
             consumer.assign(ll);
@@ -131,8 +130,8 @@ public class KafkaConsumerDodex {
             }
             final Map<TopicPartition, Long> endOffsets = consumer.endOffsets(assignment);
             final Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(assignment);
-            assert (endOffsets.size() == beginningOffsets.size());
-            assert (endOffsets.keySet().equals(beginningOffsets.keySet()));
+            assert endOffsets.size() == beginningOffsets.size();
+            assert endOffsets.keySet().equals(beginningOffsets.keySet());
 
             totalCount = beginningOffsets.entrySet().stream().mapToLong(entry -> {
                     TopicPartition tp = entry.getKey();
@@ -149,7 +148,7 @@ public class KafkaConsumerDodex {
             long toDelete = offset - totalCount/2;
             TopicPartition tp = new TopicPartition(topic, partition);
             RecordsToDelete rtd = RecordsToDelete.beforeOffset(toDelete);
-            Map<TopicPartition, RecordsToDelete> deleteRecords = new HashMap<>();
+            Map<TopicPartition, RecordsToDelete> deleteRecords = new ConcurrentHashMap<>();
             deleteRecords.put(tp, rtd);
             Properties config = new Properties();
             config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -159,6 +158,7 @@ public class KafkaConsumerDodex {
                 DeleteRecordsResult dr = ac.deleteRecords(deleteRecords);
                 dr.all().get(1l, TimeUnit.SECONDS);
                 logger.info("Approximate records deleted: {}", totalCount/2);
+                ac.close();
             } catch (InterruptedException | TimeoutException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {

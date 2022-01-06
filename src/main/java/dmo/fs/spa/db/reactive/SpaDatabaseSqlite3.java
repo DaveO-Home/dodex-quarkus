@@ -65,6 +65,7 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
+	@Override
 	public Future<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			// dbMap.put("dbname", "myDbname"); // this wiil be merged into the default map

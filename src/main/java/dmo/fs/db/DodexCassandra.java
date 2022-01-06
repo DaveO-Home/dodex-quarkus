@@ -33,5 +33,5 @@ public interface DodexCassandra {
 
 	Vertx getVertx();
 
-	public Handler<BridgeEvent> getEbConsumer();
+	Handler<BridgeEvent> getEbConsumer();
 }

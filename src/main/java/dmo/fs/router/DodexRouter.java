@@ -35,10 +35,10 @@ import io.vertx.ext.web.RoutingContext;
 @ApplicationScoped
 public class DodexRouter extends DodexRouterBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexRouter.class.getName());
-    private boolean isUsingCassandra = false;
-    private boolean isUsingFirebase = false;
-    private boolean isUsingCubrid = false;
-    private static boolean isUsingNeo4j = false;
+    private boolean isUsingCassandra;
+    private boolean isUsingFirebase;
+    private boolean isUsingCubrid;
+    private static boolean isUsingNeo4j;
     private static final KafkaEmitterDodex ke = CDI.current().select(KafkaEmitterDodex.class).isUnsatisfied() ? null :
             CDI.current().select(KafkaEmitterDodex.class).get();
 

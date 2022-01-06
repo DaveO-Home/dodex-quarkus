@@ -33,11 +33,11 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 public class CubridReactiveRouter extends DbCubridOverride {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
     private static Vertx vertxReactive = Vertx.vertx();
-    private static DodexReactiveDatabase dodexDatabase = null;
+    private static DodexReactiveDatabase dodexDatabase;
     private static final String LOGFORMAT = "{}{}{}";
     private static SharedData sd = vertxReactive.sharedData();
     private static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
-    private String remoteAddress = null;
+    private String remoteAddress;
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public void doConnection(Session session, String remoteAddress) throws UnsupportedEncodingException {

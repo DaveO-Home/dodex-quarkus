@@ -32,7 +32,7 @@ public class SpaRoutes {
     private static final String FAILURE = "{\"status\":\"-99\"}";
     protected Vertx vertx;
     protected Router router;
-    protected SessionStore sessionStore = null;
+    protected SessionStore sessionStore;
     protected static final SpaDatabaseReactive spaDatabaseReactive = SpaDbConfiguration.getSpaDb();
 
     public SpaRoutes(Vertx vertx, Router router, Promise<Router> routesPromise) throws InterruptedException, SQLException {

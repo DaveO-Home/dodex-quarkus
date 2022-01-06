@@ -51,11 +51,11 @@ public class Neo4jRouter {
     private static final SharedData sd = vertx.sharedData();
     private static final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private String remoteAddress;
-    private Driver driver = null;
+    private Driver driver;
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public Neo4jRouter(final Vertx vertx) {
-        this.vertx = vertx;
+        Neo4jRouter.vertx = vertx;
     }
 
     void onStart(@Observes StartupEvent event) throws InterruptedException, IOException, SQLException {

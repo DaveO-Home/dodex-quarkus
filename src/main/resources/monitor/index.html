@@ -130,7 +130,7 @@
     let init = 0;
 
     function fetchData() {
-      fetch("http://localhost:8089/events/list/" + init, {
+      fetch("http://" + server + "/events/list/" + init, {
         method: 'get'
       })
         .catch(err => {

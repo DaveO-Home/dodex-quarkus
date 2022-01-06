@@ -41,15 +41,15 @@ import io.vertx.reactivex.jdbcclient.JDBCPool;
 public abstract class DodexRouterBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexRouterBase.class.getName());
     protected final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
-    protected boolean isReactive = false;
-    protected boolean isSetupDone = false;
-    protected boolean isInitialized = false;
+    protected boolean isReactive;
+    protected boolean isSetupDone;
+    protected boolean isInitialized;
     protected DodexDatabase dodexDatabase;
     protected Promise<Pool> dbPromise;
     protected io.vertx.core.Promise<JDBCPool> dbPromiseReactive;
     protected final Promise<Pool> cleanupPromise = Promise.promise();
     protected Map<String, Session> sessions = new ConcurrentHashMap<>();
-    protected String remoteAddress = null;
+    protected String remoteAddress;
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     @Inject
@@ -279,7 +279,7 @@ public abstract class DodexRouterBase {
         String defaultDb = new DodexUtil().getDefaultDb();
         String startupMessage = "In Production with database: " + defaultDb;
 
-        startupMessage = DodexUtil.getEnv().equals("dev") ? "In Development with database: " + defaultDb
+        startupMessage = "dev".equals(DodexUtil.getEnv()) ? "In Development with database: " + defaultDb
                 : startupMessage;
         logger.info(String.format("%sStarting Web Socket...%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage,
                 ColorUtilConstants.RESET));

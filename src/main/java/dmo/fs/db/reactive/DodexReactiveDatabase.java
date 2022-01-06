@@ -52,7 +52,9 @@ public interface DodexReactiveDatabase {
 
 	Future<StringBuilder> buildUsersJson(MessageUser messageUser) throws InterruptedException, SQLException;
 
-	static void setVertx(Vertx vertx) {}
+	static void setVertx(Vertx vertx) {
+		//
+	}
 
 	static Vertx getVertx() { return null; }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [v2.5.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.1) (2022-01-06)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.0...v2.5.1)
+
+* Fixed moniter to run in production
+* Some code cleanup based on PMD linting
+* Changed dodexvm11 to generate graalvm executable
+* Working on Quarkus method for graalvm - build issues...unsupported features
+
 ## [v2.5.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.0) (2022-01-04)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.4.0...v2.5.0)

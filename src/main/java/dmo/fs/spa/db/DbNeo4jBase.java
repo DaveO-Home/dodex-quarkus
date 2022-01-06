@@ -2,9 +2,9 @@
 package dmo.fs.spa.db;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.neo4j.driver.Driver;
@@ -19,13 +19,13 @@ import io.vertx.mutiny.core.Promise;
 
 public abstract class DbNeo4jBase {
     private static final Logger logger = LoggerFactory.getLogger(DbNeo4jBase.class.getName());
-    private Driver driver = null;
+    private Driver driver;
 
     public Promise<SpaLogin> getLogin(SpaLogin spaLogin) throws InterruptedException, ExecutionException {
         Promise<SpaLogin> promise = Promise.promise();
         spaLogin.setStatus("0");
 
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("name", spaLogin.getName());
         params.put("password", spaLogin.getPassword());
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
@@ -57,7 +57,7 @@ public abstract class DbNeo4jBase {
 
     public Promise<SpaLogin> addLogin(SpaLogin spaLogin) throws InterruptedException, ExecutionException {
         Promise<SpaLogin> promise = Promise.promise();
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
 
         params.put("name", spaLogin.getName());
         params.put("password", spaLogin.getPassword());
@@ -89,7 +89,7 @@ public abstract class DbNeo4jBase {
 
     private SpaLogin updateLogin(SpaLogin spaLogin) // DocumentReference docRef)
             throws InterruptedException, ExecutionException {
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("name", spaLogin.getName());
         params.put("password", spaLogin.getPassword());
         params.put("zone", TimeZone.getDefault().getID());
@@ -120,7 +120,7 @@ public abstract class DbNeo4jBase {
         }
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
         spaLogin.setStatus("1");
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("name", spaLogin.getName());
 
         Multi.createFrom().resource(driver::rxSession,

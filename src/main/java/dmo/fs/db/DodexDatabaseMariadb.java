@@ -63,6 +63,7 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		dbProperties.setProperty("foreign_keys", "true");
 	}
 
+	@Override
 	public Promise<Pool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);

@@ -32,11 +32,10 @@ __Note:__ The static directory was changed from `src/main/resources/static` to `
 1. Building the Production Uber jar
     1. Before running the Uber jar for production, do: (graalvm requires the Uber jar)
         * Make sure that the spa react javascript is installed. Execute `npm install` in the `src/spa-react` directory.
-        * cd to src/spa-react/devl & execute gulp prod or gulp prd (bypasses tests)
-        * ~~rm src/main/resources/META-INF/resources/node_modules (makes a smaller uber jar)~~
+        * cd to src/spa-react/devl & execute `gulp prod` or `gulp prd` (bypasses tests) or `npx gulp prod`
+        * `npm install` must also populate the `node_modules` directory in `src/main/resources/META-INF/resources`
+        * (optional) rm src/spa-react/node_modules (makes a smaller uber jar)
     1. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar.
-
-    ~~__Note__; The `node_modules` directory can be re-added by executing `npm install` in `src/main/resources/META-INF/resources`.~~ However, the node_modules directory can be removed when running `graalvm`.
 
 1. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
 1. Execute url `http://localhost:8088/ddex` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.
@@ -86,9 +85,10 @@ The quarkus documentation can be found at: <https://quarkus.io/guides/building-n
 
 A quick start (Assuming graalvm 21+ is installed and configured with `native-image`): 
 
-__The Quarkus Method:__ `gradlew quarkusBuild -Dquarkus.package.type=native -Dquarkus.native.additional-build-args=--initialize-at-run-time=dmo.fs.spa.router.SpaRoutes` __Note;__ This will build an executable in the `build` directory named `dodex-quarkus-2.1.0-runner`. Currently there is a problem with loading the `database_config.json` file. 
+__The Quarkus Method:__ Execute `gradlew build -Dquarkus.package.type=native`. The additional arguments are in `application.properties` (quarkus.native.additional-build-args). The build fails with numerious errors.
 
-__The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will build an executable named `dmo.fs.quarkus.Server`. This executable should work.
+
+__The Old Fashion Method:__ Execute the supplied script - `dodexvm11`. This will build an executable named `dmo.fs.quarkus.Server`. This script should work, however it uses the fallback javaVM.
 
 ## Docker, Podman and Minikube(Kubernetes)
 
@@ -193,18 +193,18 @@ Simply execute `export DEFAULT_DB=neo4j` to use, after database setup.
 
 * Setup Quarkus for Kafka
     *  __set environment variable `DODEX_KAFKA=true`__
-    * Modify Quarkus applicatin.properties file
+    * Modify Quarkus application.properties file
         *  __uncomment the `mp.messaging` entries__
         *  modify the server entries if necessary
     *  startup Quarkus - the monitor should work with any of the databases
     *  the monitor configuation can be found in `application-conf.json`
 
 * Monitor Dodex
-    * in a browser enter `localhost:8089/monitor`
+    * in a browser enter `localhost:8089/monitor` or `localhost:8088/monitor` in production.
     * as dodex messaging executes the events should be recorded.
     * in the browser's `developer tools` console execute `stop();` and `start();` to stop/start the polling. Polling is started by default.
     
-    __Note;__ you and open the messaging dialog with `ctrl-doubleclick` on the dials
+    __Note;__ you can open the messaging dialog with `ctrl-doubleclick` on the dials
 
 ## ChangeLog
 

@@ -81,7 +81,7 @@ public class CassandraRouter {
          * Defaults: off - when turned on 1. execute on start up and every 7 days
          * thereafter. 2. remove users who have not logged in for 90 days.
          */
-        final Optional<Context> context = Optional.ofNullable(io.vertx.reactivex.core.Vertx.currentContext());
+        final Optional<Context> context = Optional.ofNullable(Vertx.currentContext());
         if (context.isPresent()) {
             final Optional<JsonObject> jsonObject = Optional.ofNullable(Vertx.currentContext().config());
             try {
@@ -143,7 +143,7 @@ public class CassandraRouter {
                     promise.complete(null);
                     Future<JsonObject> completed = null;
 
-                    if (command[0].length() > 0 && command[0].equals(";removeuser")) {
+                    if (command[0].length() > 0 && ";removeuser".equals(command[0])) {
                         try {
                             completed = dodexCassandra.deleteUser(session, eb, messageUser);
                         } catch (InterruptedException | SQLException e) {

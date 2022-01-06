@@ -12,6 +12,7 @@ public class DodexEventData {
     
 
     public DodexEventData() {
+        //
     }
 
     public DodexEventData(String key, String topic, Integer payload, Timestamp timestamp, Integer partition,

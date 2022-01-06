@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -26,11 +27,12 @@ import io.vertx.core.json.JsonObject;
 
 @IfBuildProperty(name = "DODEX_KAFKA", stringValue = "true")
 @Unremovable
+@Priority(10)
 @ApplicationScoped
 public class KafkaEmitterDodex {
     private static final Logger logger = LoggerFactory.getLogger(KafkaEmitterDodex.class.getName());
     private static final String channel = "dodex-events-out";
-    private static int toggle = 0;
+    private static int toggle;
     private Integer dodexEventsPartitions = 2;
     private String dodexEventsTopic = "dodex-events";
     private static Boolean removeMessages = false;

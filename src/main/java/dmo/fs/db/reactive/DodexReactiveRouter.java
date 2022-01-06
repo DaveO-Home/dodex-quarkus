@@ -34,11 +34,11 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 public class DodexReactiveRouter extends DbReactiveSqlBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
     private static Vertx vertxReactive = Vertx.vertx();
-    private static DodexReactiveDatabase dodexDatabase = null;
+    private static DodexReactiveDatabase dodexDatabase;
     private static final String LOGFORMAT = "{}{}{}";
     private static final SharedData sd = vertxReactive.sharedData();
     private static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
-    private String remoteAddress = null;
+    private String remoteAddress;
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     public void doConnection(Session session, String remoteAddress, Map<String, Session> sessions) throws UnsupportedEncodingException {
@@ -59,7 +59,6 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         messageUser.setIp(remoteAddress == null ? "unknown" : remoteAddress);
 
         final Future<MessageUser> future = selectUser(messageUser, session);
-        final Promise<Integer> promise = Promise.promise();
         future.onSuccess(mUser -> {
             final Future<StringBuilder> userJson = buildUsersJson(mUser);
             userJson.onSuccess(json -> {

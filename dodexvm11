@@ -2,11 +2,17 @@
 #####
 # Before running the Uber jar for production, do: (graalvm requires the Uber jar)
 # cd to src/spa-react & execute npm install at least once
-# cd to src/spa-react/devl & execute gulp prod or gulp prd (bypasses tests)
-# rm src/main/resources/static/node_modules (makes a smaller uber jar)
+# cd to src/spa-react/devl & execute gulp prod or gulp prd (bypasses tests) - you can also use npx gulp prod
+# rm src/spa-react/node_modules (makes a smaller uber jar)
 # Run "gradlew quarkusBuild -Dquarkus.package.type=uber-jar" 
 # execute this script -- assumes you have graalvm 21+ installed with the native-image
 #####
 ###### Modify to reflect your graalvm install location
-~/installs/graalvm-ce-java11-21.1.0/bin/native-image dmo.fs.quarkus.Server -jar ./build/dodex-quarkus-2.1.0-runner.jar  -cp ./build/classes/java/main --initialize-at-run-time=dmo.fs.spa.router.SpaRoutes -H:+ReportExceptionStackTraces --initialize-at-build-time=org.slf4j,org.apache.commons.logging,org.wildfly.common,org.jboss.logmanager,io.quarkus.bootstrap.logging,org.jboss.logging
+if [ -z "$GRAALVM_HOME" ]; then
+   echo "Please set GRAALVM_HOME";
+   exit;
+fi 
+$GRAALVM_HOME/bin/native-image dmo.fs.quarkus.Server -jar ./build/dodex-quarkus-2.1.0-runner.jar  -cp ./build/classes/java/main --initialize-at-run-time=dmo.fs.spa.router.SpaRoutes -H:+ReportExceptionStackTraces --initialize-at-build-time=org.slf4j,org.apache.commons.logging,org.wildfly.common,org.jboss.logmanager,io.quarkus.bootstrap.logging,org.jboss.logging,com.github.luben.zstd.Zstd --initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.logging.Log4JLogger  --allow-incomplete-classpath
+# --no-fallback
+# --report-unsupported-elements-at-runtime 
 

@@ -58,6 +58,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
 
+	@Override
 	public Promise<Pool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
 			// dbMap.put("dbname", "myDbname"); // this wiil be merged into the default map
