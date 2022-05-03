@@ -12,7 +12,8 @@ if [ -z "$GRAALVM_HOME" ]; then
    echo "Please set GRAALVM_HOME";
    exit;
 fi 
-$GRAALVM_HOME/bin/native-image dmo.fs.quarkus.Server -jar ./build/dodex-quarkus-2.1.0-runner.jar  -cp ./build/classes/java/main --initialize-at-run-time=dmo.fs.spa.router.SpaRoutes -H:+ReportExceptionStackTraces --initialize-at-build-time=org.slf4j,org.apache.commons.logging,org.wildfly.common,org.jboss.logmanager,io.quarkus.bootstrap.logging,org.jboss.logging,com.github.luben.zstd.Zstd --initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.logging.Log4JLogger  --allow-incomplete-classpath
+
+$GRAALVM_HOME/bin/native-image dmo.fs.quarkus.Server -jar ./build/dodex-quarkus-2.8.0-runner.jar  -cp ./build/classes/java/main --initialize-at-run-time=dmo.fs.spa.router.SpaRoutes -H:+ReportExceptionStackTraces --initialize-at-build-time=org.slf4j,org.apache.commons.logging,org.wildfly.common,org.jboss.logmanager,io.quarkus.bootstrap.logging,org.jboss.logging,com.github.luben.zstd.Zstd --initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.logging.Log4JLogger  --allow-incomplete-classpath
 # --no-fallback
 # --report-unsupported-elements-at-runtime 
 

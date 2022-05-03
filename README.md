@@ -38,7 +38,7 @@ __Note:__ The static directory was changed from `src/main/resources/static` to `
     1. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar.
 
 1. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
-1. Execute url `http://localhost:8088/ddex` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.
+1. Execute url `http://localhost:8088/ddex/index.html` or `.../ddex/bootstrap.html` in a browser. __Note;__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` for configuration.
 1. Swapping among databases; Use environment variable __`DEFAULT_DB`__ by setting it to either `sqlite3` ,`postgres`, `cubrid`, `mariadb`, `ibmdb2`, `h2`, `cassandra`, `firebase` or set the default database in `database_config.json`.
 1. When Dodex-quarkus is configured for the Cubrid database, the database must be created using UTF-8. For example `cubrid createdb dodex en_US.utf8`.
 1. The dodex server has an auto user clean up process. See `application-conf.json` and `DodexRouter.java` for configuration. It is turned off by default. Users and messages may be orphaned when clients change a handle when the server is offline.

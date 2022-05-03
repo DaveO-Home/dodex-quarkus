@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.5.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.2) (2022-05-02)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.1...v2.5.1)
+
+* Upgraded quarkus dependencies - quarkus -> 2.8.2 gradle -> 7.3.3
+* Upgraded spa web app dependencies
+* Upgraded dodex dependencies
+
 ## [v2.5.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.1) (2022-01-06)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.0...v2.5.1)
