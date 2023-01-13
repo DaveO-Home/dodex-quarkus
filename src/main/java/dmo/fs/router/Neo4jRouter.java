@@ -43,8 +43,8 @@ import io.vertx.mutiny.core.shareddata.SharedData;
 @ApplicationScoped
 public class Neo4jRouter {
     private static final Logger logger = LoggerFactory.getLogger(Neo4jRouter.class.getName());
-    private static Vertx vertx = Vertx.vertx();
-    private Map<String, Session> clients = new ConcurrentHashMap<>();
+    private static Vertx vertx = DodexUtil.getVertx();
+    private final Map<String, Session> clients = new ConcurrentHashMap<>();
     private DodexNeo4j dodexNeo4j;
     protected Promise<Driver> dbPromise;
     private static final String LOGFORMAT = "{}{}{}";
@@ -65,7 +65,7 @@ public class Neo4jRouter {
     }
 
     public void setWebSocket(final HttpServer server) throws InterruptedException, IOException, SQLException {
-        /**
+        /*
          * You can customize the db config here by: Map = db configuration, Properties =
          * credentials e.g. Map overrideMap = new Map(); Properties overrideProperties =
          * new Properties(); set override or additional values... dodexDatabase =
@@ -77,7 +77,7 @@ public class Neo4jRouter {
             setDriver(driver);
             dodexNeo4j.setDriver(getDriver());
             return Uni.createFrom().item(driver);
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         String startupMessage = "In Production";
 
@@ -211,7 +211,7 @@ public class Neo4jRouter {
                                 }
                             }
                             return null;
-                        }).subscribeAsCompletionStage();
+                        }).subscribeAsCompletionStage().isDone();
                     }
                 }
             });
@@ -254,17 +254,17 @@ public class Neo4jRouter {
                                         }
                                     }
                                     return null;
-                                }).subscribeAsCompletionStage();
+                                }).subscribeAsCompletionStage().isDone();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             return null;
-                        }).subscribeAsCompletionStage();
+                        }).subscribeAsCompletionStage().isDone();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                     return null;
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
 
             } catch (InterruptedException | ExecutionException | SQLException e) {
                 e.printStackTrace();
@@ -278,7 +278,7 @@ public class Neo4jRouter {
     }
 
     public void setVertx(Vertx vertx) {
-        this.vertx = vertx;
+        Neo4jRouter.vertx = vertx;
     }
     public Driver getDriver() {
         return driver;

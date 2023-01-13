@@ -11,6 +11,8 @@ import javax.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -34,7 +36,7 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseNeo4j(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -42,9 +44,6 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -62,8 +61,6 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
@@ -182,9 +179,8 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		String uri = String.join(":", dbMap.get("protocol"),
 				String.format("//%s", dbMap.get("host")),
 				dbMap.get("port"));
-		Driver neo4jDriver = GraphDatabase.driver(uri,
-				AuthTokens.basic(dbProperties.getProperty("user"), dbProperties.getProperty("password")));
 
-		return neo4jDriver;
+		return GraphDatabase.driver(uri,
+				AuthTokens.basic(dbProperties.getProperty("user"), dbProperties.getProperty("password")));
 	}
 }

@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +29,11 @@ import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseMariadb extends DbMariadb {
 	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseMariadb.class.getName());
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties; // = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap; // = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -50,6 +51,7 @@ public class SpaDatabaseMariadb extends DbMariadb {
 			this.dbOverrideMap = dbOverrideMap;
 		}
 
+		assert dbOverrideMap != null;
 		SpaDbConfiguration.mapMerge(dbMap, dbOverrideMap);
 		// databaseSetup();
 	}
@@ -92,20 +94,20 @@ public class SpaDatabaseMariadb extends DbMariadb {
 					}).onItem().invoke(c -> {
 						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Check Login Table Error: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			setupSql(pool);
-			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 			setupPromise.complete();
 			return Uni.createFrom().item(pool);
-		}).subscribeAsCompletionStage();
+		}).subscribeAsCompletionStage().isDone();
 
 		return setupPromise.future();
 	}
@@ -123,9 +125,9 @@ public class SpaDatabaseMariadb extends DbMariadb {
 		connectOptions = new MySQLConnectOptions().setHost(dbMap.get("host"))
 				.setPort(Integer.parseInt(dbMap.get("port"))).setUser(dbProperties.getProperty("user"))
 				.setPassword(dbProperties.getProperty("password")).setDatabase(dbMap.get("dbname"))
-				.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl"))).setIdleTimeout(1);
+				.setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl"))).setIdleTimeout(1);
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = DodexUtil.getVertx();
 		return MySQLPool.pool(vertx, connectOptions, poolOptions);
 	}
 }

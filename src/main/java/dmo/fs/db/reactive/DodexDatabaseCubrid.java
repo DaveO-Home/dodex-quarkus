@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 	protected JDBCPool pool;
 
@@ -145,15 +147,17 @@ public class DodexDatabaseCubrid extends DbCubrid {
 									});
 
 							crow.subscribe(result2 -> {
-								//
+								conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 							}, err -> {
 								logger.info(String.format("Messages Table Error: %s", err.getMessage()));
 							});
+						} else {
+							conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 						}
 					}).doOnError(err -> {
 						logger.info(String.format("Messages Table Error: %s", err.getMessage()));
 					}))
-                .flatMapCompletable(res -> tx.rxCommit())
+                .flatMapCompletable(res -> Completable.complete())
 		));
 		
 		completable.subscribe(() -> {
@@ -198,7 +202,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
 			// .setCachePreparedStatements(true)
             ;
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = Server.vertx;
 		
 		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
 	}

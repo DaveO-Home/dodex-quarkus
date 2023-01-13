@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.SessionScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
@@ -43,7 +43,7 @@ import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 
 @IfBuildProperty(name = "DODEX_KAFKA", stringValue = "true")
 @Path("/events/{command}/{init}")
-@RequestScoped
+@SessionScoped
 public class KafkaConsumerDodex {
     private static final Logger logger = LoggerFactory.getLogger(KafkaConsumerDodex.class.getName());
     private static final Queue<DodexEventData> eventQueue = new LinkedList<>();
@@ -61,8 +61,9 @@ public class KafkaConsumerDodex {
 
         while(data.hasNext()) {
             Object next = data.next();
+
             if(next instanceof IncomingKafkaRecordMetadata) {
-                ConsumerRecord<String, String> record = (ConsumerRecord<String, String>)((IncomingKafkaRecordMetadata<String, String>) next).getRecord();
+                ConsumerRecord<String, String> record = ((IncomingKafkaRecordMetadata<String, String>) next).getRecord();
                 String key = record.key(); 
                 String topic = record.topic();
                 Timestamp timestamp = new Timestamp(record.timestamp());
@@ -93,16 +94,16 @@ public class KafkaConsumerDodex {
     }
 
     @GET
-    public Set<DodexEventData> list(@PathParam String command, @PathParam Integer init) {
+    public Set<DodexEventData> list(@PathParam String command, @PathParam int init) {
         // let a new monitor start with fresh cache
-        if(init == 0) {
+        if(init == 0 && dodexEventData.size() > dodexEventsLimit/2) {
             dodexEventData.clear();
         }
         return dodexEventData;
     }
 
     /*
-        Removing messges was just an exercise in leaning Kafka - This will delete half of the messages
+        Removing messges was just an exercise in learning Kafka - This will delete half of the messages
         if a certain limit is reached (assuming the offset increments by one).
         The proper way to do this is with 'log.retention.bytes' and 'log.retention.(hours/minutes/ms)'
         in the server.properties. And, if needed, 'kafka-configs.sh --alter' at runtime.
@@ -117,7 +118,7 @@ public class KafkaConsumerDodex {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "dodex");
 
-        Long totalCount = 0l;
+        long totalCount;
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             List<TopicPartition> ll = new LinkedList<>();
@@ -156,7 +157,7 @@ public class KafkaConsumerDodex {
             try {
                 AdminClient ac = AdminClient.create(config);
                 DeleteRecordsResult dr = ac.deleteRecords(deleteRecords);
-                dr.all().get(1l, TimeUnit.SECONDS);
+                dr.all().get(1L, TimeUnit.SECONDS);
                 logger.info("Approximate records deleted: {}", totalCount/2);
                 ac.close();
             } catch (InterruptedException | TimeoutException e) {

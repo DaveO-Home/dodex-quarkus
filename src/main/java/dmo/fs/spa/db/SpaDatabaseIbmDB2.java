@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -93,19 +94,19 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 					}).onItem().invoke(c -> {
 						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			setupSql(pool);
-			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 			setupPromise.complete();
 			return Uni.createFrom().item(pool);
-		}).subscribeAsCompletionStage();
+		}).subscribeAsCompletionStage().isDone();
 
 		return setupPromise.future();
 	}
@@ -122,11 +123,11 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		DB2ConnectOptions connectOptions;
 		connectOptions = new DB2ConnectOptions().setHost(dbMap.get("host")).setPort(Integer.parseInt(dbMap.get("port")))
 				.setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
-				.setDatabase(dbMap.get("dbname")).setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
+				.setDatabase(dbMap.get("dbname")).setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl")))
 		// .setIdleTimeout(1)
 		;
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = DodexUtil.getVertx();
 		return DB2Pool.pool(vertx, connectOptions, poolOptions);
 	}
 }

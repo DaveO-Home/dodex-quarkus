@@ -94,12 +94,12 @@ public abstract class DodexRouterBase {
                 promise.future().subscribeAsCompletionStage().thenComposeAsync(resultUser -> {
                     try {
                         Promise<StringBuilder> userJson = dodexDatabase.buildUsersJson(resultUser);
-                        /**
+                        /*
                          * Send list of registered users with connected notification
                          */
                         userJson.future().invoke(json -> {
                             session.getAsyncRemote().sendObject("connected:" + json); // Users for private messages
-                        }).subscribeAsCompletionStage();
+                        }).subscribeAsCompletionStage().isDone();
                         /*
                          * Send undelivered messages and remove user related messages.
                          */
@@ -113,7 +113,7 @@ public abstract class DodexRouterBase {
                                     ke.setValue("delivered", messageCount);
                                 }
                             }
-                        }).subscribeAsCompletionStage();
+                        }).subscribeAsCompletionStage().isDone();
                     } catch (InterruptedException | SQLException e) {
                         e.printStackTrace();
                     }
@@ -136,7 +136,7 @@ public abstract class DodexRouterBase {
         final String computedMessage = returnObject.get("message");
         final String command = returnObject.get("command");
 
-        if (!"".equals(command) && ";removeuser".equals(command)) {
+        if (";removeuser".equals(command)) {
             try {
                 dodexDatabase.deleteUser(session, messageUser);
             } catch (InterruptedException | SQLException e) {
@@ -157,15 +157,13 @@ public abstract class DodexRouterBase {
                     // private message
                     } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                         boolean isMatched = false;
-                        if (!isMatched) {
-                            isMatched = h.contains(handle);
-                        }
+                        isMatched = h.contains(handle);
                         return isMatched;
                     })) {
                         s.getAsyncRemote().sendObject(messageUser.getName() + ": " + computedMessage, result -> {
                             if (result.getException() != null && logger.isInfoEnabled()) {
                                 logger.info(
-                                        String.format("%Websocket-connection...Unable to send message: %s%s%s%s",
+                                        String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
                                                 ColorUtilConstants.BLUE_BOLD_BRIGHT,
                                                 s.getRequestParameterMap().get("handle").get(0), ": ",
                                                 result.getException(), ColorUtilConstants.RESET));
@@ -195,12 +193,11 @@ public abstract class DodexRouterBase {
                     .collect(Collectors.toList());
             // Save private message to send when to-user logs in
             if (!disconnectedUsers.isEmpty()) {
-                Promise<Long> futureId = null;
+                Promise<Long> futureId;
                 try {
                     futureId = dodexDatabase.addMessage(session, messageUser, computedMessage);
-                    futureId.future().onFailure().invoke(err -> {
-                        err.printStackTrace();
-                    }).subscribeAsCompletionStage().thenComposeAsync(id -> {
+                    futureId.future().onFailure().invoke(Throwable::printStackTrace)
+                            .subscribeAsCompletionStage().thenComposeAsync(id -> {
                         try {
                             dodexDatabase.addUndelivered(session, disconnectedUsers, id);
                             if(ke != null) {
@@ -239,7 +236,7 @@ public abstract class DodexRouterBase {
         dodexDatabase = DbConfiguration.getDefaultDb();
         dbPromise = dodexDatabase.databaseSetup();
 
-        /**
+        /*
          * Optional auto user cleanup - config in "application-conf.json". When client
          * changes handle when server is down, old users and undelivered messages will
          * be orphaned.
@@ -252,7 +249,7 @@ public abstract class DodexRouterBase {
         if (context.isPresent()) {
             final Optional<JsonObject> jsonObject = Optional.ofNullable(vertx.getOrCreateContext().config());
             try {
-                JsonObject config = jsonObject.isPresent() ? jsonObject.get() : new JsonObject();
+                JsonObject config = jsonObject.orElseGet(JsonObject::new);
                 if (config.isEmpty()) {
                     ObjectMapper jsonMapper = new ObjectMapper();
                     JsonNode node;

@@ -1,21 +1,12 @@
 package dmo.fs.spa.db.reactive;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.db.DbConfiguration;
+import dmo.fs.quarkus.Server;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.Completable;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -26,14 +17,22 @@ import io.vertx.reactivex.sqlclient.Row;
 import io.vertx.reactivex.sqlclient.RowIterator;
 import io.vertx.reactivex.sqlclient.RowSet;
 import io.vertx.sqlclient.PoolOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SpaDatabaseSqlite3 extends DbSqlite3 {
 	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseSqlite3.class.getName());
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 	protected JDBCPool pool;
 
@@ -41,9 +40,6 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -54,13 +50,13 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 			this.dbOverrideMap = dbOverrideMap;
 		}
 
+		assert dbOverrideMap != null;
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
 	}
 
 	public SpaDatabaseSqlite3() throws InterruptedException, IOException, SQLException {
 		super();
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
@@ -76,45 +72,46 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 
 		Promise<Void> setupPromise = Promise.promise();
 		pool = getPool(dbMap, dbProperties);
+		pool.rxGetConnection().doOnSuccess(conn -> conn.rxBegin()
+			.doOnSuccess(tx -> conn.query(CHECKLOGINSQL).rxExecute().doOnSuccess(row -> {
+				RowIterator<Row> ri = row.iterator();
+				String val = null;
+				while (ri.hasNext()) {
+					val = ri.next().getString(0);
+				}
+				if (val == null) {
+					final String loginSql = getCreateTable("LOGIN");
 
-		Completable completable = pool.rxGetConnection().flatMapCompletable(conn -> conn.rxBegin()
-				.flatMapCompletable(tx -> conn.query(CHECKLOGINSQL).rxExecute().doOnSuccess(row -> {
-					RowIterator<Row> ri = row.iterator();
-					String val = null;
-					while (ri.hasNext()) {
-						val = ri.next().getString(0);
-					}
-					if (val == null) {
-						final String usersSql = getCreateTable("LOGIN");
-
-						Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err -> {
+					Single<RowSet<Row>> crow = conn.query(loginSql).rxExecute()
+						.doOnError(err -> {
 							logger.info(String.format("Login Table Error: %s", err.getCause().getMessage()));
 						}).doOnSuccess(result -> {
 							logger.info("Login Table Added.");
 						});
 
-						crow.subscribe(result -> {
-							//
-						}, err -> {
-							logger.info(String.format("Login Table Error: %s", err.getMessage()));
-						});
+					crow.subscribe(result -> {
+						conn.rxClose().doOnSubscribe(data -> tx.rxCommit().subscribe()).subscribe();
+
+						try {
+							setupSql(pool);
+							setupPromise.complete();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}, err -> {
+						logger.info(String.format("Set Pool Error: %s", err.getMessage()));
+						err.printStackTrace();
+					});
+				} else {
+					conn.rxClose().subscribe();
+					try {
+						setupSql(pool);
+						setupPromise.complete();
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
-				}).doOnError(err -> {
-					logger.info(String.format("Login Table Error: %s", err.getMessage()));
-
-				}).flatMapCompletable(res -> tx.rxCommit())));
-
-		completable.subscribe(() -> {
-			try {
-				setupSql(pool);
-				setupPromise.complete();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}, err -> {
-			logger.info(String.format("Tables Create Error: %s", err.getMessage()));
-			err.printStackTrace();
-		});
+				}
+			}).subscribe()).subscribe()).subscribe();
 
 		return setupPromise.future();
 	}
@@ -139,7 +136,7 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 		connectOptions = new JDBCConnectOptions()
 				.setJdbcUrl(dbMap.get("url") + dbMap.get("filename") + "?foreign_keys=on;").setIdleTimeout(1);
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = Server.vertx;
 
 		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
 	}

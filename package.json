@@ -1,6 +1,6 @@
 {
   "name": "dodex-quarkus",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "description": "A java asynchronous server for Dodex using quarkus",
   "main": "index.js",
   "scripts": {
@@ -32,7 +32,9 @@
     "react",
     "karma",
     "jasmine",
-    "dodex"
+    "dodex",
+    "gRPC",
+    "jooq"
   ],
   "author": "DaveO",
   "license": "MIT",

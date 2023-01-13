@@ -47,8 +47,8 @@ import io.vertx.reactivex.core.Promise;
 @ApplicationScoped
 public class FirebaseRouter {
     private static final Logger logger = LoggerFactory.getLogger(FirebaseRouter.class.getName());
-    private static Vertx vertx = Vertx.vertx();
-    private Map<String, Session> clients = new ConcurrentHashMap<>();
+    private static Vertx vertx = DodexUtil.getVertx();
+    private final Map<String, Session> clients = new ConcurrentHashMap<>();
     private DodexFirebase dodexFirebase;
     private static final String DODEX_PROJECT_ID = "dodex-firebase";
     Firestore dbf;
@@ -79,7 +79,7 @@ public class FirebaseRouter {
     }
 
     public void setWebSocket(final HttpServer server) throws InterruptedException, IOException, SQLException {
-        /**
+        /*
          * You can customize the db config here by: Map = db configuration, Properties =
          * credentials e.g. Map overrideMap = new Map(); Properties overrideProperties =
          * new Properties(); set override or additional values... dodexDatabase =
@@ -287,7 +287,7 @@ public class FirebaseRouter {
     }
 
     public void setVertx(Vertx vertx) {
-        this.vertx = vertx;
+        FirebaseRouter.vertx = vertx;
     }
 
     public String getRemoteAddress() {

@@ -21,6 +21,7 @@ import javax.enterprise.event.Observes;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 
+import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,13 +51,13 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 public class CassandraRouter {
     private static final Logger logger = LoggerFactory.getLogger(CassandraRouter.class.getName());
     private DodexCassandra dodexCassandra;
-    private Vertx vertx = Vertx.vertx();
+    private final Vertx vertx = Server.vertx;
     private EventBus eb = vertx.eventBus();
     private static final String LOGFORMAT = "{}{}{}";
     private String remoteAddress;
-    private Promise<Void> databasePromise = Promise.promise();
+    private final Promise<Void> databasePromise = Promise.promise();
     protected Map<String, Session> sessions;
-    static final SharedData sd = Vertx.vertx().sharedData();
+    static final SharedData sd = Server.vertx.sharedData();
     static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
@@ -71,7 +72,7 @@ public class CassandraRouter {
 
     public void setWebSocket(final HttpServer server) throws InterruptedException, IOException, SQLException {
         dodexCassandra = DbConfiguration.getDefaultDb();
-        dodexCassandra.setVertx(Vertx.vertx());
+        dodexCassandra.setVertx(Server.vertx);
         databasePromise.complete();
         /**
          * Optional auto user cleanup - config in "application-conf.json". When client
@@ -85,7 +86,7 @@ public class CassandraRouter {
         if (context.isPresent()) {
             final Optional<JsonObject> jsonObject = Optional.ofNullable(Vertx.currentContext().config());
             try {
-                JsonObject config = jsonObject.isPresent() ? jsonObject.get() : new JsonObject();
+                JsonObject config = jsonObject.orElseGet(JsonObject::new);
                 final Optional<Boolean> runClean = Optional.ofNullable(config.getBoolean("clean.run"));
                 if (runClean.isPresent() && runClean.get()) {
                     final CleanOrphanedUsers clean = new CleanOrphanedUsers();
@@ -105,7 +106,7 @@ public class CassandraRouter {
 
     public void setCassandraHandler(Session session) throws UnsupportedEncodingException {
         wsChatSessions.put(session.getId(),
-                URLDecoder.decode(session.getRequestURI().toString(), StandardCharsets.UTF_8.name()));
+                URLDecoder.decode(session.getRequestURI().toString(), StandardCharsets.UTF_8));
         final MessageUser messageUser = dodexCassandra.createMessageUser();
 
         session.addMessageHandler(new MessageHandler.Whole<String>() {

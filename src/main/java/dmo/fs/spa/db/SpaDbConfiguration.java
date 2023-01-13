@@ -36,12 +36,12 @@ public class SpaDbConfiguration extends DbConfiguration {
         NEO4J("neo4j"),
         IBMDB2("ibmdb2");
 
-        String db;
+        final String db;
 
         DbTypes(String db) {
             this.db = db;
         }
-    };
+    }
 
     SpaDbConfiguration() {
         super();

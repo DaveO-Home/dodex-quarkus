@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import Menulinks, { Dodexlink } from "./Menulinks";
 import dodex from "dodex";
 import input from "dodex-input";
@@ -8,44 +8,50 @@ import mess from "dodex-mess";
 /* develblock:start */
 if (location.href.indexOf("context.html") === -1) {
 /* develblock:end */
-  ReactDOM.render(
-    <Menulinks />,
-    document.getElementById("root")
-  );
+    if(!window.rootRoot) {
+        const container = document.getElementById("root");
+        window.rootRoot = createRoot(container);
+    }
+    window.rootRoot.render(
+        <Menulinks />
+    );
 
-  ReactDOM.render(
-    <Dodexlink />,
-    document.querySelector(".dodex--ico")
-  );
+    if(!window.dodexRoot) {
+        const dodexContainer = document.querySelector(".dodex--ico");
+        window.dodexRoot = createRoot(dodexContainer);
+    }
+    window.dodexRoot.render(
+        <Dodexlink />
+    );
 
   if (document.querySelector(".top--dodex") === null) {
     // this should handle all hostnames and ports for the websocket setup
     const server = window.location.hostname + (window.location.port.length > 0 ? ":" + window.location.port : "");
     // Content for cards A-Z and static card
     dodex.setContentFile("./dodex/data/content.js");
-    dodex.init({
-      width: 375,
-      height: 200,
-      left: "50%",
-      top: "100px",
-      input: input,    	// required if using frontend content load
-      private: "full", 	// frontend load of private content, "none", "full", "partial"(only cards 28-52) - default none
-      replace: true,   	// append to or replace default content - default false(append only)
-      mess: mess,
-      // server: "localhost:3087", // You will have to start the node server for port 3087 - do the following;
-      // cd to src/main/resources/static/node_modules/dodex-mess/server and execute "npm install" then "node koa" 
-      // server: "daveomix.us-south.cf.appdomain.cloud" // This will link to the cloud version
-      // for the verticle "dodex-vertx" use
-      // server: "localhost:8089" // if the test verticle is running.
-      server: server
-    }).then(function () {
-      // Add in app/personal cards
-      for (let i = 0;i < 4;i++) {
-        dodex.addCard(getAdditionalContent());
-      }
-      /* Auto display of widget */
-      // dodex.openDodex();
-    });
+    setTimeout(function() {
+        dodex.init({
+          width: 375,
+          height: 200,
+          left: "50%",
+          top: "100px",
+          input: input,    	// required if using frontend content load
+          private: "full", 	// frontend load of private content, "none", "full", "partial"(only cards 28-52) - default none
+          replace: true,   	// append to or replace default content - default false(append only)
+          mess: mess,
+          // server: "localhost:3087", // You will have to start the node server for port 3087 - do the following;
+          // cd to src/main/resources/static/node_modules/dodex-mess/server and execute "npm install" then "node koa"
+          // server: "localhost:8089" // if the test verticle is running.
+          server: server
+        }).then(function () {
+          // Add in app/personal cards
+          for (let i = 0;i < 4; i++) {
+            dodex.addCard(getAdditionalContent());
+          }
+          /* Auto display of widget */
+//           dodex.openDodex();
+        });
+      }, 500);
   }
 /* develblock:start */
 }

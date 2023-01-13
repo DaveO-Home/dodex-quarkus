@@ -128,7 +128,7 @@ export default App.controllers.Start ||
             form.find("input[type=submit]", el).click(formFunction);
         },
         footer: `<button type="submit" class="btn btn-sm btn-primary submit-modal mr-auto raised submit-login">{{submit}}</button>
-                 <button class="btn btn-sm close-modal raised" data-dismiss="modal" aria-hidden="true">{{close}}</button>
+                 <button class="btn btn-sm close-modal raised" data-bs-dismiss="modal" aria-hidden="true">{{close}}</button>
                  <div class="ml-auto">
                     <input type="checkbox" class="align-middle checkbox" id="newLogin" name="newLogin">
                     <label class="f14" for="newLogin">New Login</label>
@@ -139,7 +139,7 @@ export default App.controllers.Start ||
                             "</div>" +
                             "</div>",
         alert: "<div class=\"alert alert-info alert-dismissible fade show\" role=\"alert\">" +
-                    "<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times</span></button>" +
+                    "<button type=\"button\" class=\"close\" data-bs-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times</span></button>" +
                     "<strong>Thank You!</strong> Your request is being processed." +
                     "</div>",
         showAlert (me) {

@@ -8,22 +8,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
-import io.reactivex.disposables.Disposable;
-
 
 public class DodexDatabaseCassandra extends DbCassandraBase implements DodexCassandra {
 	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseCassandra.class.getName());
-	protected Disposable disposable;
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseCassandra(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -31,8 +29,6 @@ public class DodexDatabaseCassandra extends DbCassandraBase implements DodexCass
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = "prod".equals(webEnv) || !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
@@ -53,7 +49,6 @@ public class DodexDatabaseCassandra extends DbCassandraBase implements DodexCass
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = "prod".equals(webEnv) || !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 

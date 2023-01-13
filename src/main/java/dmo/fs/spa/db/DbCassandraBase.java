@@ -19,7 +19,7 @@ import io.vertx.reactivex.core.eventbus.EventBus;
 
 public abstract class DbCassandraBase {
 	private static final Logger logger = LoggerFactory.getLogger(DbCassandraBase.class.getName());
-	private Map<String, Promise<SpaLogin>> mUserPromises = new ConcurrentHashMap<>();
+	private final Map<String, Promise<SpaLogin>> mUserPromises = new ConcurrentHashMap<>();
 	private static final String GETLOGIN = "getlogin";
 	private static final String ADDLOGIN = "addlogin";
 	private static final String REMOVELOGIN = "removelogin";

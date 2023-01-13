@@ -17,7 +17,7 @@ public abstract class DbIbmDB2 extends SqlBuilder implements SpaDatabase {
 			"ON LOGIN " +
 		  "(name ASC, password ASC)");
 
-        String sql;
+        final String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

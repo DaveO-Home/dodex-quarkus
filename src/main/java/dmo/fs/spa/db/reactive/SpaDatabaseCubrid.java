@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +31,11 @@ import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseCubrid extends DbCubrid {
 	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseCubrid.class.getName());
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 	protected JDBCPool pool;
 
@@ -41,9 +43,6 @@ public class SpaDatabaseCubrid extends DbCubrid {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -60,7 +59,6 @@ public class SpaDatabaseCubrid extends DbCubrid {
 	public SpaDatabaseCubrid() throws InterruptedException, IOException, SQLException {
 		super();
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
@@ -93,15 +91,17 @@ public class SpaDatabaseCubrid extends DbCubrid {
 						});
 
 						crow.subscribe(result -> {
-							//
+							conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 						}, err -> {
 							logger.info(String.format("Login Table Error: %s", err.getMessage()));
 						});
+					} else {
+						conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 					}
 				}).doOnError(err -> {
 					logger.info(String.format("Login Table Error: %s", err.getMessage()));
 
-				}).flatMapCompletable(res -> tx.rxCommit())));
+				}).flatMapCompletable(res -> Completable.complete())));
 
 		completable.subscribe(() -> {
 			try {
@@ -143,7 +143,7 @@ public class SpaDatabaseCubrid extends DbCubrid {
 		// .setCachePreparedStatements(true)
 		;
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = Server.vertx;
 
 		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
 	}

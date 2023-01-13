@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ public class DodexDatabaseMariadb extends DbMariadb {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod" : "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -50,6 +51,11 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		dbProperties.setProperty("foreign_keys", "true");
 
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
+	}
+
+	@Override
+	public <T> T getPool4() {
+		return null;
 	}
 
 	public DodexDatabaseMariadb() throws InterruptedException, IOException, SQLException {
@@ -90,13 +96,13 @@ public class DodexDatabaseMariadb extends DbMariadb {
 					}).onFailure().invoke(error -> {
 						logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Users Check Table Error: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKMESSAGESSQL).execute().flatMap(rows -> {
@@ -113,10 +119,10 @@ public class DodexDatabaseMariadb extends DbMariadb {
 					}).onFailure().invoke(error -> {
 						logger.error("{}Messages Create Table Error: {}{}", ColorUtilConstants.RED, error,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKUNDELIVEREDSQL).execute().flatMap(rows -> {
@@ -134,19 +140,19 @@ public class DodexDatabaseMariadb extends DbMariadb {
 					}).onFailure().invoke(error -> {
 						logger.error("{}Creating Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Check Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			promise.complete(pool);
-			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 			return null;
-		}).subscribeAsCompletionStage();
+		}).subscribeAsCompletionStage().isDone();
 
 		return promise;
 	}
@@ -176,7 +182,6 @@ public class DodexDatabaseMariadb extends DbMariadb {
 			.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
 			.setCharset("utf8mb4").setIdleTimeout(1);
 
-		Vertx vertx = Vertx.vertx();
-		return MySQLPool.pool(vertx, connectOptions, poolOptions);
+		return MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 	}
 }

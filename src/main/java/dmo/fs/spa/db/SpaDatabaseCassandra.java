@@ -8,32 +8,29 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
 
 public class SpaDatabaseCassandra extends DbCassandraBase implements SpaCassandra {
 	private final static Logger logger = LoggerFactory.getLogger(SpaDatabaseCassandra.class.getName());
-	protected Disposable disposable;
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseCassandra(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
-			throws InterruptedException, IOException, SQLException {
+			throws IOException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -53,8 +50,6 @@ public class SpaDatabaseCassandra extends DbCassandraBase implements SpaCassandr
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 

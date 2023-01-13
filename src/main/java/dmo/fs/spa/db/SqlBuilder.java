@@ -150,7 +150,7 @@ public abstract class SqlBuilder {
                     if (rows.size() == 0) {
                         if (!(spaLogin.getPassword().equals(resultLogin.getPassword()))) {
                             resultLogin.setStatus("-1");
-                            resultLogin.setId(0l);
+                            resultLogin.setId(0L);
                             resultLogin.setName(spaLogin.getName());
                             resultLogin.setPassword(spaLogin.getPassword());
                             resultLogin.setLastLogin(new Date());
@@ -169,11 +169,11 @@ public abstract class SqlBuilder {
                             }
                         }
                     }
+
                     if (rows.size() > 0 && "0".equals(resultLogin.getStatus())) {
-                        conn.close();
+                        conn.close().subscribeAsCompletionStage().isDone();
 
                         Promise<Integer> customPromise = updateCustomLogin(resultLogin);
-
                         customPromise.future().onItem().call(updated -> {
                             if (updated > -1) {
                                 resultLogin.setStatus("0");
@@ -188,25 +188,25 @@ public abstract class SqlBuilder {
                         }).onFailure().invoke(err -> {
                             logger.error(String.format("%sError, Updating Last Login: %s -- %s%s", ColorUtilConstants.RED,
                                 spaLogin.getName(), err.getCause().getMessage(), ColorUtilConstants.RESET));
-                        }).subscribeAsCompletionStage();
+                        }).subscribeAsCompletionStage().isDone();
                     } else {
                         promise.complete(resultLogin);
-                        conn.close();
+                        conn.close().subscribeAsCompletionStage().isDone();
                     }
                     
                     return Uni.createFrom().item(resultLogin);
                 }).onFailure().invoke(err -> {
                     resultLogin.setStatus("-99");
                     promise.complete(resultLogin);
-                    conn.close();
+                    conn.close().subscribeAsCompletionStage().isDone();
                     logger.error(String.format("%sError retrieving user: %s -- %s%s", ColorUtilConstants.RED,
                             spaLogin.getName(), err.getCause().getMessage(), ColorUtilConstants.RESET));
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(promise);
         }).onFailure().invoke(err -> {
             logger.error(String.format("%sError, Get Login Connection: %s -- %s%s", ColorUtilConstants.RED,
                 spaLogin.getName(), err.getCause().getMessage(), ColorUtilConstants.RESET));
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -228,18 +228,18 @@ public abstract class SqlBuilder {
                     spaLogin.setLastLogin(current);
                 }
                 promise.complete(spaLogin);
-                conn.close();
+                conn.close().subscribeAsCompletionStage().isDone();
                 return null;
             }).onFailure().invoke(err -> {
                 spaLogin.setStatus("-4");
                 promise.complete(spaLogin);
                 logger.error(String.format("%sError adding login: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
-                conn.close();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
 
             return Uni.createFrom().item(promise);
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -258,24 +258,24 @@ public abstract class SqlBuilder {
 
                 spaLogin.setStatus(count.toString());
                 if (spaLogin.getId() == null) {
-                    spaLogin.setId(-1l);
+                    spaLogin.setId(-1L);
                 }
                 if (spaLogin.getLastLogin() == null) {
                     spaLogin.setLastLogin(new Date());
                 }
                 promise.complete(spaLogin);
 
-                conn.close();
+                conn.close().subscribeAsCompletionStage().isDone();
                 return Uni.createFrom().item(promise);
             }).onFailure().invoke(err -> {
                 logger.error(String.format("%sError deleting login: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
                 spaLogin.setStatus("-4");
                 promise.complete(spaLogin);
-                conn.close();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(conn);
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -286,7 +286,7 @@ public abstract class SqlBuilder {
         pool.getConnection().onItem().call(conn -> {
             Timestamp timeStamp = new Timestamp(new Date().getTime());
             OffsetDateTime time = OffsetDateTime.now();
-            Long date = new Date().getTime();
+            long date = new Date().getTime();
             String sql = getUpdateLogin();
             LocalDateTime localTime = LocalDateTime.now();
 
@@ -306,32 +306,32 @@ public abstract class SqlBuilder {
                 String query = create.query(getSqliteUpdateLogin(), dateTime, spaLogin.getId()).toString();
 
                 conn.query(query).execute().onItem().call(rows -> {
-                    conn.close();
+                    conn.close().subscribeAsCompletionStage().isDone();
                     promise.complete(rows.rowCount());
                     return Uni.createFrom().item(rows);
                 }).onFailure().invoke(err -> {
                     logger.error(String.format("%sError Updating login: %s%s", ColorUtilConstants.RED, err,
                             ColorUtilConstants.RESET));
                     err.printStackTrace();
-                    conn.close();
+                    conn.close().subscribeAsCompletionStage().isDone();
                     promise.complete(-99);
                     err.printStackTrace();
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
             } else {
                 conn.preparedQuery(sql).execute(Tuple.of(dateTime, spaLogin.getId())).onItem().call(rows -> {
                     promise.complete(rows.rowCount());
-                    conn.close();
+                    conn.close().subscribeAsCompletionStage().isDone();
                     return Uni.createFrom().item(rows);
                 }).onFailure().invoke(err -> {
                     logger.error(String.format("%sError Updating login: %s%s", ColorUtilConstants.RED, err,
                             ColorUtilConstants.RESET));
                     promise.complete(-99);
                     err.printStackTrace();
-                    conn.close();
-                }).subscribeAsCompletionStage();
+                    conn.close().subscribeAsCompletionStage().isDone();
+                }).subscribeAsCompletionStage().isDone();
             }
             return Uni.createFrom().item(promise);
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
         return promise;
     }

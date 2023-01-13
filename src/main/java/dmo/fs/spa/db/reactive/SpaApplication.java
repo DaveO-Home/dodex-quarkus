@@ -86,7 +86,7 @@ public class SpaApplication {
 
         spaLogin.setName(userName);
         spaLogin.setPassword(password);
-        spaLogin.setId(0l);
+        spaLogin.setId(0L);
         spaLogin.setLastLogin(new Date());
         spaLogin.setStatus("0");
 

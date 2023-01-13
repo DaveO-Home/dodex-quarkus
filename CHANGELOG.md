@@ -1,8 +1,20 @@
 # Changelog
 
+## [v2.6.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.0) (2023-01-12)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.2...v2.6.0)
+
+* Upgraded quarkus dependencies - quarkus -> 2.15 gradle -> 7.5
+* Upgraded all javascript dependencies, including -> React 18.2.0(many breaking changes)
+* Made numerous changes to jasmine tests related to react testing
+* Changed front end layout based on Bootstrap 5.2.3 (spa app)
+* Added a Kotlin Golf Handicap Application using Grpc, protobuf, javascript client(esbuild/webpack),
+  jooq code generator, envoy and gradle server-side protobuf generator.
+
+
 ## [v2.5.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.2) (2022-05-02)
 
-[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.1...v2.5.1)
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.1...v2.5.2)
 
 * Upgraded quarkus dependencies - quarkus -> 2.8.2 gradle -> 7.3.3
 * Upgraded spa web app dependencies

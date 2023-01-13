@@ -16,7 +16,7 @@ public abstract class DbCubrid extends SqlBuilder implements SpaDatabaseReactive
 				"COLLATE iso88591_bin " +
 				"REUSE_OID;");
 
-        String sql;
+        final String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

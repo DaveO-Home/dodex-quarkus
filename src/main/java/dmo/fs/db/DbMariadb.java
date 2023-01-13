@@ -6,8 +6,11 @@ public abstract class DbMariadb extends DbDefinitionBase implements DodexDatabas
     public static final String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='USERS';";
     protected static final String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='MESSAGES';";
     protected static final String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='UNDELIVERED';";
-	
-	private enum CreateTable {
+
+    @SuppressWarnings("unchecked")
+    public abstract <T> T getPool4();
+
+    private enum CreateTable {
 		CREATEUSERS(
 			"CREATE TABLE USERS (" +
 				"id INT NOT NULL AUTO_INCREMENT," +

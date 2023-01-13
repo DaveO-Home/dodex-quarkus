@@ -9,5 +9,7 @@
   "dodex.events.partitions": 2,
   "dodex.events.topic": "dodex-events",
   "dodex.events.limit": 25,
-  "dodex.events.remove": false
+  "dodex.events.remove": false,
+  "handicap.enableAdmin": false,
+  "handicap.adminPin": "hand!cap"
 }

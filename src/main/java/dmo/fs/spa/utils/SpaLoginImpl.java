@@ -105,7 +105,7 @@ public class SpaLoginImpl implements SpaLogin {
 
     @Override
     public Map<String, Object> getMap() {
-        Map<String, Object> map = new ConcurrentHashMap<String, Object>();
+        Map<String, Object> map = new ConcurrentHashMap<>();
         map.put("id", getId());
         map.put("name", getName());
         map.put("password", getPassword());

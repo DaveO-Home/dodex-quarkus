@@ -2,9 +2,13 @@
  * Successful acceptance tests & lints start the production build.
  * Tasks are run serially, 'accept' -> 'pat' -> ('eslint', 'csslint', 'bootlint') -> 'build'
  */
+ let chalk;
+ import("chalk").then(async C => {
+     chalk = new C.Chalk();
+     log(await chalk.green("Starting Gulp"));
+ });
 const { src, /* dest, */ series, parallel, task } = require("gulp");
 const runFusebox = require("./fuse.js");
-const chalk = require("chalk");
 const csslint = require("gulp-csslint");
 const eslint = require("gulp-eslint");
 const exec = require("child_process").exec;
@@ -75,7 +79,7 @@ const esLint = function (cb) {
     });
 
     return stream.on("end", function () {
-        log(chalk.blue.bold("# javascript & jsx files linted: " + lintCount));
+        log(chalk.blue.bold("# javascript & jsx files linted:", lintCount));
         cb();
     });
 };
@@ -314,12 +318,12 @@ const final = (done) => {
     setTimeout(function() {process.exit(0);}, 10);
 }
 
-const runProd = series(testBuild, pat, parallel(esLint, cssLint, bootLint), build, final);
+const runProd = series(testBuild, pat, parallel(esLint, cssLint/*, bootLint*/), build, final);
 runProd.displayName = "prod";
 
 task(runProd);
 exports.default = runProd;
-exports.prd = series(parallel(esLint, cssLint, bootLint), build, final);
+exports.prd = series(parallel(esLint, cssLint/*, bootLint*/), build, final);
 exports.preview = preview;
 exports.test = series(testBuild, pat, final);
 exports.tdd = fuseboxTdd;
@@ -328,7 +332,7 @@ exports.rebuild = series(fuseboxRebuild, final);
 exports.copy = copy;
 exports.acceptance = fuseboxAcceptance;
 exports.e2e = fuseboxAcceptance;
-exports.lint = parallel(esLint, cssLint, bootLint);
+exports.lint = parallel(esLint, cssLint/*, bootLint*/);
 exports.opera = tddo;
 // exports.snap = series(karmaServerSnap, final);
 exports.watch = watch;

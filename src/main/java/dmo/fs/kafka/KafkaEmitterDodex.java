@@ -65,47 +65,36 @@ public class KafkaEmitterDodex {
             .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
                 .withKey(key)
                 .withPartition(partition)
-                .withTimestamp(Instant.ofEpochMilli(System.currentTimeMillis() - -offset))
+                .withTimestamp(Instant.ofEpochMilli(System.currentTimeMillis() - (-offset)))
                 .withTopic(dodexEventsTopic)
                 .build());
 
         countEmitter.send(message
-            .withAck(() -> {
-                return CompletableFuture.completedFuture(null);
-            })
+            .withAck(() -> CompletableFuture.completedFuture(null))
             .withNack(throwable -> {
-                logger.info("Not Acknowleged: {}", throwable);
+                logger.info("Not Acknowledged: {}", throwable.getMessage());
                 return CompletableFuture.completedFuture(null);
             }));
     }
 
     private void setConfig() { 
-        JsonObject jsonObject = null;
+        JsonObject jsonObject;
         ObjectMapper jsonMapper = new ObjectMapper();
         JsonNode node;
         try {
             try (InputStream in = getClass().getResourceAsStream("/application-conf.json")) {
                 node = jsonMapper.readTree(in);
-                in.close();
             }
             jsonObject = JsonObject.mapFrom(node);
 
             final Optional<Integer> optionalEventsPartitions = Optional.ofNullable(jsonObject.getInteger("dodex.events.partitions"));
-            if (optionalEventsPartitions.isPresent()) {
-                dodexEventsPartitions = optionalEventsPartitions.get();
-            }
+            optionalEventsPartitions.ifPresent(integer -> dodexEventsPartitions = integer);
             final Optional<String> optionalEventsTopic = Optional.ofNullable(jsonObject.getString("dodex.events.topic"));
-            if (optionalEventsTopic.isPresent()) {
-                dodexEventsTopic = optionalEventsTopic.get();
-            }
+            optionalEventsTopic.ifPresent(s -> dodexEventsTopic = s);
             final Optional<Integer> optionalMessageLimit = Optional.ofNullable(jsonObject.getInteger("dodex.events.limit"));
-            if (optionalMessageLimit.isPresent()) {
-                messageLimit = optionalMessageLimit.get();
-            }
+            optionalMessageLimit.ifPresent(integer -> messageLimit = integer);
             final Optional<Boolean> optionalRemoveMessages = Optional.ofNullable(jsonObject.getBoolean("dodex.events.remove"));
-            if (optionalRemoveMessages.isPresent()) {
-                removeMessages = optionalRemoveMessages.get();
-            }
+            optionalRemoveMessages.ifPresent(aBoolean -> removeMessages = aBoolean);
         } catch (final Exception exception) {
             logger.info(String.format("%sContext Configuration failed...%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
                     exception.getMessage(), ColorUtilConstants.RESET));

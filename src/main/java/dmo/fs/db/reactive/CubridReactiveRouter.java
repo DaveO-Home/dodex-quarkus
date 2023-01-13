@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import javax.websocket.Session;
 
+import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 
 public class CubridReactiveRouter extends DbCubridOverride {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
-    private static Vertx vertxReactive = Vertx.vertx();
+    private static Vertx vertxReactive = Server.vertx;
     private static DodexReactiveDatabase dodexDatabase;
     private static final String LOGFORMAT = "{}{}{}";
     private static SharedData sd = vertxReactive.sharedData();

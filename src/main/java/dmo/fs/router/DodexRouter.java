@@ -14,6 +14,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,13 +47,13 @@ public class DodexRouter extends DodexRouterBase {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
         System.setProperty("dmo.fs.level", "INFO");
         System.setProperty("org.jooq.no-logo", "true");
-        String value = System.getenv("VERTXWEB_ENVIRONMENT");
-        
+        String value = Server.isProduction ? "prod" : "dev";
+
         Locale.setDefault(new Locale("US"));
         if (isProduction) {
             DodexUtil.setEnv("prod");
         } else {
-            DodexUtil.setEnv(value == null ? "dev" : value);
+            DodexUtil.setEnv(value);
         }
     }
 
@@ -107,7 +108,7 @@ public class DodexRouter extends DodexRouterBase {
             if (isReactive && !isInitialized) {
                 dodexReactiveDatabase = DbConfiguration.getDefaultDb();
                 DodexReactiveRouter.setDodexDatabase(dodexReactiveDatabase);
-                DodexReactiveDatabase.setVertx(io.vertx.reactivex.core.Vertx.vertx());
+                DodexReactiveDatabase.setVertx(Server.vertx);
                 dbPromiseReactive = dodexReactiveDatabase.databaseSetup();
                 dbPromiseReactive.future().onComplete(jdbcPool -> {
                     if(isUsingCubrid()) {

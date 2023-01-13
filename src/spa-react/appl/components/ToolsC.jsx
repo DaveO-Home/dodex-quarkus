@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import Table from "../js/controller/table";
 import Setup from "../js/utils/setup";
 import App from "../js/app";
@@ -7,15 +7,19 @@ import Helpers from "../js/utils/helpers";
 import ToolsSM from "../js/utils/tools.sm";
 import { messageAlert } from "../js/utils/alert";
 
+if(!window.main) {
+    const container = document.getElementById("main_container");
+    window.main = createRoot(container);
+}
 class Tools extends React.Component {
+
     componentDidMount() {
         if(!isLoggedIn()) {
             return;
         }
         getToolsComp().then(function (ToolsComp) {
-            ReactDOM.render(
-                <ToolsComp />,
-                document.getElementById("main_container")
+            window.main.render(
+                <ToolsComp />
             );
         });
     }
@@ -24,9 +28,8 @@ class Tools extends React.Component {
             return;
         }
         getToolsComp().then(function (ToolsComp) {
-            ReactDOM.render(
-                <ToolsComp />,
-                document.getElementById("main_container")
+            window.main.render(
+                <ToolsComp />
             );
         });
     }
@@ -83,13 +86,16 @@ function getToolsComp() {
                         App.controllers["Start"].initMenu();
                     }
                     Setup.init();
-                    ReactDOM.render(
-                        <ToolsSelect />,
-                        $("#main_container section")[0]
+                    const container = document.querySelector("#main_container section");
+                    const rootSection = createRoot(container);
+                    rootSection.render(
+                        <ToolsSelect />
                     );
-                    ReactDOM.render(
-                        <ToolsValue />,
-                        document.getElementById("tools-state")
+
+                    const valueContainer = document.querySelector("#tools-state");
+                    const valueRoot = createRoot(valueContainer);
+                    valueRoot.render(
+                        <ToolsValue />
                     );
                 }
                 render() {
@@ -195,16 +201,16 @@ class ToolsSelect extends React.Component {
                 <button className="dropdown-toggle smallerfont"
                     type="button"
                     id="dropdown0"
-                    data-toggle="dropdown"
+                    data-bs-toggle="dropdown"
                     aria-haspopup="true"
                     aria-expanded="false"
                 >
                     Select Job Type
                 </button>
-                <div className="dropdown-menu" aria-labelledby="dropdown0">
-                    <a className="dropdown-item smallerfont" onClick={this.onCompletedClick.bind(this)}>Combined</a>
-                    <a className="dropdown-item smallerfont" onClick={this.onCompletedClick.bind(this)}>Category1</a>
-                    <a className="dropdown-item smallerfont" onClick={this.onCompletedClick.bind(this)}>Category2</a>
+                <div className="dropdown-menu pointer" aria-labelledby="dropdown0">
+                    <a className="dropdown-item smallerfont pointer" onClick={this.onCompletedClick.bind(this)}>Combined</a>
+                    <a className="dropdown-item smallerfont pointer" onClick={this.onCompletedClick.bind(this)}>Category1</a>
+                    <a className="dropdown-item smallerfont pointer" onClick={this.onCompletedClick.bind(this)}>Category2</a>
                 </div>
             </div>
         );

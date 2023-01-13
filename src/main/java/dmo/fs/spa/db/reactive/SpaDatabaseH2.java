@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.quarkus.Server;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,7 @@ public class SpaDatabaseH2 extends DbH2 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 	protected JDBCPool pool;
 
@@ -41,9 +43,6 @@ public class SpaDatabaseH2 extends DbH2 {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -54,13 +53,13 @@ public class SpaDatabaseH2 extends DbH2 {
 			this.dbOverrideMap = dbOverrideMap;
 		}
 
+		assert dbOverrideMap != null;
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
 	}
 
 	public SpaDatabaseH2() throws InterruptedException, IOException, SQLException {
 		super();
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 	}
@@ -87,21 +86,22 @@ public class SpaDatabaseH2 extends DbH2 {
 						final String usersSql = getCreateTable("LOGIN");
 
 						Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err -> {
-							logger.info(String.format("Login Table Error: %s", err.getCause().getMessage()));
-						}).doOnSuccess(result -> {
-							logger.info("Login Table Added.");
-						});
+							logger.info(String.format("Login Table Create Error: %s", err.getMessage()));
+						}).doOnSuccess(result -> logger.warn("Login Table Added."));
 
 						crow.subscribe(result -> {
-							//
+							conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 						}, err -> {
-							logger.info(String.format("Login Table Error: %s", err.getMessage()));
+							logger.error(String.format("Login Table Result Error: %s", err.getMessage()));
+							err.printStackTrace();
 						});
+					} else {
+						conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 					}
 				}).doOnError(err -> {
-					logger.info(String.format("Login Table Error: %s", err.getMessage()));
+					logger.error(String.format("Login Table Query Error: %s", err.getMessage()));
 
-				}).flatMapCompletable(res -> tx.rxCommit())));
+				}).doOnError(Throwable::printStackTrace).flatMapCompletable(res -> Completable.complete())));
 
 		completable.subscribe(() -> {
 			try {
@@ -111,7 +111,7 @@ public class SpaDatabaseH2 extends DbH2 {
 				e.printStackTrace();
 			}
 		}, err -> {
-			logger.info(String.format("Tables Create Error: %s", err.getMessage()));
+			logger.error(String.format("Tables Create Error: %s", err.getMessage()));
 			err.printStackTrace();
 		});
 
@@ -139,7 +139,7 @@ public class SpaDatabaseH2 extends DbH2 {
 				.setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
 				.setIdleTimeout(1);
 
-		Vertx vertx = Vertx.vertx();
+		Vertx vertx = Server.vertx;
 
 		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
 	}

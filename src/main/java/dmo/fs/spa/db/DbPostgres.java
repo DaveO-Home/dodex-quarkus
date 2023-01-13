@@ -19,7 +19,7 @@ public abstract class DbPostgres extends SqlBuilder implements SpaDatabase {
 				"WITH (OIDS = FALSE) TABLESPACE pg_default;" +		
 			"ALTER TABLE public.login OWNER to dummy;");
 
-        String sql;
+        final String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

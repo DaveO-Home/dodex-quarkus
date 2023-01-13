@@ -17,7 +17,7 @@ public abstract class DbNeo4j extends DbNeo4jBase implements SpaNeo4j {
 			"CREATE CONSTRAINT ON (login:Login) ASSERT login.name IS UNIQUE;"
 		);
 		
-        String sql;
+        final String sql;
 
         CreateSchema(String sql) {
             this.sql = sql;

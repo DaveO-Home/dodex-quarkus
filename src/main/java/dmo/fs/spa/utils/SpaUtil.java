@@ -57,7 +57,9 @@ public class SpaUtil {
          * json
          */
         defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp : defaultDb;
-
+//        if("sqlite3".equals(defaultDb) && "true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
+//            defaultDb = "h2";
+//        }
         return node.get(defaultDb);
     }
 

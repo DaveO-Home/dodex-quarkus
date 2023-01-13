@@ -166,7 +166,7 @@ const run = function (mode, configure, debug, cb) {
         const fuse = context.getConfig();
      
         const { onComplete } = await fuse.runProd({ 
-            uglify: true,
+            uglify: false,
             bundles: { distRoot: distDir,
                 app: { path: "app.$hash.js" },
                 vendor: { path: "vendor.$hash.js" }

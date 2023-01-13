@@ -1,24 +1,10 @@
 package dmo.fs.db.reactive;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import javax.websocket.Session;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
 import dmo.fs.kafka.KafkaEmitterDodex;
+import dmo.fs.quarkus.Server;
 import dmo.fs.router.DodexRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
@@ -26,14 +12,22 @@ import dmo.fs.utils.ParseQueryUtilHelper;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Context;
-import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.shareddata.LocalMap;
 import io.vertx.reactivex.core.shareddata.SharedData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.websocket.Session;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DodexReactiveRouter extends DbReactiveSqlBase {
     private static final Logger logger = LoggerFactory.getLogger(DodexReactiveRouter.class.getName());
-    private static Vertx vertxReactive = Vertx.vertx();
+    private static final Vertx vertxReactive = Server.vertx;
     private static DodexReactiveDatabase dodexDatabase;
     private static final String LOGFORMAT = "{}{}{}";
     private static final SharedData sd = vertxReactive.sharedData();
@@ -46,7 +40,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         String handle = "";
         String id = "";
         Map<String, String> query = null;
-        String queryString = URLDecoder.decode(session.getQueryString(), StandardCharsets.UTF_8.name());
+        String queryString = URLDecoder.decode(session.getQueryString(), StandardCharsets.UTF_8);
         wsChatSessions.put(session.getId(), queryString);
         final MessageUser messageUser = createMessageUser();
         query = ParseQueryUtilHelper.getQueryMap(queryString);
@@ -91,7 +85,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         final String computedMessage = returnObject.get("message");
         final String command = returnObject.get("command");
 
-        if (!"".equals(command) && ";removeuser".equals(command)) {
+        if (";removeuser".equals(command)) {
             deleteUser(session, messageUser);
         }
 
@@ -113,7 +107,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
                         s.getAsyncRemote().sendObject(messageUser.getName() + ": " + computedMessage, result -> {
                             if (result.getException() != null && logger.isInfoEnabled()) {
                                 logger.info(
-                                    String.format("%Websocket-connection...Unable to send message: %s%s%s%s",
+                                    String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
                                             ColorUtilConstants.BLUE_BOLD_BRIGHT,
                                             s.getRequestParameterMap().get("handle").get(0), ": ",
                                             result.getException(), ColorUtilConstants.RESET));
@@ -128,7 +122,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
                 session.getAsyncRemote().sendObject("Private user not selected");
             } else {
                 session.getAsyncRemote().sendObject("ok");
-                if (ke != null && "".equals(selectedUsers) && "".equals(command)) {
+                if (ke != null && "".equals(selectedUsers)) {
                     ke.setValue(1);
                 }    
             }
@@ -159,7 +153,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
     }
 
     public void setup() {
-        /**
+        /*
          * Optional auto user cleanup - config in "application-conf.json". When client
          * changes handle when server is down, old users and undelivered messages will
          * be orphaned.
@@ -171,7 +165,7 @@ public class DodexReactiveRouter extends DbReactiveSqlBase {
         if (context.isPresent()) {
             final Optional<JsonObject> jsonObject = Optional.ofNullable(Vertx.currentContext().config());
             try {
-                final JsonObject config = jsonObject.isPresent() ? jsonObject.get() : new JsonObject();
+                final JsonObject config = jsonObject.orElseGet(JsonObject::new);
                 final Optional<Boolean> runClean = Optional.ofNullable(config.getBoolean("clean.run"));
                 if (runClean.isPresent() && runClean.get().equals(true)) {
                     final CleanOrphanedUsers clean = new CleanOrphanedUsers();

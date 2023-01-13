@@ -18,7 +18,7 @@ import io.quarkus.runtime.configuration.ProfileManager;
 
 public abstract class DbConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
-    private static Map<String, String> map = new ConcurrentHashMap<>();
+    private static final Map<String, String> map = new ConcurrentHashMap<>();
     protected static Properties properties = new Properties();
 
     protected static Boolean isUsingSqlite3 = false;
@@ -32,7 +32,7 @@ public abstract class DbConfiguration {
     protected static Boolean isUsingNeo4j = false;
     private static String defaultDb = "sqlite3";
     private static boolean overrideDefaultDb;
-    private static DodexUtil dodexUtil = new DodexUtil();
+    private static final DodexUtil dodexUtil = new DodexUtil();
     private static DodexDatabase dodexDatabase;
     protected static DodexCassandra dodexCassandra;
     private static DodexFirebase dodexFirebase;
@@ -51,7 +51,7 @@ public abstract class DbConfiguration {
         NEO4J("neo4j"),
         FIREBASE("firebase");
 
-        String db;
+        final String db;
 
         DbTypes(String db) {
             this.db = db;

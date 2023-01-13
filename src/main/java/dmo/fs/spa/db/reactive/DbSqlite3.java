@@ -7,7 +7,7 @@ public abstract class DbSqlite3 extends SqlBuilder implements SpaDatabaseReactiv
 	private enum CreateTable {
 		CREATELOGIN("create table login (id integer primary key, name text not null unique, password text not null, last_login DATETIME not null)");
 
-		String sql;		
+		final String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

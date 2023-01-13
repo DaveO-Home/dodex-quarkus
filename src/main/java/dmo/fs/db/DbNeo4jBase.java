@@ -169,7 +169,7 @@ public abstract class DbNeo4jBase {
             promise.complete(messageUser);
             return Uni.createFrom().item(session);
         })
-        .onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        .onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
         
 		return promise;
 	}
@@ -192,9 +192,9 @@ public abstract class DbNeo4jBase {
                 }
                 promise.complete(messageUser);
                 return Uni.createFrom().publisher(session.close());
-            }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+            }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(session);
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 		return promise;
 	}
 

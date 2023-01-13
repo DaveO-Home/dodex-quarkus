@@ -1,5 +1,6 @@
 /* eslint "comma-style": [0, "last"] */
 
+import { createPopper } from "@popperjs/core";
 import capitalize from "lodash/capitalize";
 import "bootstrap";
 import "tablesorter";
@@ -13,7 +14,7 @@ if (typeof window.testit !== "undefined" && window.testit) {
         });
 
         it("is Popper defined", () => {
-            expect(typeof Popper === "function").toBe(true);
+            expect(typeof createPopper === "function").toBe(true);
         });
     });
 }

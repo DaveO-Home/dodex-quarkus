@@ -40,7 +40,7 @@ The basic idea is to build a single page(spa) production application ensuring co
   3. Gulp4 - use `npx gulp` if not installed globally.
   4. Google Chrome
   5. Firefox
-  6. Dodex-Vertx
+  6. Dodex-Quarkus
 
 **Desktop:**
 
@@ -223,7 +223,7 @@ A test and development scenario for ***Dodex-Quarkus***.
 2. `cd <dodex-quarkus install>`, make sure ***Dodex*** is installed `npm install` in src/main/resources/static
 3. `gradlew quarkusDev`
 4. Open a desktop terminal window
-5. `cd <dodex-vertx install>/src/spa-react/devl`, make sure ***React*** demo application is installed `npm install` in src/spa-react
+5. `cd <dodex-quarkus install>/src/spa-react/devl`, make sure ***React*** demo application is installed `npm install` in src/spa-react
 6. `gulp watch`
 7. When developing ***Java***, refreshing the browser window will redeploy ***Dodex-Quarkus***.
 8. To test Java code, Open a desktop terminal window `cd <dodex-quarkus install>` and execute `gradlew test`
@@ -235,7 +235,7 @@ A test and development scenario for ***Dodex-Quarkus***.
 
 ### Fusebox
 
-[Top](#react-integration-testing-with-karma-jasmine-and-vertx)
+[Top](#react-integration-testing-with-karma-jasmine-and-quarkus)
 
 A blazing fast js bundler/loader with a comprehensive API <https://github.com/fuse-box/fuse-box>
 

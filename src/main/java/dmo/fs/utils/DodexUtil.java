@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.reactivex.disposables.Disposable;
+import io.vertx.mutiny.core.Vertx;
 
 public class DodexUtil {
     private static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
@@ -25,7 +26,7 @@ public class DodexUtil {
     private static final String USERS = ";users";
     private static String env = "dev";
     String defaultDb = "sqlite3";
-
+    private static Vertx vertx = Vertx.vertx();
     public void await(Disposable disposable) {
         while (!disposable.isDisposed()) {
             try {
@@ -138,7 +139,9 @@ public class DodexUtil {
 
         /* use environment variable first, if set, than properties and then from config json */
         defaultDb = defaultdbEnv != null? defaultdbEnv: defaultdbProp != null? defaultdbProp: defaultDb;
-
+//        if("sqlite3".equals(defaultDb) && "true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
+//            defaultDb = "h2";
+//        }
 		return node.get(defaultDb);
 	}
     
@@ -207,5 +210,13 @@ public class DodexUtil {
 
       public static boolean isNull(Object obj) {
         return obj == null;
+    }
+
+    public static Vertx getVertx() {
+        return vertx;
+    }
+
+    public static void setVertx(Vertx vertx) {
+        DodexUtil.vertx = vertx;
     }
 }

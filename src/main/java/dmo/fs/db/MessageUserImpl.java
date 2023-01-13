@@ -73,9 +73,7 @@ public class MessageUserImpl implements MessageUser {
             Optional<Date> loginDate = login
                 .filter(Date.class::isInstance)
                 .map(Date.class::cast);
-            if(loginDate.isPresent()) {
-                this.lastLogin = new Timestamp(loginDate.get().getTime());
-            }
+            loginDate.ifPresent(date -> this.lastLogin = new Timestamp(date.getTime()));
         }
     }
 

@@ -1,31 +1,6 @@
 
 package dmo.fs.db.reactive;
 
-import static org.jooq.impl.DSL.deleteFrom;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.insertInto;
-import static org.jooq.impl.DSL.notExists;
-import static org.jooq.impl.DSL.select;
-import static org.jooq.impl.DSL.table;
-
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.websocket.Session;
-
-import org.jooq.DSLContext;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
@@ -38,11 +13,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.jdbcclient.JDBCPool;
 import io.vertx.reactivex.mysqlclient.MySQLClient;
-import io.vertx.reactivex.sqlclient.Pool;
-import io.vertx.reactivex.sqlclient.Row;
-import io.vertx.reactivex.sqlclient.RowSet;
-import io.vertx.reactivex.sqlclient.SqlConnection;
-import io.vertx.reactivex.sqlclient.Tuple;
+import io.vertx.reactivex.sqlclient.*;
+import org.jooq.DSLContext;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.websocket.Session;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.OffsetDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.jooq.impl.DSL.*;
 
 public abstract class DbReactiveSqlBase {
     private static final Logger logger = LoggerFactory.getLogger(DbReactiveSqlBase.class.getName());
@@ -358,8 +343,9 @@ public abstract class DbReactiveSqlBase {
                 }
                 if (DbConfiguration.isUsingMariadb()) {
                     messageUser.setId(rows.property(MySQLClient.LAST_INSERTED_ID));
-                } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid() ||
-                        DbConfiguration.isUsingH2()) {
+                } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid())
+//                        || DbConfiguration.isUsingH2())
+                {
                     messageUser.setId(rows.property(JDBCPool.GENERATED_KEYS).getLong(0));
                 }
                 messageUser.setLastLogin(current);
@@ -414,7 +400,7 @@ public abstract class DbReactiveSqlBase {
 
     private Tuple getTupleParameters(MessageUser messageUser) {
         Timestamp timeStamp = new Timestamp(new Date().getTime());
-        Long date = new Date().getTime();
+        long date = new Date().getTime();
         OffsetDateTime time = OffsetDateTime.now();
         Tuple parameters;
 
@@ -450,7 +436,7 @@ public abstract class DbReactiveSqlBase {
                 for (Row row : rows) {
                     id = row.getLong(0);
                 }
-                Long count = Long.valueOf(rows.rowCount());
+                Long count = (long) rows.rowCount();
                 messageUser.setId(id > 0L ? id : count);
                 conn.close();
                 promise.complete(count);
@@ -502,8 +488,9 @@ public abstract class DbReactiveSqlBase {
                     }
                     if (DbConfiguration.isUsingMariadb()) {
                         id = rows.property(MySQLClient.LAST_INSERTED_ID);
-                    } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid() ||
-                            DbConfiguration.isUsingH2()) {
+                    } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid())
+//                        || DbConfiguration.isUsingH2())
+                    {
                         id = rows.property(JDBCPool.GENERATED_KEYS).getLong(0);
                     }
                     conn.close();
@@ -632,7 +619,7 @@ public abstract class DbReactiveSqlBase {
                                 promise.complete(resultUser);
                             });
                         } catch (Exception ex) {
-                            ex.getCause().getMessage();
+                            logger.error(ex.getMessage());
                         }
                     } else {
                         for (Row row : rows) {
@@ -655,6 +642,7 @@ public abstract class DbReactiveSqlBase {
                     }
 
                     if (rows.size() > 0) {
+                        assert future1 != null;
                         future1.onComplete(v -> {
                             //
                         });
@@ -767,16 +755,14 @@ public abstract class DbReactiveSqlBase {
                             messageUser.getName(), ColorUtilConstants.RESET));
                 }
             });
-        }).compose(v -> {
-            return Future.<Void>future(promise -> {
-                removeMessage.setPromise(promise);
-                try {
-                    removeMessage.run();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        });
+        }).compose(v -> Future.<Void>future(promise -> {
+            removeMessage.setPromise(promise);
+            try {
+                removeMessage.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
 
         return removeUndelivered.getPromise2().future();
     }
@@ -920,9 +906,7 @@ public abstract class DbReactiveSqlBase {
                         logger.error(String.format("%sDeleting Message2: %s%s", ColorUtilConstants.RED, err,
                                 ColorUtilConstants.RESET));
                     }).doFinally(completePromise).subscribe(rows -> {
-                    }, err -> {
-                        err.printStackTrace();
-                    });
+                    }, Throwable::printStackTrace);
                 });
             }
         }

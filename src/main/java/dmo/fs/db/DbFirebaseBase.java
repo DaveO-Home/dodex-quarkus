@@ -3,11 +3,7 @@ package dmo.fs.db;
 
 import java.sql.SQLException;
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -22,6 +18,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteResult;
 
+import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +36,7 @@ import io.vertx.reactivex.core.Vertx;
 public abstract class DbFirebaseBase {
 	private static final Logger logger = LoggerFactory.getLogger(DbFirebaseBase.class.getName());
 
-	private Vertx vertx = Vertx.vertx();
+	private Vertx vertx = Server.vertx;
     private Firestore dbf;
 
     public Timestamp addUser(Session ws, FirebaseUser firebaseUser)
@@ -200,7 +197,7 @@ public abstract class DbFirebaseBase {
         }
         else {
                 documents.get().forEach(message -> {
-                Date postDate = message.getTimestamp("post_date").toDate();
+                Date postDate = Objects.requireNonNull(message.getTimestamp("post_date")).toDate();
                 DateFormat formatDate = DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.getDefault());
                 String handle = message.getString("name");
 

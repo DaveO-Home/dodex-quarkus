@@ -48,9 +48,9 @@ public abstract class DbNeo4jBase {
                 }
                 promise.complete(spaLogin);
                 return Uni.createFrom().publisher(session.close());
-            }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+            }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(session);
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
         return promise;
     }

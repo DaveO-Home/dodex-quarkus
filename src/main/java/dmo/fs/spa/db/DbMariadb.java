@@ -14,7 +14,7 @@ public abstract class DbMariadb extends SqlBuilder implements SpaDatabase {
 				"PRIMARY KEY (id)," +
 				"UNIQUE INDEX name_password_UNIQUE (name ASC, password ASC));");
 
-        String sql;
+        final String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

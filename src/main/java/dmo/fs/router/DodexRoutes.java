@@ -10,6 +10,8 @@ import javax.inject.Inject;
 
 import com.google.cloud.firestore.Firestore;
 
+import golf.handicap.routes.GrpcRoutes;
+import golf.handicap.routes.HandicapRoutes;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
@@ -29,16 +31,16 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.Route.HttpMethod;
 import io.quarkus.vertx.web.RoutingExchange;
-import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.core.http.HttpServerResponse;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.ext.bridge.BridgeOptions;
 import io.vertx.ext.bridge.PermittedOptions;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.CorsHandler;
-import io.vertx.ext.web.handler.FaviconHandler;
-import io.vertx.ext.web.handler.StaticHandler;
-import io.vertx.ext.web.handler.TimeoutHandler;
+import io.vertx.mutiny.ext.web.Router;
+import io.vertx.mutiny.ext.web.handler.CorsHandler;
+import io.vertx.mutiny.ext.web.handler.FaviconHandler;
+import io.vertx.mutiny.ext.web.handler.StaticHandler;
+import io.vertx.mutiny.ext.web.handler.TimeoutHandler;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.eventbus.EventBus;
 import io.vertx.reactivex.core.http.HttpServer;
@@ -47,22 +49,24 @@ import io.vertx.reactivex.ext.eventbus.bridge.tcp.TcpEventBusBridge;
 @Unremovable
 @ApplicationScoped
 public class DodexRoutes {
-    private static final Logger logger = LoggerFactory.getLogger(DodexRoutes.class.getName());
-    private final StaticHandler staticHandler = StaticHandler.create();
-    private final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
-    private final io.vertx.core.Vertx coreVertx = io.vertx.core.Vertx.vertx();
-    private final io.vertx.reactivex.core.Vertx reactiveVertx = io.vertx.reactivex.core.Vertx.vertx();
-    private TcpEventBusBridge bridge;
-    Firestore firestore;
-
-    @Inject
-    @CommandLineArguments
-    String[] args;
-
     @Inject
     Vertx vertx;
     @Inject
     EventBus eb;
+    private static final Logger logger = LoggerFactory.getLogger(DodexRoutes.class.getName());
+    private static HandicapRoutes routesHandicap;
+    private final StaticHandler staticHandler = StaticHandler.create();
+    private final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+    private io.vertx.core.Vertx coreVertx = null;
+    private io.vertx.reactivex.core.Vertx reactiveVertx = null;
+    private TcpEventBusBridge bridge;
+    Firestore firestore;
+    private final io.vertx.core.Promise<Void> handicapPromise = io.vertx.core.Promise.promise();
+    @Inject
+    @CommandLineArguments
+    String[] args;
+
+
 
     void onStart(@Observes StartupEvent event) {
         System.setProperty("org.jooq.no-logo", "true");
@@ -84,7 +88,7 @@ public class DodexRoutes {
     // /* Just a way to gracefully shutdown the dev server */
     @Route(regex = "/dev[/]?|/dev/.*\\.html", methods = HttpMethod.GET)
     void dev(RoutingExchange ex) {
-        HttpServerResponse response = ex.response();
+        io.vertx.core.http.HttpServerResponse response = ex.response();
         response.putHeader("content-type", "text/html");
 
         if (isProduction) {
@@ -97,7 +101,7 @@ public class DodexRoutes {
 
     @Route(regex = "/test[/]?|/test/.*\\.html", methods = HttpMethod.GET)
     void test(RoutingExchange ex) {
-        HttpServerResponse response = ex.response();
+        io.vertx.core.http.HttpServerResponse response = ex.response();
         response.putHeader("content-type", "text/html");
 
         if (isProduction) {
@@ -114,7 +118,7 @@ public class DodexRoutes {
     // dodex conflicts with websocket endpoint "/dodex" so using ddex
     @Route(regex = "/ddex[/]?|/ddex/.*\\.html", methods = HttpMethod.GET)
     public void prod(RoutingExchange ex) {
-        HttpServerResponse response = ex.response(); // routingContext.response();
+        io.vertx.core.http.HttpServerResponse response = ex.response(); // routingContext.response();
         response.putHeader("content-type", "text/html");
 
         if (isProduction) {
@@ -130,7 +134,7 @@ public class DodexRoutes {
 
     @Route(regex = "/monitor[/]?|/monitor/.*\\.html", methods = HttpMethod.GET)
     void monitor(RoutingExchange ex) {
-        HttpServerResponse response = ex.response();
+        io.vertx.core.http.HttpServerResponse response = ex.response();
         response.putHeader("content-type", "text/html");
 
         int length = ex.context().request().path().length();
@@ -142,23 +146,29 @@ public class DodexRoutes {
 
     // static content and Spa Routes
     public void init(@Observes Router router) {
-        String value = System.getenv("VERTXWEB_ENVIRONMENT");
-        FaviconHandler faviconHandler = FaviconHandler.create(coreVertx);
+        coreVertx = vertx.getDelegate();
+        String value = Server.isProduction ? "prod" : "dev";
+        FaviconHandler faviconHandler = FaviconHandler.create(vertx); // coreVertx);
 
         if (isProduction) {
             DodexUtil.setEnv("prod");
             staticHandler.setCachingEnabled(true);
         } else {
-            DodexUtil.setEnv(value == null ? "dev" : value);
+            DodexUtil.setEnv(value);
             staticHandler.setCachingEnabled(false);
         }
-        router.route().failureHandler(ctx -> {
-            if (logger.isInfoEnabled()) {
-                logger.error(String.format("%sFAILURE in static route: %d%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                        ctx.statusCode(), ColorUtilConstants.RESET));
-            }
-            ctx.next();
-        });
+        /*
+            This will trap routing errors - but not the cause?
+         */
+//        router.route().failureHandler(ctx -> {
+//            if (logger.isInfoEnabled()) {
+//                logger.error(String.format("%sFAILURE in static route: %d%s", ColorUtilConstants.RED_BOLD_BRIGHT,
+//                        ctx.statusCode(), ColorUtilConstants.RESET));
+//                ctx.request().body().onItem().invoke(result ->
+//                        logger.info("Result: "+result)).subscribeAsCompletionStage();
+//            }
+//            ctx.next();
+//        });
 
         String readme = "/dist_test/react-fusebox";
         if (isProduction) {
@@ -168,26 +178,35 @@ public class DodexRoutes {
             HttpServerResponse response = ctx.response();
             String acceptableContentType = ctx.getAcceptableContentType();
             response.putHeader("content-type", acceptableContentType);
-            response.sendFile("dist_test/README.md");
+            response.sendFile("dist_test/README.md").subscribeAsCompletionStage().isDone();
         });
 
-        staticHandler.setWebRoot("");
-
-        router.route("/*").produces("text/plain").produces("text/html").produces("text/markdown").produces("image/*")
-                .handler(staticHandler).handler(TimeoutHandler.create(2000));
+        router.route("/*").handler(StaticHandler.create())
+                .produces("text/plain")
+                .produces("text/html")
+                .produces("text/markdown")
+                .produces("image/*")
+                .handler(staticHandler)
+                ;
+        router.route().handler(TimeoutHandler.create(2000));
 
         if ("dev".equals(DodexUtil.getEnv())) {
             router.route().handler(CorsHandler.create("*"/* Need ports 8089 & 9876 */)
                     .allowedMethod(io.vertx.core.http.HttpMethod.GET));
         }
 
-        Server.getServerPromise().future().onSuccess(httpServer -> {
+        if(routesHandicap == null) {
+            routesHandicap = new GrpcRoutes(DodexUtil.getVertx(), router);
+            routesHandicap.getVertxRouter(handicapPromise);
+        }
+
+        Server.getServerPromise().future().onItem().invoke(httpServer -> {
             try {
                 setDodexRoute(httpServer, router);
             } catch (InterruptedException | IOException | SQLException e) {
                 e.printStackTrace();
             }
-        });
+        }).subscribeAsCompletionStage().isDone();
 
         router.route().handler(faviconHandler);
     }
@@ -199,6 +218,7 @@ public class DodexRoutes {
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
                 ColorUtilConstants.RESET);
+
         DodexRouter dodexRouter = null;
         switch (defaultDbName) {
             case "cubrid":
@@ -208,10 +228,18 @@ public class DodexRoutes {
             case "h2":
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
                 dodexRouter.setReactive(true);
-                new SpaRoutes(coreVertx, router, routerPromise);
+
+                handicapPromise.future().onSuccess(r -> {
+                    try {
+                        new SpaRoutes(vertx.getDelegate(), router, routerPromise);
+                    } catch (InterruptedException | SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 break;
             case "cassandra":
                 try {
+                    reactiveVertx = Server.vertx;
                     CassandraRouter cassandraRouter = CDI.current().select(CassandraRouter.class).get();
                     cassandraRouter.getDatabasePromise().future().onSuccess(none -> setupEventBridge(cassandraRouter));
                     cassandraRouter.setEb(reactiveVertx.eventBus());
@@ -251,7 +279,7 @@ public class DodexRoutes {
 
         int eventBridgePort = isProduction ? Integer.parseInt(config.getConfigValue("prod.bridge.port").getValue())
                 : Integer.parseInt(config.getConfigValue("dev.bridge.port").getValue());
-        
+
         bridge = TcpEventBusBridge.create(reactiveVertx,
                 new BridgeOptions().addInboundPermitted(new PermittedOptions().setAddress("vertx"))
                         .addOutboundPermitted(new PermittedOptions().setAddress("akka"))

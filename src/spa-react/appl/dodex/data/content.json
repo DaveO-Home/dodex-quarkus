@@ -75,7 +75,7 @@
 		"card8": {
 			"tab": "H",
 			"front": {
-				"content": "<h1>Description</h1><a href=\"#!\"><i class=\"fa fa-fw fa-home\"></i>Home</a>"
+				"content": "<h1>Description</h1><a href=\"#!\"><i class=\"fa fa-fw fa-home\"></i> &nbsp;Home</a>"
 			},
 			"back": {
 				"content": "<h1>Lorem Ipsum</h1><a href=\"https://www.yahoo.com\" target=\"_\">Yahoo8</a>"

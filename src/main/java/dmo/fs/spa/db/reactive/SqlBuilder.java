@@ -160,7 +160,7 @@ public abstract class SqlBuilder {
                         if (rows.size() == 0) {
                             if (!(spaLogin.getPassword().equals(resultLogin.getPassword()))) {
                                 resultLogin.setStatus("-1");
-                                resultLogin.setId(0l);
+                                resultLogin.setId(0L);
                                 resultLogin.setName(spaLogin.getName());
                                 resultLogin.setPassword(spaLogin.getPassword());
                                 resultLogin.setLastLogin(new Date());
@@ -273,7 +273,7 @@ public abstract class SqlBuilder {
 
                     spaLogin.setStatus(count.toString());
                     if (spaLogin.getId() == null) {
-                        spaLogin.setId(-1l);
+                        spaLogin.setId(-1L);
                     }
                     if (spaLogin.getLastLogin() == null) {
                         spaLogin.setLastLogin(new Date());
@@ -305,7 +305,7 @@ public abstract class SqlBuilder {
             SqlConnection conn = c.result();
             Timestamp timeStamp = new Timestamp(new Date().getTime());
             OffsetDateTime time = OffsetDateTime.now();
-            Long date = new Date().getTime();
+            long date = new Date().getTime();
             String sql = getUpdateLogin();
             LocalDateTime lTime = LocalDateTime.now();
 

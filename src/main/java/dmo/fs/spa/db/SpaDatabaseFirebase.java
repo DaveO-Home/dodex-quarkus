@@ -1,29 +1,27 @@
 package dmo.fs.spa.db;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import dmo.fs.quarkus.Server;
+import dmo.fs.spa.utils.SpaLogin;
+import dmo.fs.spa.utils.SpaLoginImpl;
+import dmo.fs.utils.DodexUtil;
+import io.quarkus.runtime.configuration.ProfileManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmo.fs.spa.utils.SpaLogin;
-import dmo.fs.spa.utils.SpaLoginImpl;
-import dmo.fs.utils.DodexUtil;
-import io.reactivex.disposables.Disposable;
-
 public class SpaDatabaseFirebase extends DbFirebaseBase implements SpaFirebase {
 	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseFirebase.class.getName());
-	protected Disposable disposable;
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseFirebase(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -31,9 +29,6 @@ public class SpaDatabaseFirebase extends DbFirebaseBase implements SpaFirebase {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
@@ -53,8 +48,6 @@ public class SpaDatabaseFirebase extends DbFirebaseBase implements SpaFirebase {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
-		webEnv = webEnv == null || "prod".equals(webEnv) ? "prod" : "dev";
-
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 

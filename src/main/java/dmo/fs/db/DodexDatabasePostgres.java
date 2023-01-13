@@ -1,18 +1,9 @@
 package dmo.fs.db;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.core.Vertx;
@@ -22,14 +13,21 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DodexDatabasePostgres extends DbPostgres {
 	private static final Logger logger = LoggerFactory.getLogger(DodexDatabasePostgres.class.getName());
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -47,10 +45,11 @@ public class DodexDatabasePostgres extends DbPostgres {
 			this.dbOverrideMap = dbOverrideMap;
 		}
 
+		assert dbOverrideMap != null;
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
 	}
 
-	public DodexDatabasePostgres() throws InterruptedException, IOException, SQLException {
+	public DodexDatabasePostgres() throws IOException {
 		super();
 		defaultNode = dodexUtil.getDefaultNode();
 
@@ -61,7 +60,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 	@Override
 	public Promise<Pool> databaseSetup() {
 		if ("dev".equals(webEnv)) {
-			// dbMap.put("dbname", "myDbname"); // this wiil be merged into the default map
+			// dbMap.put("dbname", "myDbname"); // this will be merged into the default map
 			DbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
 			DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
@@ -86,12 +85,12 @@ public class DodexDatabasePostgres extends DbPostgres {
 					}).onItem().invoke(c -> {
 						logger.info("{}Users Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKMESSAGESSQL).execute().flatMap(rows -> {
@@ -108,10 +107,10 @@ public class DodexDatabasePostgres extends DbPostgres {
 					}).onItem().invoke(c -> {
 						logger.info("{}Messages Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKUNDELIVEREDSQL).execute().flatMap(rows -> {
@@ -130,19 +129,19 @@ public class DodexDatabasePostgres extends DbPostgres {
 					}).onItem().invoke(c -> {
 						logger.info("{}Undelivered Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			promise.complete(pool);
-			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(pool);
-		}).subscribeAsCompletionStage();
+		}).subscribeAsCompletionStage().isDone();
 
 		return promise;
 	}
@@ -169,10 +168,9 @@ public class DodexDatabasePostgres extends DbPostgres {
 			.setUser(dbProperties.getProperty("user"))
 			.setPassword(dbProperties.getProperty("password"))
 			.setDatabase(dbMap.get("dbname"))
-			.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
+			.setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl")))
 			.setIdleTimeout(1);
 
-		Vertx vertx = Vertx.vertx();
-		return PgPool.pool(vertx, connectOptions, poolOptions);
+		return PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 	}
 }

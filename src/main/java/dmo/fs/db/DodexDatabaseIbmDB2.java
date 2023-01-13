@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = DbConfiguration.isProduction() ? "prod": "dev";
+	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -84,12 +85,12 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 					}).invoke(c -> {
 						logger.info("{}Users Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKMESSAGESQL).execute().flatMap(rows -> {
@@ -106,10 +107,10 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 					}).invoke(c -> {
 						logger.info("{}Messages Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			conn.query(CHECKUNDELIVEREDSQL).execute().flatMap(rows -> {
@@ -127,19 +128,19 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 					}).invoke(c -> {
 						logger.info("{}Undelivered Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage();
+					}).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
 				logger.error("{}Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage();
+			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			promise.complete(pool);
-			conn.close().onFailure().invoke(err -> err.printStackTrace()).subscribeAsCompletionStage();
+			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(pool);
-		}).subscribeAsCompletionStage();
+		}).subscribeAsCompletionStage().isDone();
 
 		return promise;
 	}
@@ -168,7 +169,6 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 			.setDatabase(dbMap.get("dbname"))
 			.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")));
 
-		Vertx vertx = Vertx.vertx();
-		return DB2Pool.pool(vertx, connectOptions, poolOptions);
+		return DB2Pool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 	}
 }

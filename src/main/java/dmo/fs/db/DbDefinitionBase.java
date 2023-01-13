@@ -377,11 +377,11 @@ public abstract class DbDefinitionBase {
                 return conn.close().subscribe();
             }).onFailure().invoke(error -> {
                 logger.error("{}Error Adding user: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
-            }).subscribeAsCompletionStage();
+            }).subscribeAsCompletionStage().isDone();
         }).onFailure().invoke(error -> {
             logger.error("{}Error Adding user-database connection error: {}{}", ColorUtilConstants.RED, error,
                     ColorUtilConstants.RESET);
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -396,23 +396,23 @@ public abstract class DbDefinitionBase {
                     || DbConfiguration.isUsingMariadb() ? getSqliteUpdateUser() : getUpdateUser();
 
             conn.preparedQuery(sql).execute(parameters).map(rows -> {
-                conn.close().subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
                 promise.complete(rows.rowCount());
                 return null;
             }).onFailure().invoke(err -> {
                 logger.error(String.format("%sError Updating user: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
                 ws.getAsyncRemote().sendObject(err.toString());
-                conn.close().subscribeAsCompletionStage();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
             return null;
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
         return promise;
     }
 
     private Tuple getTupleParameters(MessageUser messageUser) {
         Timestamp timeStamp = new Timestamp(new Date().getTime());
-        Long date = new Date().getTime();
+        long date = new Date().getTime();
         OffsetDateTime time = OffsetDateTime.now();
         Tuple parameters;
 
@@ -448,7 +448,7 @@ public abstract class DbDefinitionBase {
                 }
                 Long count = Long.valueOf(rows.rowCount());
                 messageUser.setId(id > 0L ? id : count);
-                conn.close().subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
                 promise.complete(count);
                 return Uni.createFrom().item(rows);
             }).onFailure().invoke(err -> {
@@ -460,12 +460,12 @@ public abstract class DbDefinitionBase {
                 }
                 logger.error(String.format("%s%s%s", ColorUtilConstants.RED, errMessage, ColorUtilConstants.RESET));
                 promise.complete(-1L);
-                conn.close().subscribeAsCompletionStage();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(conn);
         }).onFailure().invoke(err -> {
             err.printStackTrace();
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -475,7 +475,7 @@ public abstract class DbDefinitionBase {
         Promise<Long> promise = Promise.promise();
         Timestamp timeStamp = new Timestamp(new Date().getTime());
         OffsetDateTime time = OffsetDateTime.now();
-        Long date = new Date().getTime();
+        long date = new Date().getTime();
         LocalDateTime localTime = LocalDateTime.now();
 
         Object dateTime = time;
@@ -508,26 +508,26 @@ public abstract class DbDefinitionBase {
                     } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid()) {
                         id = rows.property((PropertyKind<Row>) JDBCPool.GENERATED_KEYS).getLong(0);
                     }
-                    tx.commit().subscribeAsCompletionStage();
+                    tx.commit().subscribeAsCompletionStage().isDone();
                     promise.complete(id);
-                    conn.close().subscribeAsCompletionStage();
+                    conn.close().subscribeAsCompletionStage().isDone();
                     return Uni.createFrom().item(rows);
                 }).onFailure().invoke(err -> {
                     logger.error(String.format("%sError adding messaage: %s%s", ColorUtilConstants.RED,
                             err.getCause().getMessage(), ColorUtilConstants.RESET));
                     ws.getAsyncRemote().sendObject(err.getMessage());
-                    tx.rollback().subscribeAsCompletionStage();
-                    conn.close().subscribeAsCompletionStage();
-                }).subscribeAsCompletionStage();
+                    tx.rollback().subscribeAsCompletionStage().isDone();
+                    conn.close().subscribeAsCompletionStage().isDone();
+                }).subscribeAsCompletionStage().isDone();
                 return Uni.createFrom().item(tx);
             }).onFailure().invoke(err -> {
                 logger.error(String.format("%sTransaction Error adding messaage: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
-            }).subscribeAsCompletionStage();
+            }).subscribeAsCompletionStage().isDone();
         }).onFailure().invoke(err -> {
             logger.error(String.format("%sConnection Error adding messaage: %s%s", ColorUtilConstants.RED, err,
                     ColorUtilConstants.RESET));
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -538,15 +538,15 @@ public abstract class DbDefinitionBase {
         Tuple parameters = Tuple.of(userId, messageId);
         pool.getConnection().map(conn -> {
             conn.preparedQuery(getAddUndelivered()).execute(parameters).invoke(rows -> {
-                conn.close().subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
                 promise.complete();
             }).onFailure().invoke(err -> {
                 logger.error(String.format("%sAdd Undelivered Error: %s%s", ColorUtilConstants.RED,
                         err.getCause().getMessage(), ColorUtilConstants.RESET));
-                conn.close();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(null);
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -559,9 +559,7 @@ public abstract class DbDefinitionBase {
             future.future().subscribeAsCompletionStage().thenCompose(userId -> {
                 addUndelivered(userId, messageId).future().invoke(() -> {
                     promise.tryComplete();
-                }).onFailure().invoke(err -> {
-                    err.printStackTrace();
-                }).subscribeAsCompletionStage();
+                }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
                 return null;
             });
         }
@@ -579,15 +577,15 @@ public abstract class DbDefinitionBase {
                     id = row.getLong(0);
                 }
                 promise.complete(id);
-                conn.close().subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
                 return Uni.createFrom().item(id);
             }).onFailure().invoke(err -> {
                 logger.error(String.format("%sError finding user by name: %s - %s%s", ColorUtilConstants.RED, name,
                         err.getCause().getMessage(), ColorUtilConstants.RESET));
-                conn.close().subscribeAsCompletionStage();
-            }).subscribeAsCompletionStage();
+                conn.close().subscribeAsCompletionStage().isDone();
+            }).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(conn);
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
         return promise;
     }
 
@@ -636,7 +634,7 @@ public abstract class DbDefinitionBase {
         }).onFailure().invoke(error -> {
             logger.error("{}Error Retriving/Adding User: {}{}", ColorUtilConstants.RED, error,
                     ColorUtilConstants.RESET);
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -659,14 +657,14 @@ public abstract class DbDefinitionBase {
                     logger.error(String.format("%sError building user json: %s%s", ColorUtilConstants.RED,
                             err.getCause().getMessage(), ColorUtilConstants.RESET));
                     err.printStackTrace();
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
                 return null;
             });
         }).onFailure().invoke(err -> {
             logger.error(String.format("%sError with database connection: %s%s", ColorUtilConstants.RED,
                     err.getCause().getMessage(), ColorUtilConstants.RESET));
             err.printStackTrace();
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return promise;
     }
@@ -707,18 +705,18 @@ public abstract class DbDefinitionBase {
                 return Uni.createFrom().item(tx);
             }).onFailure().call(err -> {
                 err.printStackTrace();
-                tx.close().subscribeAsCompletionStage();
+                tx.close().subscribeAsCompletionStage().isDone();
                 return null;
             }).eventually(removeUndelivered).call(rows -> {
                 Promise<Void> undeliveredPromise = Promise.promise();
                 removeMessage.setPromise(undeliveredPromise);
                 return Uni.createFrom().item(rows);
-            }).eventually(removeMessage).subscribeAsCompletionStage();
+            }).eventually(removeMessage).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(tx);
         }).onFailure().call(err -> {
             err.printStackTrace();
             return null;
-        }).subscribeAsCompletionStage();
+        }).subscribeAsCompletionStage().isDone();
 
         return removeUndelivered.getReturnPromise();
     }
@@ -774,9 +772,9 @@ public abstract class DbDefinitionBase {
                         returnPromise.complete(counts);
                     }
                 }).onFailure().invoke(err -> {
-                    tx.close().subscribeAsCompletionStage();
+                    tx.close().subscribeAsCompletionStage().isDone();
                     logger.error("Deleting Undelivered: {}", err.getCause().getMessage());
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
             }
         }
 
@@ -859,14 +857,14 @@ public abstract class DbDefinitionBase {
                     count += rows.rowCount() == 0 ? 1 : rows.rowCount();
 
                     if (messageIds.size() == count) {
-                        tx.close().subscribeAsCompletionStage();
+                        tx.close().subscribeAsCompletionStage().isDone();
                     }
                 }).onFailure().invoke(err -> {
                     logger.error(String.format("%sDeleting Messages: %s%s", ColorUtilConstants.RED, err,
                             ColorUtilConstants.RESET));
                 }).eventually(completePromise).onFailure().invoke(err -> {
                     err.printStackTrace();
-                }).subscribeAsCompletionStage();
+                }).subscribeAsCompletionStage().isDone();
             }
         }
 

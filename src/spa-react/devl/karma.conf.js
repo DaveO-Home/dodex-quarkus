@@ -50,7 +50,8 @@ module.exports = function (config) {
             "/images/": base + "/images/",
             "/userlogin/unregister": "http://localhost:8089/userlogin/unregister",
             "/userlogin": "http://localhost:8089/userlogin",
-            "/app.js": distDir + bundler + "/app.js"
+            "/app.js": distDir + bundler + "/app.js",
+            "/appl/assets/": base + "/appl/assets/"
         },
         // list of files / patterns to load in the browser
         files: [
@@ -74,9 +75,9 @@ module.exports = function (config) {
             "karma-*",
             "@metahub/karma-jasmine-jquery"
         ],
-        /* Karma uses <link href="/base/appl/testapp_dev.html" rel="import"> -- you will need webcomponents polyfill to use browsers other than Chrome.
-         * This test demo will work with Chrome/ChromeHeadless by default - Webcomponents included above, so FirefoxHeadless should work also. 
-         * Other browsers may work with tdd.
+        /* Karma uses <link href="/base/appl/testapp_dev.html" rel="import"> -- you will need webcomponents polyfill to
+         * use browsers other than Chrome. This test demo will work with Chrome/ChromeHeadless by default -
+         * Webcomponents included above, so FirefoxHeadless should work also. Other browsers may work with tdd.
          */
         browsers: global.whichBrowser,
         customLaunchers: {
@@ -114,6 +115,7 @@ module.exports = function (config) {
             useIframe: true,
         },
         // how many browser should be started simultaneous
-        concurrency: 10 // Infinity
+        concurrency: 10, // Infinity
+        random: false
     });
 };
