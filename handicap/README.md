@@ -54,13 +54,13 @@
 The following are the steps to add golfer info, courses with tee data and golfer scores.
 
 * First time login simply enter a `pin`(2 alpha characters with between 4-6 addition alpha-numeric characters) with first and last name. Click the login button to create/login to the application. On subsequent logins only the `pin` is needed, don't forget it. The `Country` and `State` should also be selected before creating a `pin` as default values. However, you can change the defaults on any login. Also, `Overlap Years` and `Public` should be set.
-<br/>
+
     * Overlap will use the previous year's scores for the handicap if needed.
     * Public will allow your scores to show up in the `Scores` tab for public viewing.
     
 * Add a course by entering it's name with one radio button selected for the tee. You can also change the tee's color. The `rating`, `slope` and `par` values are also required. Click the `Add Tee` button. After the first added tee, the others can be added when needed.
-<br/>
-__Note__: You can disable the course/tee add function by setting `handicap.enableAdmin` to `true` in the `...\resources\application-conf.json` file. And then use the default `admin.pin` to administer the courses/tees. When using this pin, a first and last name must be entered on initial use.
+
+__Note:__: You can disable the course/tee add function by setting `handicap.enableAdmin` to `true` in the `...\resources\application-conf.json` file. And then use the default `admin.pin` to administer the courses/tees. When using this pin, a first and last name must be entered on initial use.
 
 * To add a score, select a course and tee with values for `Gross Score`, `Adjusted Score` and `Tee Time`. Click the `Add Score` button to add the score. The `Remove Last Score` will remove the last entered score, mutiple clicks will remove mutiple scores.
 
