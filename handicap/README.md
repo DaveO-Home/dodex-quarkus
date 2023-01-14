@@ -9,6 +9,8 @@
     * Execute __`npm install`__ to download the javascript dependencies.
 
     * When changing the client proto configuration, execute `./proto protos/handicap` to generate the `proto3/gRPC` javascript modules. The proto3 configuration is in `./protos/handicap.proto`.
+      
+      __Note:__ git ignores the protobuf(protoc) generated code. You must exec __./proto protos/handicap__ before building the client.
 
     * Execute either `npm run esbuild:build` or `npm run webpack:build` to package the javascript development client. The output is located in `src/main/resources/META-INF/resources/`. When making changes to javascript/html/css, simply rerun `npm run esbuild:build`, if the verticle is running, refresh the browser. For proto3 changes, rerun `./proto protos/handicap` first.
 

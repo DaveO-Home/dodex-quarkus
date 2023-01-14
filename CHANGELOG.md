@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2.6.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.1) (2023-01-14)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.0...v2.6.1)
+
+* Changed src/grpc/client/proto script to run out of the box after npm install. Using the node version of protoc.
+* For some reason git will not recognize the protoc generated code.
+
 ## [v2.6.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.0) (2023-01-12)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.5.2...v2.6.0)
@@ -9,8 +16,7 @@
 * Made numerous changes to jasmine tests related to react testing
 * Changed front end layout based on Bootstrap 5.2.3 (spa app)
 * Added a Kotlin Golf Handicap Application using Grpc, protobuf, javascript client(esbuild/webpack),
-  jooq code generator, envoy and gradle server-side protobuf generator.
-
+  jooq code generator, envoy and gradle server-side protobuf generator(quarkus internal).
 
 ## [v2.5.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.5.2) (2022-05-02)
 
