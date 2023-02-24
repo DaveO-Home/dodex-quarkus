@@ -31,9 +31,9 @@ import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseH2 extends DbH2 {
 	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseH2.class.getName());
-	protected Properties dbProperties = new Properties();
+	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
+	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
 	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
@@ -85,23 +85,20 @@ public class SpaDatabaseH2 extends DbH2 {
 					if (val == null) {
 						final String usersSql = getCreateTable("LOGIN");
 
-						Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err -> {
-							logger.info(String.format("Login Table Create Error: %s", err.getMessage()));
-						}).doOnSuccess(result -> logger.warn("Login Table Added."));
+						Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err ->
+								logger.info(String.format("Login Table Create Error: %s", err.getMessage())))
+							.doOnSuccess(result -> logger.warn("Login Table Added."));
 
-						crow.subscribe(result -> {
-							conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
-						}, err -> {
-							logger.error(String.format("Login Table Result Error: %s", err.getMessage()));
-							err.printStackTrace();
+						crow.subscribe(result -> conn.rxClose()
+							.doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe(), err -> {
+								logger.error(String.format("Login Table Result Error: %s", err.getMessage()));
+								err.printStackTrace();
 						});
 					} else {
 						conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
 					}
-				}).doOnError(err -> {
-					logger.error(String.format("Login Table Query Error: %s", err.getMessage()));
-
-				}).doOnError(Throwable::printStackTrace).flatMapCompletable(res -> Completable.complete())));
+				}).doOnError(err -> logger.error(String.format("Login Table Query Error: %s", err.getMessage())))
+					.doOnError(Throwable::printStackTrace).flatMapCompletable(res -> Completable.complete())));
 
 		completable.subscribe(() -> {
 			try {

@@ -12,7 +12,6 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.ColorUtilConstants;
@@ -53,7 +52,6 @@ public class SpaDatabaseMariadb extends DbMariadb {
 
 		assert dbOverrideMap != null;
 		SpaDbConfiguration.mapMerge(dbMap, dbOverrideMap);
-		// databaseSetup();
 	}
 
 	public SpaDatabaseMariadb() throws InterruptedException, IOException, SQLException {
@@ -64,13 +62,12 @@ public class SpaDatabaseMariadb extends DbMariadb {
 
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
-		// databaseSetup();
 	}
 
 	@Override
 	public Future<Void> databaseSetup() {
 		if ("dev".equals(webEnv)) {
-			// dbMap.put("dbname", "/myDbname"); // this wiil be merged into the default map
+			// dbMap.put("dbname", "/myDbname"); // this will be merged into the default map
 			SpaDbConfiguration.configureTestDefaults(dbMap, dbProperties);
 		} else {
 			SpaDbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
@@ -88,26 +85,23 @@ public class SpaDatabaseMariadb extends DbMariadb {
 				}
 				if (val == null) {
 					final String usersSql = getCreateTable("LOGIN");
-					conn.query(usersSql).execute().onFailure().invoke(error -> {
+					conn.query(usersSql).execute().onFailure().invoke(error ->
 						logger.error("{}Login Table Error: {}{}", ColorUtilConstants.RED, error,
-								ColorUtilConstants.RESET);
-					}).onItem().invoke(c -> {
+							ColorUtilConstants.RESET)).onItem().invoke(c ->
 						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-								ColorUtilConstants.RESET);
-					}).subscribeAsCompletionStage().isDone();
+							ColorUtilConstants.RESET)).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
-			}).onFailure().invoke(error -> {
+			}).onFailure().invoke(error ->
 				logger.error("{}Check Login Table Error: {}{}", ColorUtilConstants.RED, error,
-						ColorUtilConstants.RESET);
-			}).subscribeAsCompletionStage().isDone();
+					ColorUtilConstants.RESET)).subscribeAsCompletionStage().isDone();
+			setupPromise.complete();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
 			setupSql(pool);
 			conn.close().onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
-			setupPromise.complete();
 			return Uni.createFrom().item(pool);
-		}).subscribeAsCompletionStage().isDone();
+		}).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
 		return setupPromise.future();
 	}

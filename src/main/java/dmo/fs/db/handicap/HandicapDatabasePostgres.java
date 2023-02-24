@@ -230,7 +230,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                             }).subscribeAsCompletionStage().isDone();
                     })).subscribeAsCompletionStage().isDone();
 
-            returnPromise.future().onItem().invoke(isTablesCreated -> {
+            finalPromise.future().onItem().invoke(isTablesCreated -> {
                 if (!isCreateTables) {
                     try {
                         setupSql(pool4);

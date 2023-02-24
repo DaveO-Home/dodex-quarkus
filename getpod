@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+pod=$(minikube kubectl -- get pods |cut -d " " -f1 | grep quarkus-depl)
+
+echo $pod

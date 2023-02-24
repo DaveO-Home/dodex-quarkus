@@ -68,6 +68,7 @@ public class DodexRouter extends DodexRouterBase {
         if(ke != null) {
             ke.setValue("sessions", sessions.size());
         }
+
         if (isUsingCassandra()) {
             CassandraRouter cassandraRouter = CDI.current().select(CassandraRouter.class).get();
             cassandraRouter.setRemoteAddress(currentRemoteAddress);

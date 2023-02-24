@@ -218,6 +218,7 @@ public class DodexRoutes {
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
                 ColorUtilConstants.RESET);
+        Server.setDefaultDbName(defaultDbName);
 
         DodexRouter dodexRouter = null;
         switch (defaultDbName) {
@@ -253,10 +254,10 @@ public class DodexRoutes {
                 break;
             case "firebase":
                 try {
-                    FirebaseRouter firebaseRouter = CDI.current().select(FirebaseRouter.class).get();
-                    firestore = firebaseRouter.getDbf();
                     dodexRouter = CDI.current().select(DodexRouter.class).get();
                     dodexRouter.setUsingFirebase(true);
+                    FirebaseRouter firebaseRouter = CDI.current().select(FirebaseRouter.class).get();
+                    firestore = firebaseRouter.getDbf();
                     new dmo.fs.spa.router.SpaRoutes(router, routerPromise, firestore);
                 } catch (Exception ex) {
                     ex.printStackTrace();

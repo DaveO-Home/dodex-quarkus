@@ -38,7 +38,7 @@
                 "ssl": "false"
             },
             "config": {
-                "filename": "file:./dodexh2.db",
+                "filename": "file:/data/h2/dodexh2.db",
                 "url": "jdbc:h2:"
             }
         }
@@ -51,7 +51,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
+                "host": "192.168.1.75",
                 "port": "5432",
                 "url": "jdbc:postgresql:",
                 "dbname": "dodex"
@@ -64,7 +64,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
+                "host": "192.168.1.75",
                 "port": "5432",
                 "url": "jdbc:postgresql:",
                 "dbname": "dodex"
@@ -118,10 +118,10 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
+                "host": "192.168.1.75",
                 "port": "3306",
                 "url": "jdbc:mysql:",
-                "dbname": "dodex"
+                "dbname": "test"
             }
         }
     },

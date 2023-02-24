@@ -24,6 +24,7 @@ import io.quarkus.arc.properties.IfBuildProperty
 import io.quarkus.arc.properties.UnlessBuildProperty
 import io.quarkus.grpc.GrpcService
 import io.vertx.core.Promise
+import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
 import io.vertx.mutiny.core.Context
 import io.vertx.mutiny.core.Vertx
@@ -32,10 +33,10 @@ import io.vertx.mutiny.ext.web.Router
 import io.vertx.mutiny.ext.web.handler.FaviconHandler
 import io.vertx.mutiny.ext.web.handler.StaticHandler
 import io.vertx.mutiny.ext.web.handler.TimeoutHandler
+import io.vertx.mutiny.ext.web.handler.CorsHandler
 import org.eclipse.microprofile.config.ConfigProvider
 import java.util.*
 import java.util.logging.Logger
-import javax.inject.Singleton
 
 class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
     val router: Router = router
@@ -115,10 +116,15 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         val staticHandler: StaticHandler = StaticHandler.create("")
         staticHandler.setCachingEnabled(false)
         staticHandler.setMaxAgeSeconds(0)
-
         if (handicapDatabase != null && isUsingHandicap!!) {
             handicapDatabase?.checkOnTables()?.onItem()!!.invoke { ->
                 val staticRoute: Route = router.route("/handicap/*").handler(TimeoutHandler.create(2000))
+                val corsHandler = CorsHandler.create()
+                corsHandler.addOrigin("Access-Control-Allow-Origin: *")
+                corsHandler.addOrigin("Access-Control-Allow-Headers: *")
+                val methods = setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.OPTIONS, HttpMethod.HEAD)
+                corsHandler.allowedMethods(methods)
+                staticRoute.handler(corsHandler)
                 staticRoute.handler(staticHandler)
                 staticRoute.failureHandler {
                         err,
@@ -129,9 +135,15 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 router.route().handler(staticHandler)
                 router.route().handler(faviconHandler)
                 handicapPromise.complete()
-            }.subscribeAsCompletionStage()
+            }.onFailure().invoke { err ->
+                err.stackTrace
+            }
+            .subscribeAsCompletionStage()
         } else {
             handicapPromise.complete()
+        }
+        if(isUsingHandicap!! && handicapDatabase.toString().contains("H2")) {
+            handicapPromise.tryComplete()
         }
         return router
     }
@@ -159,7 +171,6 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
     @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cassandra")
     @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cubrid")
     @IfBuildProperty(name = "handicap.enableHandicap", stringValue = "true")
-    @Singleton
     @GrpcService
     class HandicapIndexService : HandicapIndexGrpc.HandicapIndexImplBase() {
         init {

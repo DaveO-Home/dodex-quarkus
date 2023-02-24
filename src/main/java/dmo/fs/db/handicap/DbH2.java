@@ -1,9 +1,6 @@
 
 package dmo.fs.db.handicap;
 
-//import dmo.fs.db.handicap.HandicapDatabase;
-//import dmo.fs.db.handicap.DbDefinitionBase;
-
 public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase {
 	public static final String CHECKUSERSQL = "SELECT table_name FROM  INFORMATION_SCHEMA.TABLES where table_name = 'USERS' and table_type = 'BASE TABLE' and TABLE_SCHEMA = 'PUBLIC'";
     protected static final String CHECKMESSAGESSQL = "SELECT table_name FROM  INFORMATION_SCHEMA.TABLES where table_name = 'MESSAGES'";

@@ -238,7 +238,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                         }).subscribeAsCompletionStage().isDone();
                     })).subscribeAsCompletionStage().isDone();
 
-            returnPromise.future().onItem().invoke(isTablesCreated -> {
+            finalPromise.future().onItem().invoke(isTablesCreated -> {
                 if (!isCreateTables) {
                     try {
                         setupSql(pool4);

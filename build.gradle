@@ -104,6 +104,7 @@ compileKotlin {
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11
+    dependsOn compileKotlin
 }
 
 def usr = System.getProperty("user.home")
@@ -139,7 +140,7 @@ task run(type:Exec) {
   }
   //on windows:
   if(OS.indexOf("win") >= 0) {
-    commandLine "cmd", "/c", ".\\gradlew", "quarkusDev" 
+    commandLine "cmd", "/c", ".\\gradlew", "quarkusDev"
   } else {
   //on linux
     commandLine "./gradlew", "quarkusDev"

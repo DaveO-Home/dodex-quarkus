@@ -121,7 +121,9 @@ public class SpaDatabasePostgres extends DbPostgres {
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
 		PgConnectOptions connectOptions;
-		connectOptions = new PgConnectOptions().setHost(dbMap.get("host")).setPort(Integer.parseInt(dbMap.get("port")))
+		connectOptions = new PgConnectOptions()
+				.setHost(dbMap.get("host"))
+				.setPort(Integer.parseInt(dbMap.get("port")))
 				.setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
 				.setDatabase(dbMap.get("dbname")).setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl")))
 				.setIdleTimeout(1);

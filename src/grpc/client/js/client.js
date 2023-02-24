@@ -22,9 +22,17 @@ countryState("US");
 
 /* Use protobuf to generate/validate message */
 const useProtobuf = true;
-const port = "8071";
+/*
+    For tunneling with `localtunnel` the grpc hostname must be app --subdomain value + "2"
+    as described in the README.
+*/
+let port = isNaN(window.location.hostname.split(".").join("")) ? ":8071" : ":30071"; // for minikube
+port = window.location.hostname === "127.0.0.1" ? ":8071" : port;
+const grpcHost = window.location.hostname.replace(".loca.lt","2.loca.lt");
+const host = window.location.hostname.endsWith(".loca.lt") ? grpcHost : window.location.hostname;
+port = grpcHost.endsWith("2.loca.lt") ? "" : port;
 
-const client = new HandicapIndexClient("http://" + window.location.hostname + ":" + port, null, null);
+const client = new HandicapIndexClient(window.location.protocol + "//" + host + port, null, null);
 const login = new HandicapSetup();
 const command = new Command();
 const courses = new Course();
@@ -77,7 +85,6 @@ const submitLogin = async (event) => {
   login.setJson(message);
   login.setCmd(window.cmd);
   login.setMessage("Golfer Data");
-console.log("Grpc getGolfer*********",login)
 
   await client.getGolfer(login, {}, (err, response) => {
     if (err) {

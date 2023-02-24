@@ -162,6 +162,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
 		PgConnectOptions connectOptions;
+
 		connectOptions = new PgConnectOptions()
 			.setHost(dbMap.get("host"))
 			.setPort(Integer.parseInt(dbMap.get("port")))

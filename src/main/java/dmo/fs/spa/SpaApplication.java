@@ -74,6 +74,7 @@ public class SpaApplication {
             setupPromise.complete();
             return setupPromise.future();
         }
+logger.info("Returning DatabaseSetup******************: "+spaDatabase);
         return spaDatabase.databaseSetup();
     }
 

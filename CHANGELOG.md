@@ -1,4 +1,18 @@
 # Changelog
+## [v2.6.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.2) (2023-02-28)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.1...v2.6.2)
+
+* Upgraded Quarkus to 2.15.3
+* Native windows setup for the handicap application with envoy - see "Using on native Windows" in ../handicap/README.md
+* Major upgrade to the docker/minikube configuration for the dufferdo2/dodex-quarkus image
+  * Image includes envoy
+  * Minikube envoy/handicap inclusion
+  * Minikube persistent volume for h2(embedded)
+  * Minikube exposed to internet using `localtunnel`(javascript) tunnel with static subdomains(very cool)
+* Upgraded gradle to 7.6, supports java17/18/19
+* Upgraded firebase client
+* Changes to README.md
 
 ## [v2.6.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.1) (2023-01-14)
 

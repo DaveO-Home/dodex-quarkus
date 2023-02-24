@@ -37,6 +37,7 @@ public class HandicapDatabaseH2 extends DbH2 {
     protected JDBCPool pool4;
     protected Boolean isCreateTables = false;
     protected Promise<String> returnPromise = Promise.promise();
+    protected Promise<String> finalPromise = Promise.promise();
     protected JDBCConnectOptions connectOptions;
     protected PoolOptions poolOptions;
 
@@ -92,7 +93,6 @@ public class HandicapDatabaseH2 extends DbH2 {
     }
 
     private void databaseSetup() {
-        Promise<String> finalPromise = Promise.promise();
         if ("dev".equals(webEnv)) {
             DbConfiguration.configureTestDefaults(dbMap, dbProperties);
         } else {
@@ -226,15 +226,16 @@ public class HandicapDatabaseH2 extends DbH2 {
                                 }).subscribeAsCompletionStage().isDone();
                     })).subscribeAsCompletionStage().isDone();
 
-            returnPromise.future().onItem().invoke(isTablesCreated -> {
-                if (!isCreateTables) {
-                    try {
-                        setupSql(getJavaPool());
-                    } catch (IOException | SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }).subscribeAsCompletionStage().isDone();
+                    finalPromise.future().onItem().invoke(isTablesCreated -> {
+                        if (!isCreateTables) {
+                            try {
+                                setupSql(getJavaPool());
+                            } catch (IOException | SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }).subscribeAsCompletionStage().isDone();
+
         }).onFailure().invoke(err -> {
             logger.info(String.format("Starting Create Tables Error: %s", err.getMessage()));
             err.printStackTrace();

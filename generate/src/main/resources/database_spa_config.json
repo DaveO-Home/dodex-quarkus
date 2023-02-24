@@ -25,7 +25,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost",
+                "host": "//192.168.1.75",
                 "url": "jdbc:postgresql:",
                 "dbname": "/dodex"
             }
@@ -37,7 +37,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "//localhost",
+                "host": "//192.168.1.75",
                 "url": "jdbc:postgresql:",
                 "dbname": "/dodex"
             }
@@ -85,15 +85,15 @@
         },
         "prod": {
             "credentials": {
-                "user": "user",
-                "password": "password",
+                "user": "dodex",
+                "password": "dodex",
                 "ssl": "false"
             },
             "config": {
-                "host": "localhost",
+                "host": "192.168.1.75",
                 "port": "3306",
                 "url": "jdbc:mariadb:",
-                "dbname": "dodex"
+                "dbname": "test"
             }
         }
     },
@@ -146,8 +146,9 @@
                 "ssl": "false"
             },
             "config": {
-                "filename": "file:./dodexh2.db",
-                "url": "jdbc:h2:"
+                "filename": "file:/data/h2/dodexh2.db",
+                "url": "jdbc:h2:",
+                "using": "true"
             }
         }
     },

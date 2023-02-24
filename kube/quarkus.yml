@@ -1,0 +1,101 @@
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-4.3.1
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    io.kubernetes.cri-o.ContainerType/dodex-quarkus: container
+    #    io.kubernetes.cri-o.SandboxID/dodex-quarkus: 40a80914bb112ddcf781364a16089ffec022e9de4e5754b22bf8636d6836f80
+    io.kubernetes.cri-o.TTY/dodex-quarkus: "true"
+    io.podman.annotations.autoremove/dodex-quarkus: "FALSE"
+    io.podman.annotations.init/dodex-quarkus: "true"
+    io.podman.annotations.privileged/dodex-quarkus: "FALSE"
+    io.podman.annotations.publish-all/dodex-quarkus: "FALSE"
+    creationTimestamp: "2023-01-31T17:14:30Z"
+  name: quarkus-deploy
+  labels:
+    app: quarkus-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quarkus-app
+  template:
+    metadata:
+      labels:
+        app: quarkus-app
+    spec:
+      containers:
+        - name: dodex-quarkus
+          image: dufferdo2/dodex-quarkus:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DEFAULT_DB
+              value: "h2"  # or postgres or mariadb
+            - name: USE_HANDICAP
+              value: "true"
+            - name: storage__root_directory
+              value: /data/h2
+          ports:
+            - containerPort: 8071
+              hostPort: 8071
+            - containerPort: 8088
+              hostPort: 8088
+            - containerPort: 9901
+              hostPort: 9901
+          volumeMounts:
+            - mountPath: /data/h2
+              name: quarkus-storage
+          securityContext:
+            capabilities:
+              drop:
+              - CAP_MKNOD
+              - CAP_NET_RAW
+              - CAP_AUDIT_WRITE
+          tty: true
+      volumes:
+        - name: quarkus-storage
+          persistentVolumeClaim:
+            claimName: quarkus-pvc
+      enableServiceLinks: true
+      hostname: quarkus-pod
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quarkus-service
+  labels:
+    app: quarkus-app
+spec:
+  selector:
+    app: quarkus-app
+  type: NodePort
+  ports:
+    - port: 8088
+      nodePort: 30088
+      targetPort: 8088
+      protocol: TCP
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quarkus-grpc
+  labels:
+    app: quarkus-app
+spec:
+  selector:
+    app: quarkus-app
+  type: NodePort
+  ports:
+    - port: 8071
+      nodePort: 30071
+      targetPort: 8071
+      protocol: TCP
+      name: http

@@ -1,7 +1,6 @@
 package dmo.fs.quarkus;
 
 import dmo.fs.utils.ColorUtilConstants;
-import dmo.fs.utils.DodexUtil;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -17,8 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 @QuarkusMain
@@ -28,6 +29,7 @@ public class Server implements QuarkusApplication {
     private static Promise<Router> routesPromise = Promise.promise();
     private static Integer port;
     private static Boolean isUsingHandicap = false;
+    private static String defaultDbName = "";
     public static boolean isProduction;
     public static final Vertx vertx = Vertx.vertx();
 
@@ -38,7 +40,6 @@ public class Server implements QuarkusApplication {
 
     @Override
     public int run(String... args) throws InterruptedException, ExecutionException, IOException {
-//        Vertx vertx = Vertx.vertx();
         HttpServer server = vertx.createHttpServer();
         Config config = ConfigProvider.getConfig();
         isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
@@ -55,7 +56,12 @@ public class Server implements QuarkusApplication {
         }
 
         routesPromise.future().onItem().invoke(router -> {
-            if (isUsingHandicap) {
+            Set<String> supportedDBs = new HashSet<>();
+            supportedDBs.add("h2");
+            supportedDBs.add("postgres");
+            supportedDBs.add("mariadb");
+            boolean isUseHandicapSet = "true".equals(System.getenv().get("USE_HANDICAP"));
+            if (isUsingHandicap && supportedDBs.contains(defaultDbName) && isUseHandicapSet) {
                 logger.warn(
                         String.format(
                                 "%sHandicap Started on port: %s%s",
@@ -84,9 +90,9 @@ public class Server implements QuarkusApplication {
                 logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on http://", host, ":",
                         port, ColorUtilConstants.RESET);
             }
-        }).subscribeAsCompletionStage().isDone();
-        Quarkus.waitForExit();
+        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
 
+        Quarkus.waitForExit();
         server.close();
 
         return 0;
@@ -116,5 +122,9 @@ public class Server implements QuarkusApplication {
 
     public static void setIsUsingHandicap(Boolean isUsingHandicap) {
         Server.isUsingHandicap = isUsingHandicap;
+    }
+
+    public static void setDefaultDbName(String defaultDbName) {
+        Server.defaultDbName = defaultDbName;
     }
 }

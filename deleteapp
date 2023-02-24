@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+minikube kubectl -- delete services quarkus-grpc quarkus-service
+minikube kubectl -- delete deployments quarkus-deploy

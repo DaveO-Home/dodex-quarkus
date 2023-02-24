@@ -1,6 +1,6 @@
 {
   "name": "dodex-quarkus",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "description": "A java asynchronous server for Dodex using quarkus",
   "main": "index.js",
   "scripts": {
@@ -43,5 +43,6 @@
   },
   "homepage": "https://github.com/DaveO-Home/dodex-quarkus#readme",
   "dependencies": {
+    "localtunnel": "^2.0.2"
   }
 }

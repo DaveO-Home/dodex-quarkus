@@ -70,7 +70,6 @@ public class SpaRoutes {
             routesPromise.complete(router);
         } else {
             spaDatabase = SpaDbConfiguration.getSpaDb();
-
             if (spaDatabase != null) {
                 spaDatabase.databaseSetup().onSuccess(none -> {
                     setGetLoginRoute();
