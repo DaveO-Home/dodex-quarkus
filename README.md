@@ -142,7 +142,7 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm17`. This will
 6. before cleaning up, you can generate a yaml template. Execute __`podman generate kube quarkus_pod > quarkus.yaml`__
 
 ### Building a *deployment*, *service* and *persistent volume* with minikube
-   * Since including the **Handicap** application(multiple exposed ports, persistent volume) to **dodex-quarkus*, the **minikube** deployment must be from configuration files.
+   * Since including the **Handicap** application(multiple exposed ports, persistent volume) to **dodex-quarkus**, the **minikube** deployment must be from configuration files.
 1. execute __`minikube start`__
 2. edit kube/quarkus.yml and change **env:** to desired database(DEFAULT_DB) - defaults to **h2**(embedded), no database configuration necessary otherwise set **DEFAULT_DB** to **mariadb** or **postgres**
 3. execute `kubectl create -f kube/h2-volume.yml`
@@ -182,7 +182,7 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm17`. This will
    * if the **dodex_quarkus** and/or the **dufferdo2/dodex-quarkus** exist, remove them `docker rm dodex_quarkus` and `docker rmi dufferdo2/dodex-quarkus`
    * build the image `docker build -t dufferdo2/dodex-quarkus:latest -f ./kube/Dockerfile ./kube`
 4. execute `./deleteapp`
-5. execute `minikube image rmi dufferdo2/dodex-quarkus`
+5. execute `minikube image rm dufferdo2/dodex-quarkus`
 6. execute `minikube load image dufferdo2/qodex-quarkus`
 7. execute `kubectl create -f kube/quarkus.yml`
 8. execute `minikube service quarkus-service`
@@ -194,10 +194,12 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm17`. This will
 2. execute `minikube service quarkus-service --url` to view the local host **ip** address - can be used for the **--local-host** value
 3. in separate terminals 
    * execute `npx localtunnel  --host https://localtunnel.me --subdomain my-app --port 30088 --local-host $(minikube service quarkus-service --url | cut -d":" -f2 | cut -d"/" -f3)` 
-   * execute `npx localtunnel  --host https://localtunnel.me --subdomain my-app2 --port 30071 --local-host $(minikube service quarkus-service --url | cut -d":" -f2 | cut -d"/" -f3)`
+   * for the gRPC tunnel, execute `npx localtunnel  --host https://localtunnel.me --subdomain my-app2 --port 30071 --local-host $(minikube service quarkus-service --url | cut -d":" -f2 | cut -d"/" -f3)`
      * the **--subdomain** for **my-app** and **my-app2** should be changed to unique values
      * the naming convention is required(otherwise edit src/grpc/client/js/client.js and tweak) e.g. **coolapp** for port 30088 and **coolapp2** for port 30071
-   * view <https://YOUR-UNIQUE-APP.loca.lt> in browser
+   * view <https://YOUR-UNIQUE-APP.loca.lt> or <https://YOUR-UNIQUE-APP.lt/handicap.html> in browser
+   
+   __Note:__ Make sure your Ad-Blocker is turned off for the web site.
 
 ### Firebase
 

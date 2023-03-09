@@ -1,4 +1,13 @@
 # Changelog
+## [v2.6.3](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.3) (2023-03-08)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.2...v2.6.3)
+
+* Upgraded Quarkus to 2.16.4
+* Fixed CORS configuration for v2.16 - application.properties
+* Javascript updates - grpc, react, firebase, dodex
+* Upgraded java dependencies
+
 ## [v2.6.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.2) (2023-02-28)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.1...v2.6.2)

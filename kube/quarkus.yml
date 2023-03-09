@@ -34,7 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: DEFAULT_DB
-              value: "h2"  # or postgres or mariadb
+              value: "mariadb"  # h2 or postgres or mariadb
             - name: USE_HANDICAP
               value: "true"
             - name: storage__root_directory

@@ -8,9 +8,12 @@
         </div>
     </div>
     <div class="form-group">
-        <label class="control-label" for="inputPassword">Password:</label>
+        <p>
+        <label class="control-label" for="inputPassword"></label>
         <input pattern="(?=.*?[A-z])(?=.*?[0-9])(?=.*?[^\w\s]).{8,48}" name="password" id="inputPassword" class="form-control" required type="password" placeholder="Password"/>
+        <label class="control-label"><i class="bi bi-eye-slash" id="togglePassword"></i> Toggle Visibility</label>
         <!-- <input name="password" id="inputPassword" class="form-control" required type="password" placeholder="Password"/> -->
+        </p>
     </div>
     <div class="form-group" hidden>
         <label class="control-label" for="inputPassword">Repeat Password:</label>
@@ -22,3 +25,4 @@
     </div>
     <!-- <input type="submit" name="username" id="submitForm"/> -->
     </form>
+

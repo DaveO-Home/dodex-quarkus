@@ -47,13 +47,25 @@ export default {
                 options["body"] = Stache.compile(frag)(options);
                 const el = $(document.body).append(template(options)).find("> .modal").last();
                 const css = {};
-                
+
                 if (options.width) {
                     css["width"] = typeof css.width === "number"
                         ? `${options.width}%` : options.width;
                     const width = css.width.substring(0, css.width.length - 1);
                     css["margin-left"] = `${(100 - width) / 2}%`;
                 }
+
+                let togglePassword = document.querySelector("#togglePassword");
+                const password = document.querySelector("#inputPassword");
+
+                togglePassword.addEventListener("click", function () {
+                    // toggle the type attribute
+                    const type = password.getAttribute("type") === "password" ? "text" : "password";
+                    password.setAttribute("type", type);
+
+                    // toggle the icon
+                    this.classList.toggle("bi-eye");
+                });
 
                 const loginButton = $(".modal .submit-login");
                 loginButton.on("click", login(loginButton, true));

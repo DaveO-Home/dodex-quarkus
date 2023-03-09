@@ -23,7 +23,7 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.3.7"
+    vertxVersion = "4.4.0"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
@@ -32,31 +32,31 @@ dependencies {
     implementation "io.quarkus:quarkus-resteasy-jackson"
     implementation "io.vertx:vertx-rx-java3:$vertxVersion"
     implementation "io.quarkus:quarkus-resteasy"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "io.quarkus:quarkus-grpc"
     implementation "io.quarkus:quarkus-kotlin"
 
     implementation "io.quarkus:quarkus-websockets"
-    implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client:3.0.0"
+    implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client"
     implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
 
     implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation group: "io.quarkiverse.neo4j", name: "quarkus-neo4j", version: "1.0.3"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:1.0.3"
     
     implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     
     implementation "io.quarkus:quarkus-vertx-http"
     implementation "io.quarkus:quarkus-smallrye-reactive-messaging-kafka"
-    implementation group:"org.apache.kafka", name: "kafka-clients", version: "3.0.0"
-    implementation "com.h2database:h2:2.1.214"
-    implementation("org.jooq:jooq:3.17.6")
-    implementation("org.jooq:jooq-codegen-maven:3.17.6")
-    implementation("org.jooq:jooq-meta:3.17.6")
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.0")
+    implementation "org.apache.kafka:kafka-clients"
+    implementation "com.h2database:h2"
+    implementation("org.jooq:jooq:3.18.0")
+    implementation("org.jooq:jooq-codegen-maven:3.18.0")
+    implementation("org.jooq:jooq-meta:3.18.0")
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api")
     implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
@@ -70,7 +70,7 @@ dependencies {
 //    implementation group: "jakarta.xml.bind", name: "jakarta.xml.bind-api", version: "4.0.0"
 //    runtimeOnly group: "com.sun.xml.bind", name: "jaxb-impl", version: "4.0.0"
 
-    implementation group: "cubrid", name: "cubrid-jdbc", version: "11.0.6.0313"
+    implementation "cubrid:cubrid-jdbc:11.1.1.0028"
 
     implementation("dmo.fs.utils:generate:0.0.1")
 
