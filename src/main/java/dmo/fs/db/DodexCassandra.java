@@ -3,7 +3,7 @@ package dmo.fs.db;
 import java.sql.SQLException;
 import java.util.List;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import io.vertx.reactivex.core.eventbus.EventBus;
 

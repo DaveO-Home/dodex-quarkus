@@ -1,34 +1,26 @@
 package dmo.fs.db;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import dmo.fs.utils.ColorUtilConstants;
+import dmo.fs.utils.DodexUtil;
+import io.quarkus.runtime.configuration.ProfileManager;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Promise;
+import jakarta.ws.rs.core.Response.Status;
+import org.neo4j.driver.*;
+import org.neo4j.driver.async.AsyncSession;
+import org.neo4j.driver.exceptions.NoSuchRecordException;
+import org.neo4j.driver.reactive.ReactiveSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.ws.rs.core.Response.Status;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import dmo.fs.quarkus.Server;
-import io.quarkus.runtime.configuration.ProfileManager;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.async.AsyncSession;
-import org.neo4j.driver.exceptions.NoSuchRecordException;
-import org.neo4j.driver.reactive.RxResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmo.fs.utils.ColorUtilConstants;
-import dmo.fs.utils.DodexUtil;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.core.Promise;
 
 public class DodexDatabaseNeo4j extends DbNeo4j {
 	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseNeo4j.class.getName());
@@ -54,10 +46,11 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 			this.dbOverrideMap = dbOverrideMap;
 		}
 
+		assert dbOverrideMap != null;
 		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
 	}
 
-	public DodexDatabaseNeo4j() throws InterruptedException, IOException, SQLException {
+	public DodexDatabaseNeo4j() throws IOException {
 		super();
 
 		defaultNode = dodexUtil.getDefaultNode();
@@ -82,7 +75,7 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		Promise<Driver> promise = Promise.promise();
 		Driver driver = getDriver(dbMap, dbProperties);
 
-		AsyncSession session = driver.asyncSession();
+		AsyncSession session = driver.session(AsyncSession.class); // driver.asyncSession();
 
 		session.runAsync(getCheckConstraints())
 			.thenCompose(fn -> fn.singleAsync())
@@ -144,15 +137,16 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 	}
 	// If apoc plugin installed
 	private void apocConstraints(Driver driver, Promise<Driver> promise) {
-		Multi.createFrom().resource(driver::rxSession,
-			session -> session.writeTransaction(tx -> {
-				RxResult resultConstraints = tx.run(getCreateConstraints());
-				return Multi.createFrom().publisher(resultConstraints.records())
+		Multi.createFrom().resource(() -> driver.session(ReactiveSession.class),
+			session -> session.executeWrite(tx -> {
+//				Result resultConstraints = tx.run(getCreateConstraints());
+				return Multi.createFrom().item(tx.run(getCreateConstraints()))
 						.map(record -> "constraints");
 			}))
 			.withFinalizer(session -> {
 				promise.complete(driver);
-				return Uni.createFrom().publisher(session.close());
+				session.close();
+				return Uni.createFrom().nothing();
 			})
 			.onFailure().invoke(Throwable::printStackTrace)
 			.subscribe().asStream();

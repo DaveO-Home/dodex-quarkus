@@ -16,10 +16,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.Session;
 
 import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;

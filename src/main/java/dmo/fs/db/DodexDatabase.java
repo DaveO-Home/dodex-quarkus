@@ -7,7 +7,7 @@ import java.util.Map;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.sqlclient.Pool;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 public interface DodexDatabase {
 

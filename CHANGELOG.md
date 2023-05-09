@@ -1,4 +1,15 @@
 # Changelog
+## [v3.0.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.0.0) (2023-05-09)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.3...v3.0.0)
+
+* Upgraded Quarkus to 3.0.2
+* Upgraded dependencies Java(build.gradle), Javascript(package.json files)
+* Code Changes
+  * javax to jakarta packages (javax.websocket, javax.enterprise etc)
+  * Mutiny reactive changes for neo4j to make compliant with neo4j jdbc driver 5
+* Added dodex content to handicap application
+
 ## [v2.6.3](https://github.com/DaveO-Home/dodex-quarkus/tree/v2.6.3) (2023-03-08)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.2...v2.6.3)

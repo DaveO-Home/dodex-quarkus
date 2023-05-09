@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.reactive.RxResult;
+import org.neo4j.driver.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +30,12 @@ public abstract class DbNeo4jBase {
         params.put("password", spaLogin.getPassword());
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
 
-        Uni.createFrom().item(driver::rxSession).call(session -> {
-            RxResult result = session.run(
+        Uni.createFrom().item(driver::session).call(session -> {
+            Result result = session.run(
                     "MATCH (l:Login) where l.name = $name and l.password = $password RETURN count(*) as count;",
                     params);
-            Uni.createFrom().publisher(result.records()).call(record -> {
-                int count = record.get("count").asInt();
+            Uni.createFrom().item(result).call(record -> {
+                int count = record.peek().get("count").asInt();
                 session.close();
                 if (count == 0) {
                     spaLogin.setStatus("-1");
@@ -47,7 +47,8 @@ public abstract class DbNeo4jBase {
                     }
                 }
                 promise.complete(spaLogin);
-                return Uni.createFrom().publisher(session.close());
+                session.close();
+                return Uni.createFrom().nothing();
             }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
             return Uni.createFrom().item(session);
         }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
@@ -65,17 +66,18 @@ public abstract class DbNeo4jBase {
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
         spaLogin.setStatus("0");
 
-        Multi.createFrom().resource(driver::rxSession,
-                session -> session.writeTransaction(tx -> {
-                    RxResult results = tx.run(
+        Multi.createFrom().resource(driver::session,
+                session -> session.executeWrite(tx -> {
+                    Result results = tx.run(
                             "create (l:Login {name: $name, password: $password, lastLogin: datetime({timezone:$zone})});",
                             params);
-                    tx.commit();
-                    return Multi.createFrom().publisher(results.records()).onItem().transform(record -> "add");
+//                    tx.commit();
+                    return Multi.createFrom().item(results).onItem().transform(record -> "add");
                 }))
                 .withFinalizer(session -> {
                     promise.complete(spaLogin);
-                    return Uni.createFrom().publisher(session.close());
+                    session.close();
+                    return Uni.createFrom().nothing();
                 })
                 .onFailure().invoke(t -> {
                     spaLogin.setStatus("-4");
@@ -95,16 +97,17 @@ public abstract class DbNeo4jBase {
         params.put("zone", TimeZone.getDefault().getID());
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
 
-        Multi.createFrom().resource(driver::rxSession,
+        Multi.createFrom().resource(driver::session,
                 session -> session.writeTransaction(tx -> {
-                    RxResult results = tx.run(
+                    Result results = tx.run(
                             "MATCH (l:Login {name: $name, password: $password}) SET l.lastLogin = dateTime({timezone:$zone});",
                             params);
                     tx.commit();
-                    return Multi.createFrom().publisher(results.records()).onItem().transform(record -> "update");
+                    return Multi.createFrom().item(results).onItem().transform(record -> "update");
                 }))
                 .withFinalizer(session -> {
-                    return Uni.createFrom().publisher(session.close());
+                    session.close();
+                    return Uni.createFrom().nothing();
                 })
                 .onFailure().invoke(Throwable::printStackTrace)
                 .subscribe().asStream();
@@ -123,15 +126,16 @@ public abstract class DbNeo4jBase {
         Map<String, Object> params = new ConcurrentHashMap<>();
         params.put("name", spaLogin.getName());
 
-        Multi.createFrom().resource(driver::rxSession,
-                session -> session.writeTransaction(tx -> {
-                    RxResult results = tx.run("MATCH (l:Login) where l.name = $name delete l;", params);
-                    tx.commit();
-                    return Multi.createFrom().publisher(results.records()).onItem().transform(record -> "delete");
+        Multi.createFrom().resource(driver::session,
+                session -> session.executeWrite(tx -> {
+                    Result results = tx.run("MATCH (l:Login) where l.name = $name delete l;", params);
+//                    tx.commit();
+                    return Multi.createFrom().item(results).onItem().transform(record -> "delete");
                 }))
                 .withFinalizer(session -> {
                     promise.complete(spaLogin);
-                    return Uni.createFrom().publisher(session.close());
+                    session.close();
+                    return Uni.createFrom().nothing();
                 })
                 .onFailure().invoke(Throwable::printStackTrace)
                 .subscribe().asStream();

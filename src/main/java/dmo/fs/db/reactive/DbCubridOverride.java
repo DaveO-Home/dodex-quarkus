@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

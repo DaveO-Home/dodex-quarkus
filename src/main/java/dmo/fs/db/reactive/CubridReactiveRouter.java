@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;

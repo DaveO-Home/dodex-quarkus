@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;

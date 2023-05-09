@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;

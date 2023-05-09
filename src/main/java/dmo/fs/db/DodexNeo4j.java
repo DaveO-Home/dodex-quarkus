@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import javax.websocket.Session;
+import io.smallrye.mutiny.Uni;
+import jakarta.websocket.Session;
 
 import org.neo4j.driver.Driver;
 
@@ -15,7 +16,7 @@ public interface DodexNeo4j {
 
 	Promise<MessageUser> deleteUser(Session ws, MessageUser messageUser) throws InterruptedException, ExecutionException;
 
-    MessageUser updateUser(MessageUser messageUser);
+    Uni<MessageUser> updateUser(MessageUser messageUser);
 
 	Promise<MessageUser> addMessage(Session ws, MessageUser messageUser, String message, List<String> undelivered) throws InterruptedException, ExecutionException;
 

@@ -4,7 +4,7 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.7.21"
     id "org.jetbrains.kotlin.plugin.allopen" version "1.7.21"
     id "io.quarkus"
-    id 'pmd'
+    id "pmd"
 }
 
 repositories {
@@ -23,12 +23,13 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.4.0"
+    vertxVersion = "4.4.1"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    // runtimeOnly("org.openrewrite:rewrite-java:7.38.0")
     implementation "io.quarkus:quarkus-resteasy-jackson"
     implementation "io.vertx:vertx-rx-java3:$vertxVersion"
     implementation "io.quarkus:quarkus-resteasy"
@@ -44,9 +45,9 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation "io.quarkiverse.neo4j:quarkus-neo4j:1.0.3"
-    
-    implementation "io.quarkus:quarkus-vertx-web:${quarkusPlatformVersion}"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:3.0.0"
+
+    implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     
     implementation "io.quarkus:quarkus-vertx-http"
@@ -65,6 +66,7 @@ dependencies {
     implementation "io.quarkus:quarkus-smallrye-health"
     implementation "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
     implementation "com.google.firebase:firebase-admin:9.1.1"
+
     // implementation group: 'net.java.dev.jna', name: 'platform', version: '3.5.2'  // for graalvm
 
 //    implementation group: "jakarta.xml.bind", name: "jakarta.xml.bind-api", version: "4.0.0"
@@ -74,18 +76,19 @@ dependencies {
 
     implementation("dmo.fs.utils:generate:0.0.1")
 
+
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
     testImplementation "io.rest-assured:rest-assured"
 
 }
 
 group 'dmo.fs'
-version '2.10.2'
+version '3.0.0'
 
-sourceCompatibility = "11"
+sourceCompatibility = "17"
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 compileJava {
@@ -98,14 +101,15 @@ task runWith(type: JavaExec) {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_11
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
     kotlinOptions.javaParameters = true
 }
 
 compileTestKotlin {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_11
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
     dependsOn compileKotlin
 }
+
 
 def usr = System.getProperty("user.home")
 def OS = System.getProperty("os.name").toLowerCase()

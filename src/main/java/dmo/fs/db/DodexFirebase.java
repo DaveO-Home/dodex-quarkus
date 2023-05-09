@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import com.google.cloud.firestore.Firestore;
 

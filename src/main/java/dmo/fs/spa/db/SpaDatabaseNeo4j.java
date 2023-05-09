@@ -7,7 +7,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -20,7 +20,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.async.AsyncSession;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
-import org.neo4j.driver.reactive.RxResult;
+import org.neo4j.driver.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,15 +146,16 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 	}
 	// If apoc plugin installed
 	private void apocConstraints(Driver driver, Promise<Void> promise) {
-		Multi.createFrom().resource(driver::rxSession,
-			session -> session.writeTransaction(tx -> {
-				RxResult resultConstraints = tx.run(getCreateConstraints());
-				return Multi.createFrom().publisher(resultConstraints.records())
+		Multi.createFrom().resource(driver::session,
+			session -> session.executeWrite(tx -> {
+				Result resultConstraints = tx.run(getCreateConstraints());
+				return Multi.createFrom().item(resultConstraints)
 						.map(record -> "constraints");
 			}))
 			.withFinalizer(session -> {
 				promise.complete();
-				return Uni.createFrom().publisher(session.close());
+				session.close();
+				return Uni.createFrom().nothing();
 			})
 			.onFailure().invoke(Throwable::printStackTrace)
 			.subscribe().asStream();

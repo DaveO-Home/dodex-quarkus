@@ -122,7 +122,7 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm17`. This will
 
 3. execute __`cp build/dodex-quarkus-2.1.0-runner.jar`__ to **./kube**
 4. execute __`docker build -t dufferdo2/dodex-quarkus:latest -f kube/Dockerfile ./kube`__
-5. execute __`docker create -t -p 8088:8088 -p 8071:8071 -p 9901:9901 --name dodex_quarkus dodex-quarkus`__
+5. execute __`docker create -t -p 8088:8088 -p 8071:8071 -p 9901:9901 --name dodex_quarkus dufferdo2/dodex-quarkus`__
 6. execute __`docker start dodex_quarkus`__
 7. use browser to view - <http://localhost:8088/handicap.html> or <http://localhost:8088/ddex> or <http://localhost:8088/ddex/bootstrap.html>, if the spa-react was installed this link should work, <http://localhost:8088/dist/react-fusebox/appl/testapp.html>
 8. execute __`docker stop dodex_quarkus`__

@@ -11,7 +11,7 @@ COPY --from=builder /usr/local/bin/envoy /usr/bin/
 USER root
 
 COPY envoy.yaml /etc/envoy/envoy.yaml
-RUN chmod go+r /etc/envoy/envoy.yaml
+RUN chmod go+r /etc/envoy/envoy.yaml && chmod o+w /data/h2
 
 RUN adduser dodex -D
 
@@ -20,7 +20,7 @@ EXPOSE 8071
 EXPOSE 9901
 
 COPY run_dodex.sh /usr/bin
-RUN chmod o+x /usr/bin/run_dodex.sh && chmod o+w /data/h2
+RUN chmod o+x /usr/bin/run_dodex.sh
 
 USER dodex:dodex
 

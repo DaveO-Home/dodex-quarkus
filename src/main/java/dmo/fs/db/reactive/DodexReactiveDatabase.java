@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import dmo.fs.db.MessageUser;
 import io.vertx.core.Future;

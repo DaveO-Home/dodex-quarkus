@@ -3,10 +3,10 @@ package dmo.fs.router;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 
 import com.google.cloud.firestore.Firestore;
 
@@ -191,7 +191,7 @@ public class DodexRoutes {
         router.route().handler(TimeoutHandler.create(2000));
 
         if ("dev".equals(DodexUtil.getEnv())) {
-            router.route().handler(CorsHandler.create("*"/* Need ports 8089 & 9876 */)
+            router.route().handler(CorsHandler.create(/* Need ports 8089 & 9876 */)
                     .allowedMethod(io.vertx.core.http.HttpMethod.GET));
         }
 
