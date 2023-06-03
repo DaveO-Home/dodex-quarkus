@@ -11,5 +11,6 @@
   "dodex.events.limit": 25,
   "dodex.events.remove": false,
   "handicap.enableAdmin": false,
-  "handicap.adminPin": "hand!cap"
+  "handicap.adminPin": "hand!cap",
+  "log.console.color": true
 }

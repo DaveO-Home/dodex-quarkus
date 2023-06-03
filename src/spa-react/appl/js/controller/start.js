@@ -149,6 +149,7 @@ export default App.controllers.Start ||
             // const marked = require('../utils/marked')
             me = this;
             const mdFunction = data => {
+                marked.use({mangle:false, headerIds: false});
                 me.html = `${App.html} ${marked.parse(data)}`;
             };
 

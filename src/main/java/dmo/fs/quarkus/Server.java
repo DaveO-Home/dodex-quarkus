@@ -1,10 +1,13 @@
 package dmo.fs.quarkus;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dmo.fs.utils.ColorUtilConstants;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.ext.web.Route;
 import io.vertx.mutiny.ext.web.Router;
@@ -16,10 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.io.InputStream;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @QuarkusMain
@@ -30,6 +31,7 @@ public class Server implements QuarkusApplication {
     private static Integer port;
     private static Boolean isUsingHandicap = false;
     private static String defaultDbName = "";
+    private static boolean color = true;
     public static boolean isProduction;
     public static final Vertx vertx = Vertx.vertx();
 
@@ -40,6 +42,9 @@ public class Server implements QuarkusApplication {
 
     @Override
     public int run(String... args) throws InterruptedException, ExecutionException, IOException {
+        ObjectMapper jsonMapper = new ObjectMapper();
+        JsonNode node;
+
         HttpServer server = vertx.createHttpServer();
         Config config = ConfigProvider.getConfig();
         isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
@@ -49,8 +54,16 @@ public class Server implements QuarkusApplication {
                 : config.getValue("%dev.quarkus.http.host", String.class); // see application.properties
         port = isProduction ? config.getValue("quarkus.http.port", Integer.class)
                 : config.getValue("%dev.quarkus.http.port", Integer.class);
-        boolean color = isProduction ? config.getValue("quarkus.log.console.color", Boolean.class)
-                : config.getValue("%dev.quarkus.log.console.color", Boolean.class);
+//        boolean color = isProduction ? config.getValue("quarkus.log.console.color", Boolean.class)
+//                : config.getValue("%dev.quarkus.log.console.color", Boolean.class);
+
+        try (InputStream in = getClass().getResourceAsStream("/application-conf.json")) {
+            node = jsonMapper.readTree(in);
+            JsonObject jsonObject = JsonObject.mapFrom(node);
+            final Optional<Boolean> optionalColor = Optional.ofNullable(jsonObject.getBoolean("log.console.color"));
+            optionalColor.ifPresent(aBoolean -> color = aBoolean);
+        }
+
         if (!color) {
             ColorUtilConstants.colorOff();
         }

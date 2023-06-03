@@ -1,4 +1,15 @@
 # Changelog
+
+## [v3.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.1.0) (2023-06-03)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.0.0...v3.1.0)
+
+* Upgraded Quarkus to 3.1.1 - includes kotlin 1.8.21
+* Upgraded Gradle to 8.1.1
+* Upgraded javascript dependencies(firebase, spa-react, dodex, grpc/client)
+* Fixed quarkus deprecation for `console.color`, moved to application-conf.json
+* Fixed font size on handicap form.
+
 ## [v3.0.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.0.0) (2023-05-09)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v2.6.3...v3.0.0)
