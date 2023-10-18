@@ -218,6 +218,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 )
                     .uppercase()
             }
+
             populateCourse
                 .getCourseWithTee(ratingMap)
                 .onItem().invoke { handicapData ->

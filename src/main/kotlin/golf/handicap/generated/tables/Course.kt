@@ -52,7 +52,7 @@ open class Course(
     companion object {
 
         /**
-         * The reference instance of <code>COURSE</code>
+         * The reference instance of <code>course</code>
          */
         val COURSE: Course = Course()
     }
@@ -63,22 +63,22 @@ open class Course(
     override fun getRecordType(): Class<CourseRecord> = CourseRecord::class.java
 
     /**
-     * The column <code>COURSE.COURSE_SEQ</code>.
+     * The column <code>course.COURSE_SEQ</code>.
      */
     val COURSE_SEQ: TableField<CourseRecord, Int?> = createField(DSL.name("COURSE_SEQ"), SQLDataType.INTEGER.nullable(false).identity(true), this, "")
 
     /**
-     * The column <code>COURSE.COURSE_NAME</code>.
+     * The column <code>course.COURSE_NAME</code>.
      */
     val COURSE_NAME: TableField<CourseRecord, String?> = createField(DSL.name("COURSE_NAME"), SQLDataType.VARCHAR(128).nullable(false), this, "")
 
     /**
-     * The column <code>COURSE.COURSE_COUNTRY</code>.
+     * The column <code>course.COURSE_COUNTRY</code>.
      */
     val COURSE_COUNTRY: TableField<CourseRecord, String?> = createField(DSL.name("COURSE_COUNTRY"), SQLDataType.VARCHAR(128).nullable(false), this, "")
 
     /**
-     * The column <code>COURSE.COURSE_STATE</code>.
+     * The column <code>course.COURSE_STATE</code>.
      */
     val COURSE_STATE: TableField<CourseRecord, String?> = createField(DSL.name("COURSE_STATE"), SQLDataType.CHAR(2).nullable(false), this, "")
 
@@ -86,19 +86,19 @@ open class Course(
     private constructor(alias: Name, aliased: Table<CourseRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
 
     /**
-     * Create an aliased <code>COURSE</code> table reference
+     * Create an aliased <code>course</code> table reference
      */
     constructor(alias: String): this(DSL.name(alias))
 
     /**
-     * Create an aliased <code>COURSE</code> table reference
+     * Create an aliased <code>course</code> table reference
      */
     constructor(alias: Name): this(alias, null)
 
     /**
-     * Create a <code>COURSE</code> table reference
+     * Create a <code>course</code> table reference
      */
-    constructor(): this(DSL.name("COURSE"), null)
+    constructor(): this(DSL.name("course"), null)
 
     constructor(child: Table<out Record>, key: ForeignKey<out Record, CourseRecord>): this(Internal.createPathAlias(child, key), child, key, COURSE, null)
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA

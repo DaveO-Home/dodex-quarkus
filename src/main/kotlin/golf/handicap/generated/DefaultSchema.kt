@@ -30,22 +30,22 @@ open class DefaultSchema : SchemaImpl("", DefaultCatalog.DEFAULT_CATALOG) {
     }
 
     /**
-     * The table <code>COURSE</code>.
+     * The table <code>course</code>.
      */
     val COURSE: Course get() = Course.COURSE
 
     /**
-     * The table <code>GOLFER</code>.
+     * The table <code>golfer</code>.
      */
     val GOLFER: Golfer get() = Golfer.GOLFER
 
     /**
-     * The table <code>RATINGS</code>.
+     * The table <code>ratings</code>.
      */
     val RATINGS: Ratings get() = Ratings.RATINGS
 
     /**
-     * The table <code>SCORES</code>.
+     * The table <code>scores</code>.
      */
     val SCORES: Scores get() = Scores.SCORES
 

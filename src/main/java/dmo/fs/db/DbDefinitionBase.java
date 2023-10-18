@@ -8,6 +8,8 @@ import static org.jooq.impl.DSL.notExists;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.table;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.time.LocalDateTime;
@@ -50,9 +52,9 @@ import io.vertx.mutiny.sqlclient.Tuple;
 
 public abstract class DbDefinitionBase {
     private static final Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
-    protected static final String QUERYUSERS = "select * from USERS where password=$";
-    protected static final String QUERYMESSAGES = "select * from MESSAGES where id=$";
-    protected static final String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from USERS, UNDELIVERED, MESSAGES where USERS.id = user_id and MESSAGES.id = message_id and USERS.id = $1";
+    protected static final String QUERYUSERS = "select * from users where password=$";
+    protected static final String QUERYMESSAGES = "select * from messages where id=$";
+    protected static final String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from users, undelivered, messages where users.id = user_id and messages.id = message_id and users.id = $1";
 
     protected static DSLContext create;
 
@@ -130,7 +132,7 @@ public abstract class DbDefinitionBase {
     private static String setupAllUsers() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-                        .from(table("USERS")).where(field("NAME").ne("$")));
+                        .from(table("users")).where(field("NAME").ne("$")));
     }
 
     public static String getAllUsers() {
@@ -140,7 +142,7 @@ public abstract class DbDefinitionBase {
     private static String setupMessageByHandleDate() {
         return create.renderNamedParams(
                 select(field("ID"))
-                        .from(table("MESSAGES")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
+                        .from(table("messages")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
     }
 
     public String getMessageIdByHandleDate() {
@@ -150,7 +152,7 @@ public abstract class DbDefinitionBase {
     private static String setupUserByName() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-                        .from(table("USERS")).where(field("NAME").eq("$")));
+                        .from(table("users")).where(field("NAME").eq("$")));
     }
 
     public static String getUserByName() {
@@ -160,7 +162,7 @@ public abstract class DbDefinitionBase {
     private static String setupUserById() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-                        .from(table("USERS")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
+                        .from(table("users")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
     }
 
     public static String getUserById() {
@@ -169,7 +171,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupInsertUser() {
         return create.renderNamedParams(
-                insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                insertInto(table("users")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$").returning(field("ID")));
     }
 
@@ -179,7 +181,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupMariaInsertUser() {
         return create.renderNamedParams(
-                insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
+                insertInto(table("users")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$"));
     }
 
@@ -188,7 +190,7 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupUpdateUser() {
-        return create.renderNamedParams(insertInto(table("USERS"))
+        return create.renderNamedParams(insertInto(table("users"))
                 .columns(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                 .values("$1", "$2", "$3", "$4", "$5").onConflict(field("PASSWORD")).doUpdate()
                 .set(field("LAST_LOGIN"), "$5").returning(field("ID")));
@@ -199,7 +201,7 @@ public abstract class DbDefinitionBase {
     }
 
     public static String setupSqliteUpdateUser() {
-        return "update USERS set last_login = ? where id = ?";
+        return "update users set last_login = ? where id = ?";
     }
 
     public static String getSqliteUpdateUser() {
@@ -207,7 +209,7 @@ public abstract class DbDefinitionBase {
     }
 
     public static String setupCustomDeleteUsers() {
-        return "DELETE FROM USERS WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT USERS.id AS mid FROM USERS INNER JOIN UNDELIVERED ON user_id = USERS.id) AS u )";
+        return "DELETE FROM users WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT users.id AS mid FROM users INNER JOIN undelivered ON user_id = users.id) AS u )";
     }
 
     public static String getCustomDeleteUsers() {
@@ -215,7 +217,7 @@ public abstract class DbDefinitionBase {
     }
 
     public static String setupCustomDeleteMessage() {
-        return "DELETE FROM MESSAGES WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT MESSAGES.id AS mid FROM MESSAGES INNER JOIN UNDELIVERED ON message_id = MESSAGES.id and MESSAGES.id = ?) AS m )";
+        return "DELETE FROM messages WHERE id = ? and NOT EXISTS (SELECT mid FROM (SELECT DISTINCT messages.id AS mid FROM messages INNER JOIN undelivered ON message_id = messages.id and messages.id = ?) AS m )";
     }
 
     public static String getCustomDeleteMessages() {
@@ -224,7 +226,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupRemoveUndelivered() {
         return create.renderNamedParams(
-                deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
+                deleteFrom(table("undelivered")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
     }
 
     public static String getRemoveUndelivered() {
@@ -232,7 +234,7 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupRemoveUserUndelivered() {
-        return create.renderNamedParams(deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$")));
+        return create.renderNamedParams(deleteFrom(table("undelivered")).where(field("USER_ID").eq("$")));
     }
 
     public static String getRemoveUserUndelivered() {
@@ -242,9 +244,9 @@ public abstract class DbDefinitionBase {
     private static String setupRemoveMessage() {
         return create
                 .renderNamedParams(
-                        deleteFrom(table("MESSAGES")).where(create.renderNamedParams(field("ID").eq("$1")
-                                .and(create.renderNamedParams(notExists(select().from(table("MESSAGES"))
-                                        .join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID")))
+                        deleteFrom(table("messages")).where(create.renderNamedParams(field("ID").eq("$1")
+                                .and(create.renderNamedParams(notExists(select().from(table("messages"))
+                                        .join(table("undelivered")).on(field("ID").eq(field("MESSAGE_ID")))
                                         .and(field("ID").eq("$2"))))))));
     }
 
@@ -253,9 +255,9 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupRemoveUsers() {
-        return create.renderNamedParams(deleteFrom(table("USERS")).where(create.renderNamedParams(
-                field("ID").eq("$").and(create.renderNamedParams(notExists(select().from(table("USERS"))
-                        .join(table("UNDELIVERED")).on(field("ID").eq(field("USER_ID"))).and(field("ID").eq("$"))))))));
+        return create.renderNamedParams(deleteFrom(table("users")).where(create.renderNamedParams(
+                field("ID").eq("$").and(create.renderNamedParams(notExists(select().from(table("users"))
+                        .join(table("undelivered")).on(field("ID").eq(field("USER_ID"))).and(field("ID").eq("$"))))))));
     }
 
     public static String getRemoveUsers() {
@@ -263,8 +265,8 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupUndeliveredMessage() {
-        return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID")).from(table("MESSAGES"))
-                .join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq("$"))
+        return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID")).from(table("messages"))
+                .join(table("undelivered")).on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq("$"))
                 .and(field("USER_ID").eq("$")));
     }
 
@@ -274,9 +276,9 @@ public abstract class DbDefinitionBase {
 
     private static String setupUserUndelivered() {
         return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID"), field("MESSAGE"),
-                field("POST_DATE"), field("FROM_HANDLE")).from(table("USERS")).join(table("UNDELIVERED"))
-                        .on(field("USERS.ID").eq(field("USER_ID")).and(field("USERS.ID").eq("$")))
-                        .join(table("MESSAGES")).on(field("MESSAGES.ID").eq(field("MESSAGE_ID"))));
+                field("POST_DATE"), field("FROM_HANDLE")).from(table("users")).join(table("undelivered"))
+                        .on(field("users.ID").eq(field("USER_ID")).and(field("users.ID").eq("$")))
+                        .join(table("messages")).on(field("messages.ID").eq(field("MESSAGE_ID"))));
     }
 
     public static String getUserUndelivered() {
@@ -284,7 +286,7 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupDeleteUser() {
-        return create.renderNamedParams(deleteFrom(table("USERS"))
+        return create.renderNamedParams(deleteFrom(table("users"))
                 .where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")).returning(field("ID")));
     }
 
@@ -294,7 +296,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupMariaDeleteUser() {
         return create.renderNamedParams(
-                deleteFrom(table("USERS")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
+                deleteFrom(table("users")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
     }
 
     public static String getMariaDeleteUser() {
@@ -302,7 +304,7 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupDeleteUserById() {
-        return create.renderNamedParams(deleteFrom(table("USERS")).where(field("ID").eq("$1")).returning(field("ID")));
+        return create.renderNamedParams(deleteFrom(table("users")).where(field("ID").eq("$1")).returning(field("ID")));
     }
 
     public static String getDeleteUserById() {
@@ -311,7 +313,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupAddMessage() {
         return create.renderNamedParams(
-                insertInto(table("MESSAGES")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
+                insertInto(table("messages")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
                         .values("$", "$", "$").returning(field("ID")));
     }
 
@@ -320,7 +322,7 @@ public abstract class DbDefinitionBase {
     }
 
     private static String setupMariaAddMessage() {
-        return create.renderNamedParams(insertInto(table("MESSAGES"))
+        return create.renderNamedParams(insertInto(table("messages"))
                 .columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE")).values("$", "$", "$"));
     }
 
@@ -330,7 +332,7 @@ public abstract class DbDefinitionBase {
 
     private static String setupAddUndelivered() {
         return create.renderNamedParams(
-                insertInto(table("UNDELIVERED")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
+                insertInto(table("undelivered")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
     }
 
     public static String getAddUndelivered() {
@@ -340,7 +342,7 @@ public abstract class DbDefinitionBase {
     private static String setupUserNames() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
-                        .from(table("USERS")).where(field("NAME").ne("$")));
+                        .from(table("users")).where(field("NAME").ne("$")));
     }
 
     public static String getUserNames() {
@@ -393,7 +395,8 @@ public abstract class DbDefinitionBase {
             Tuple parameters = getTupleParameters(messageUser);
 
             String sql = DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3()
-                    || DbConfiguration.isUsingMariadb() ? getSqliteUpdateUser() : getUpdateUser();
+                    || DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingH2() ?
+                    getSqliteUpdateUser() : getUpdateUser();
 
             conn.preparedQuery(sql).execute(parameters).map(rows -> {
                 conn.close().subscribeAsCompletionStage().isDone();
@@ -416,9 +419,12 @@ public abstract class DbDefinitionBase {
         OffsetDateTime time = OffsetDateTime.now();
         Tuple parameters;
 
-        if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingMariadb()) {
+        if (DbConfiguration.isUsingIbmDB2() ||
+                DbConfiguration.isUsingSqlite3() ||
+                DbConfiguration.isUsingMariadb() ||
+                DbConfiguration.isUsingH2()) {
             parameters = Tuple.of(
-                    DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb() ? timeStamp : date,
+                    DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingH2() ? timeStamp : date,
                     messageUser.getId());
             return parameters;
         }
@@ -594,7 +600,7 @@ public abstract class DbDefinitionBase {
     public Promise<MessageUser> selectUser(MessageUser messageUser, Session ws) {
         MessageUser resultUser = createMessageUser();
         Promise<MessageUser> promise = Promise.promise();
-        Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword());
+        Tuple parameters = Tuple.of(messageUser.getName(), URLDecoder.decode(messageUser.getPassword(), StandardCharsets.UTF_8));
 
         pool.getConnection().onItem().ifNotNull().invoke(conn -> {
             UniSubscribe<RowSet<Row>> data = conn.preparedQuery(getUserById()).execute(parameters).onFailure()
@@ -846,7 +852,7 @@ public abstract class DbDefinitionBase {
                 Tuple parameters = Tuple.of(messageId, messageId);
                 String sql = null;
                 if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb()
-                        || DbConfiguration.isUsingSqlite3()) {
+                        || DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingH2()) {
                     sql = getCustomDeleteMessages();
                 } else {
                     parameters = Tuple.of(messageId);

@@ -2,7 +2,6 @@ package dmo.fs.db.handicap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.handicap.utils.DodexUtil;
-import dmo.fs.quarkus.Server;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
@@ -83,7 +82,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
     }
 
     public Uni<String> checkOnTables() throws InterruptedException, SQLException {
-        if(isCreateTables) {
+        if (isCreateTables) {
             databaseSetup();
         }
         return returnPromise.future();
@@ -108,135 +107,172 @@ public class HandicapDatabaseMariadb extends DbMariadb {
         PoolOptions poolOptions =
                 new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
+        setMySQLConnectOptions(connectOptions);
+        setPoolOptions(poolOptions);
+
         // Create the client pool
         pool4 = MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 
         pool4.withTransaction(conn -> {
             conn.query(CHECKUSERSQL).execute().onItem().invoke(row -> {
-                RowIterator<Row> ri = row.iterator();
-                Integer val = null;
-                while (ri.hasNext()) {
-                    val = ri.next().getInteger(0);
-                }
+                        RowIterator<Row> ri = row.iterator();
+                        Integer val = null;
+                        while (ri.hasNext()) {
+                            val = ri.next().getInteger(0);
+                        }
 
-                if (val == null) {
-                    final String usersSql =
-                            getCreateTable("USERS").replaceAll("dummy", dbProperties.get("user").toString());
+                        if (val == null) {
+                            final String usersSql =
+                                    getCreateTable("USERS");
 
-                    Uni<RowSet<Row>> crow = conn.query(usersSql).execute().onFailure().invoke(err -> {
+                            Uni<RowSet<Row>> crow = conn.query(usersSql).execute().onFailure().invoke(err -> {
+                                logger.info(String.format("Users Table Error: %s", err.getMessage()));
+                            }).onItem().invoke(result -> {
+                                logger.info("Users Table Added.");
+                            });
+
+                            crow.subscribeAsCompletionStage().isDone();
+                        }
+                    }).onFailure().invoke(err -> {
                         logger.info(String.format("Users Table Error: %s", err.getMessage()));
-                    }).onItem().invoke(result -> {
-                        logger.info("Users Table Added.");
-                    });
 
-                    crow.subscribeAsCompletionStage().isDone();
-                }
-            }).onFailure().invoke(err -> {
-                logger.info(String.format("Users Table Error: %s", err.getMessage()));
-
-            }).flatMap(result -> conn.query(CHECKMESSAGESSQL).execute().onItem().invoke(row -> {
-                RowIterator<Row> ri = row.iterator();
-                Integer val = null;
-                while (ri.hasNext()) {
-                    val = ri.next().getInteger(0);
-                }
-
-                if (val == null) {
-                    final String sql =
-                            getCreateTable("MESSAGES").replaceAll("dummy", dbProperties.get("user").toString());
-
-                    Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
-                        logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-                    }).onItem().invoke(row2 -> {
-                        logger.info("Messages Table Added.");
-                    });
-
-                    crow.subscribeAsCompletionStage().isDone();
-                }
-            }).onFailure().invoke(err -> {
-                logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-
-            })).flatMap(result -> conn.query(CHECKUNDELIVEREDSQL).execute().onItem().invoke(row -> {
-                RowIterator<Row> ri = row.iterator();
-                Integer val = null;
-                while (ri.hasNext()) {
-                    val = ri.next().getInteger(0);
-                }
-
-                if (val == null) {
-                    final String sql = getCreateTable("UNDELIVERED").replaceAll("dummy",
-                            dbProperties.get("user").toString());
-
-                    Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
-                        logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
-                    }).onItem().invoke(row2 -> {
-                        logger.info("Undelivered Table Added.");
-                    });
-
-                    crow.subscribeAsCompletionStage().isDone();
-                }
-            }).onFailure().invoke(err -> {
-                logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-            })).flatMap(result -> conn.query(CHECKHANDICAPSQL).execute().onFailure().invoke(err ->
-                            logger.error(String.format("Golfer Table Error: %s", err.getMessage())))
-                    .onItem().invoke(rows -> {
-                        Set<String> names = new HashSet<>();
-
-                        for (Row row : rows) {
-                            names.add(row.getString(0));
+                    }).flatMap(result -> conn.query(CHECKMESSAGESSQL).execute().onItem().invoke(row -> {
+                        RowIterator<Row> ri = row.iterator();
+                        Integer val = null;
+                        while (ri.hasNext()) {
+                            val = ri.next().getInteger(0);
                         }
 
-                        String sql = getCreateTable("GOLFER");
-                        if ((names.contains("GOLFER"))) {
-                            sql = SELECTONE;
-                        }
+                        if (val == null) {
+                            final String sql =
+                                    getCreateTable("MESSAGES");
 
-                        conn.query(sql).execute().onFailure().invoke(err -> {
-                            logger.error(String.format("Golfer Table Error: %s", err.getMessage()));
-                        }).onItem().invoke(row1 -> {
-                            if (!names.contains("GOLFER")) {
-                                logger.warn("Golfer Table Added.");
-                            }
-                            String sql2 = getCreateTable("COURSE");
-
-                            if ((names.contains("COURSE"))) {
-                                sql2 = SELECTONE;
-                            }
-                            conn.query(sql2).execute().onFailure().invoke(err -> {
-                                logger.warn(String.format("Course Table Error: %s", err.getMessage()));
+                            Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
+                                logger.info(String.format("Messages Table Error: %s", err.getMessage()));
                             }).onItem().invoke(row2 -> {
-                                if (!names.contains("COURSE")) {
-                                    logger.warn("Course Table Added.");
+                                logger.info("Messages Table Added.");
+                            });
+
+                            crow.subscribeAsCompletionStage().isDone();
+                        }
+                    }).onFailure().invoke(err -> logger.info(String.format("Messages Table Error: %s", err.getMessage()))))
+                    .flatMap(result -> conn.query(CHECKUNDELIVEREDSQL).execute().onItem().invoke(row -> {
+                        RowIterator<Row> ri = row.iterator();
+                        Integer val = null;
+                        while (ri.hasNext()) {
+                            val = ri.next().getInteger(0);
+                        }
+
+                        if (val == null) {
+                            final String sql = getCreateTable("UNDELIVERED");
+
+                            Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
+                                logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
+                            }).onItem().invoke(row2 -> logger.info("Undelivered Table Added."));
+
+                            crow.subscribeAsCompletionStage().isDone();
+                        }
+                    }).onFailure().invoke(err -> {
+                        logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                    }))
+                    .flatMap(result -> conn.query(CHECKGROUPSSQL).execute().onItem().invoke(row -> {
+                        RowIterator<Row> ri = row.iterator();
+                        Integer val = null;
+                        while (ri.hasNext()) {
+                            val = ri.next().getInteger(0);
+                        }
+
+                        if (val == null) {
+                            final String sql = getCreateTable("GROUPS");
+
+                            Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
+                                logger.info(String.format("Groups Table Error: %s", err.getMessage()));
+                            }).onItem().invoke(row2 -> logger.info("Groups Table Added."));
+
+                            crow.subscribeAsCompletionStage().isDone();
+                        }
+                    }).onFailure().invoke(err -> {
+                        logger.info(String.format("Groups Table Error: %s", err.getMessage()));
+                    }))
+                    .flatMap(result -> conn.query(CHECKMEMBERSQL).execute().onItem().invoke(row -> {
+                        RowIterator<Row> ri = row.iterator();
+                        Integer val = null;
+                        while (ri.hasNext()) {
+                            val = ri.next().getInteger(0);
+                        }
+
+                        if (val == null) {
+                            final String sql = getCreateTable("MEMBER");
+
+                            Uni<RowSet<Row>> crow = conn.query(sql).execute().onFailure().invoke(err -> {
+                                logger.info(String.format("Member Table Error: %s", err.getMessage()));
+                            }).onItem().invoke(row2 -> logger.info("Member Table Added."));
+
+                            crow.subscribeAsCompletionStage().isDone();
+                        }
+                    }).onFailure().invoke(err -> {
+                        logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
+                    }))
+                    .flatMap(result -> conn.query(CHECKHANDICAPSQL).execute().onFailure().invoke(err ->
+                                    logger.error(String.format("Golfer Table Error: %s", err.getMessage())))
+                            .onItem().invoke(rows -> {
+                                Set<String> names = new HashSet<>();
+
+                                for (Row row : rows) {
+                                    names.add(row.getString(0));
                                 }
-                                String sql3 = getCreateTable("RATINGS");
-                                if ((names.contains("RATINGS"))) {
-                                    sql3 = SELECTONE;
+
+                                String sql = getCreateTable("GOLFER");
+                                if ((names.contains("golfer"))) {
+                                    sql = SELECTONE;
                                 }
-                                conn.query(sql3).execute().onFailure().invoke(err -> {
-                                    logger.warn(String.format("Ratings Table Error: %s", err.getMessage()));
-                                }).onItem().invoke(row3 -> {
-                                    if (!names.contains("RATINGS")) {
-                                        logger.warn("Ratings Table Added.");
+
+                                conn.query(sql).execute().onFailure().invoke(err -> {
+                                    logger.error(String.format("Golfer Table Error: %s", err.getMessage()));
+                                }).onItem().invoke(row1 -> {
+                                    if (!names.contains("golfer")) {
+                                        logger.warn("Golfer Table Added.");
                                     }
-                                    String sql4 = getCreateTable("SCORES");
-                                    if ((names.contains("SCORES"))) {
-                                        sql4 = SELECTONE;
+                                    String sql2 = getCreateTable("COURSE");
+
+                                    if ((names.contains("COURSE"))) {
+                                        sql2 = SELECTONE;
                                     }
-                                    conn.query(sql4).execute().onFailure().invoke(err -> {
-                                        logger.error(String.format("Scores Table Error: %s", err.getMessage()));
-                                    }).onItem().invoke(row4 -> {
-                                        if (!names.contains("SCORES")) {
-                                            logger.warn("Scores Table Added.");
+                                    conn.query(sql2).execute().onFailure().invoke(err -> {
+                                        logger.warn(String.format("Course Table Error: %s", err.getMessage()));
+                                    }).onItem().invoke(row2 -> {
+                                        if (!names.contains("course")) {
+                                            logger.warn("Course Table Added.");
                                         }
-                                    }).onTermination().invoke(() -> {
-                                        finalPromise.complete(isCreateTables.toString());
-                                        returnPromise.complete(isCreateTables.toString());
-                                        conn.close().subscribeAsCompletionStage().isDone();
+                                        String sql3 = getCreateTable("RATINGS");
+                                        if ((names.contains("ratings"))) {
+                                            sql3 = SELECTONE;
+                                        }
+                                        conn.query(sql3).execute().onFailure().invoke(err -> {
+                                            logger.warn(String.format("Ratings Table Error: %s", err.getMessage()));
+                                        }).onItem().invoke(row3 -> {
+                                            if (!names.contains("ratings")) {
+                                                logger.warn("Ratings Table Added.");
+                                            }
+                                            String sql4 = getCreateTable("SCORES");
+                                            if ((names.contains("scores"))) {
+                                                sql4 = SELECTONE;
+                                            }
+                                            conn.query(sql4).execute().onFailure().invoke(err -> {
+                                                logger.error(String.format("Scores Table Error: %s", err.getMessage()));
+                                            }).onItem().invoke(row4 -> {
+                                                if (!names.contains("scores")) {
+                                                    logger.warn("Scores Table Added.");
+                                                }
+                                            }).onTermination().invoke(() -> {
+                                                finalPromise.complete(isCreateTables.toString());
+                                                returnPromise.complete(isCreateTables.toString());
+                                                conn.close().subscribeAsCompletionStage().isDone();
+                                            }).subscribeAsCompletionStage().isDone();
+                                        }).subscribeAsCompletionStage().isDone();
                                     }).subscribeAsCompletionStage().isDone();
                                 }).subscribeAsCompletionStage().isDone();
-                            }).subscribeAsCompletionStage().isDone();
-                        }).subscribeAsCompletionStage().isDone();
-                    })).subscribeAsCompletionStage().isDone();
+                            })).subscribeAsCompletionStage().isDone();
 
             finalPromise.future().onItem().invoke(isTablesCreated -> {
                 if (!isCreateTables) {

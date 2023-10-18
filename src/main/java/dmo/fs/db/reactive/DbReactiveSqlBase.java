@@ -2,6 +2,7 @@
 package dmo.fs.db.reactive;
 
 import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.GroupOpenApiSql;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
@@ -10,17 +11,19 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.jdbcclient.JDBCPool;
 import io.vertx.reactivex.mysqlclient.MySQLClient;
 import io.vertx.reactivex.sqlclient.*;
+import io.vertx.sqlclient.PoolOptions;
+import jakarta.websocket.Session;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.websocket.Session;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.time.OffsetDateTime;
@@ -30,40 +33,42 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.jooq.impl.DSL.*;
 
 public abstract class DbReactiveSqlBase {
-    private static final Logger logger = LoggerFactory.getLogger(DbReactiveSqlBase.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(DbReactiveSqlBase.class.getName());
     protected static final String QUERYUSERS = "select * from USERS where password=$";
     protected static final String QUERYMESSAGES = "select * from MESSAGES where id=$";
     protected static final String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from USERS, UNDELIVERED, MESSAGES where USERS.id = user_id and MESSAGES.id = message_id and USERS.id = $1";
 
     protected static DSLContext create;
 
-    private static String GETALLUSERS;
-    private static String GETUSERBYNAME;
-    private static String GETINSERTUSER;
-    private static String GETUPDATEUSER;
-    private static String GETREMOVEUNDELIVERED;
-    private static String GETREMOVEMESSAGE;
-    private static String GETUNDELIVEREDMESSAGE;
-    private static String GETDELETEUSER;
-    private static String GETADDMESSAGE;
-    private static String GETADDUNDELIVERED;
-    private static String GETUSERNAMES;
-    private static String GETUSERBYID;
-    private static String GETREMOVEUSERUNDELIVERED;
-    private static String GETUSERUNDELIVERED;
-    private static String GETDELETEUSERBYID;
-    private static String GETSQLITEUPDATEUSER;
-    private static String GETREMOVEUSERS;
-    private static String GETCUSTOMDELETEMESSAGES;
-    private static String GETCUSTOMDELETEUSERS;
-    private static String GETMARIAINSERTUSER;
-    private static String GETMARIAADDMESSAGE;
-    private static String GETMARIADELETEUSER;
-    private static String GETMESSAGEIDBYHANDLEDATE;
-    private Boolean isTimestamp;
+    protected static String GETALLUSERS;
+    protected static String GETUSERBYNAME;
+    protected static String GETINSERTUSER;
+    protected static String GETUPDATEUSER;
+    protected static String GETREMOVEUNDELIVERED;
+    protected static String GETREMOVEMESSAGE;
+    protected static String GETUNDELIVEREDMESSAGE;
+    protected static String GETDELETEUSER;
+    protected static String GETADDMESSAGE;
+    protected static String GETADDUNDELIVERED;
+    protected static String GETUSERNAMES;
+    protected static String GETUSERBYID;
+    protected static String GETREMOVEUSERUNDELIVERED;
+    protected static String GETUSERUNDELIVERED;
+    protected static String GETDELETEUSERBYID;
+    protected static String GETSQLITEUPDATEUSER;
+    protected static String GETREMOVEUSERS;
+    protected static String GETCUSTOMDELETEMESSAGES;
+    protected static String GETCUSTOMDELETEUSERS;
+    protected static String GETMARIAINSERTUSER;
+    protected static String GETMARIAADDMESSAGE;
+    protected static String GETMARIADELETEUSER;
+    protected static String GETMESSAGEIDBYHANDLEDATE;
+    protected Boolean isTimestamp;
     protected Vertx vertx;
     protected static Pool pool;
-    private static boolean qmark = true;
+    protected static JDBCConnectOptions jdbcConnectOptions;
+    protected static PoolOptions poolOptions;
+    protected static boolean qmark = true;
 
     public static <T> void setupSql(T jdbcPool) {
         if (jdbcPool instanceof JDBCPool) {
@@ -73,6 +78,17 @@ public abstract class DbReactiveSqlBase {
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
 
         create = DSL.using(DodexUtil.getSqlDialect(), settings);
+
+        /* @TODO: convert GroupOpenApiSql to mutiny */
+        io.vertx.rxjava3.sqlclient.Pool poolRx =
+                io.vertx.rxjava3.jdbcclient.JDBCPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), jdbcConnectOptions, poolOptions);
+        GroupOpenApiSql.setPool(poolRx);
+
+        GroupOpenApiSql.setCreate(create);
+        GroupOpenApiSql.setQmark(qmark);
+        GroupOpenApiSql.buildSql();
+
+
         // Postges works with "$"(numbered) - Others work with "?"(un-numbered)
         GETALLUSERS = qmark ? setupAllUsers().replaceAll("\\$\\d", "?") : setupAllUsers();
         GETUSERBYNAME = qmark ? setupUserByName().replaceAll("\\$\\d", "?") : setupUserByName();
@@ -100,7 +116,7 @@ public abstract class DbReactiveSqlBase {
         GETMESSAGEIDBYHANDLEDATE = qmark ? setupMessageByHandleDate().replaceAll("\\$\\d", "?") : setupRemoveUsers();
     }
 
-    private static String setupAllUsers() {
+    protected static String setupAllUsers() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("USERS")).where(field("NAME").ne("$")));
@@ -110,7 +126,7 @@ public abstract class DbReactiveSqlBase {
         return GETALLUSERS;
     }
 
-    private static String setupMessageByHandleDate() {
+    protected static String setupMessageByHandleDate() {
         return create.renderNamedParams(
                 select(field("ID"))
                         .from(table("MESSAGES")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
@@ -120,7 +136,7 @@ public abstract class DbReactiveSqlBase {
         return GETMESSAGEIDBYHANDLEDATE;
     }
 
-    private static String setupUserByName() {
+    protected static String setupUserByName() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("USERS")).where(field("NAME").eq("$")));
@@ -130,7 +146,7 @@ public abstract class DbReactiveSqlBase {
         return GETUSERBYNAME;
     }
 
-    private static String setupUserById() {
+    protected static String setupUserById() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("USERS")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
@@ -140,7 +156,7 @@ public abstract class DbReactiveSqlBase {
         return GETUSERBYID;
     }
 
-    private static String setupInsertUser() {
+    protected static String setupInsertUser() {
         return create.renderNamedParams(
                 insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$").returning(field("ID")));
@@ -150,7 +166,7 @@ public abstract class DbReactiveSqlBase {
         return GETINSERTUSER;
     }
 
-    private static String setupMariaInsertUser() {
+    protected static String setupMariaInsertUser() {
         return create.renderNamedParams(
                 insertInto(table("USERS")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$"));
@@ -160,7 +176,7 @@ public abstract class DbReactiveSqlBase {
         return GETMARIAINSERTUSER;
     }
 
-    private static String setupUpdateUser() {
+    protected static String setupUpdateUser() {
         return create.renderNamedParams(insertInto(table("USERS"))
                 .columns(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                 .values("$1", "$2", "$3", "$4", "$5").onConflict(field("PASSWORD")).doUpdate()
@@ -195,7 +211,7 @@ public abstract class DbReactiveSqlBase {
         return GETCUSTOMDELETEMESSAGES;
     }
 
-    private static String setupRemoveUndelivered() {
+    protected static String setupRemoveUndelivered() {
         return create.renderNamedParams(
                 deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
     }
@@ -204,7 +220,7 @@ public abstract class DbReactiveSqlBase {
         return GETREMOVEUNDELIVERED;
     }
 
-    private static String setupRemoveUserUndelivered() {
+    protected static String setupRemoveUserUndelivered() {
         return create.renderNamedParams(deleteFrom(table("UNDELIVERED")).where(field("USER_ID").eq("$")));
     }
 
@@ -212,7 +228,7 @@ public abstract class DbReactiveSqlBase {
         return GETREMOVEUSERUNDELIVERED;
     }
 
-    private static String setupRemoveMessage() {
+    protected static String setupRemoveMessage() {
         return create
                 .renderNamedParams(
                         deleteFrom(table("MESSAGES")).where(create.renderNamedParams(field("ID").eq("$1")
@@ -225,7 +241,7 @@ public abstract class DbReactiveSqlBase {
         return GETREMOVEMESSAGE;
     }
 
-    private static String setupRemoveUsers() {
+    protected static String setupRemoveUsers() {
         return create.renderNamedParams(deleteFrom(table("USERS")).where(create.renderNamedParams(
                 field("ID").eq("$").and(create.renderNamedParams(notExists(select().from(table("USERS"))
                         .join(table("UNDELIVERED")).on(field("ID").eq(field("USER_ID"))).and(field("ID").eq("$"))))))));
@@ -235,7 +251,7 @@ public abstract class DbReactiveSqlBase {
         return GETREMOVEUSERS;
     }
 
-    private static String setupUndeliveredMessage() {
+    protected static String setupUndeliveredMessage() {
         return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID")).from(table("MESSAGES"))
                 .join(table("UNDELIVERED")).on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq("$"))
                 .and(field("USER_ID").eq("$")));
@@ -245,7 +261,7 @@ public abstract class DbReactiveSqlBase {
         return GETUNDELIVEREDMESSAGE;
     }
 
-    private static String setupUserUndelivered() {
+    protected static String setupUserUndelivered() {
         return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID"), field("MESSAGE"),
                 field("POST_DATE"), field("FROM_HANDLE")).from(table("USERS")).join(table("UNDELIVERED"))
                         .on(field("USERS.ID").eq(field("USER_ID")).and(field("USERS.ID").eq("$")))
@@ -256,7 +272,7 @@ public abstract class DbReactiveSqlBase {
         return GETUSERUNDELIVERED;
     }
 
-    private static String setupDeleteUser() {
+    protected static String setupDeleteUser() {
         return create.renderNamedParams(deleteFrom(table("USERS"))
                 .where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")).returning(field("ID")));
     }
@@ -265,7 +281,7 @@ public abstract class DbReactiveSqlBase {
         return GETDELETEUSER;
     }
 
-    private static String setupMariaDeleteUser() {
+    protected static String setupMariaDeleteUser() {
         return create.renderNamedParams(
                 deleteFrom(table("USERS")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
     }
@@ -274,7 +290,7 @@ public abstract class DbReactiveSqlBase {
         return GETMARIADELETEUSER;
     }
 
-    private static String setupDeleteUserById() {
+    protected static String setupDeleteUserById() {
         return create.renderNamedParams(deleteFrom(table("USERS")).where(field("ID").eq("$1")).returning(field("ID")));
     }
 
@@ -282,7 +298,7 @@ public abstract class DbReactiveSqlBase {
         return GETDELETEUSERBYID;
     }
 
-    private static String setupAddMessage() {
+    protected static String setupAddMessage() {
         return create.renderNamedParams(
                 insertInto(table("MESSAGES")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
                         .values("$", "$", "$").returning(field("ID")));
@@ -292,7 +308,7 @@ public abstract class DbReactiveSqlBase {
         return GETADDMESSAGE;
     }
 
-    private static String setupMariaAddMessage() {
+    protected static String setupMariaAddMessage() {
         return create.renderNamedParams(insertInto(table("MESSAGES"))
                 .columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE")).values("$", "$", "$"));
     }
@@ -301,7 +317,7 @@ public abstract class DbReactiveSqlBase {
         return GETMARIAADDMESSAGE;
     }
 
-    private static String setupAddUndelivered() {
+    protected static String setupAddUndelivered() {
         return create.renderNamedParams(
                 insertInto(table("UNDELIVERED")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
     }
@@ -310,7 +326,7 @@ public abstract class DbReactiveSqlBase {
         return GETADDUNDELIVERED;
     }
 
-    private static String setupUserNames() {
+    protected static String setupUserNames() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("USERS")).where(field("NAME").ne("$")));
@@ -382,7 +398,7 @@ public abstract class DbReactiveSqlBase {
                 conn.close();
                 promise.complete(rows.rowCount());
             }).doOnError(err -> {
-                logger.error(String.format("%sError Updating user: %s%s", ColorUtilConstants.RED, err,
+                logger.error(String.format("%sError Updating user Reactive: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
                 ws.getAsyncRemote().sendText(err.toString());
                 conn.close();
@@ -398,7 +414,7 @@ public abstract class DbReactiveSqlBase {
         return promise.future();
     }
 
-    private Tuple getTupleParameters(MessageUser messageUser) {
+    protected Tuple getTupleParameters(MessageUser messageUser) {
         Timestamp timeStamp = new Timestamp(new Date().getTime());
         long date = new Date().getTime();
         OffsetDateTime time = OffsetDateTime.now();
@@ -489,7 +505,6 @@ public abstract class DbReactiveSqlBase {
                     if (DbConfiguration.isUsingMariadb()) {
                         id = rows.property(MySQLClient.LAST_INSERTED_ID);
                     } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid())
-//                        || DbConfiguration.isUsingH2())
                     {
                         id = rows.property(JDBCPool.GENERATED_KEYS).getLong(0);
                     }
@@ -946,5 +961,13 @@ public abstract class DbReactiveSqlBase {
 
     public static DSLContext getCreate() {
         return create;
+    }
+
+    public static void setJDBCConnectOptions(JDBCConnectOptions jdbcConnectOptions) {
+        DbReactiveSqlBase.jdbcConnectOptions = jdbcConnectOptions;
+    }
+
+    public static void setPoolOptions(PoolOptions poolOptions) {
+        DbReactiveSqlBase.poolOptions = poolOptions;
     }
 }

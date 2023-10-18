@@ -27,19 +27,19 @@ class PopulateScore : SqlConstants(), IPopulateScore {
         @JvmStatic
         fun buildSql() {
             GETSCOREINSERT =
-                if (qmark) setupInsertScore().replace(regEx, "?")
+                if (qmark) setupInsertScore().replace(regEx, "?").replace("\"", "")
                 else setupInsertScore().replace("\"", "")
 
             GETSCOREBYTEETIME =
-                if (qmark) setupSelectScore().replace(regEx, "?")
+                if (qmark) setupSelectScore().replace(regEx, "?").replace("\"", "")
                 else setupSelectScore().replace("\"", "")
 
             GETSCOREUPDATE =
-                if (qmark) setupUpdateScore().replace(regEx, "?")
+                if (qmark) setupUpdateScore().replace(regEx, "?").replace("\"", "")
                 else setupUpdateScore().replace("\"", "")
 
             GETGOLFERUPDATECHECKED =
-                if (qmark) setupUpdateGolfer().replace(regEx, "?")
+                if (qmark) setupUpdateGolfer().replace(regEx, "?").replace("\"", "")
                 else setupUpdateGolfer().replace("\"", "")
         }
 
@@ -97,7 +97,7 @@ class PopulateScore : SqlConstants(), IPopulateScore {
         private fun setupUpdateScore(): String {
 
             return create!!.renderNamedParams(
-                update(table("SCORES"))
+                update(table("scores"))
                     .set(field("gross_score"), 0)
                     .set(field("adjusted_score"), 0)
                     .set(field("net_score"), 0)
@@ -111,7 +111,7 @@ class PopulateScore : SqlConstants(), IPopulateScore {
         @JvmStatic
         fun setupUpdateGolfer(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER"))
+                update(table("golfer"))
                     .set(field("OVERLAP_YEARS"), "$")
                     .set(field("PUBLIC"), "$")
                     .where(field("pin").eq("$"))

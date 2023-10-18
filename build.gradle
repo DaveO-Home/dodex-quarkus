@@ -1,8 +1,8 @@
 
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.7.21"
-    id "org.jetbrains.kotlin.plugin.allopen" version "1.8.21"
+    id "org.jetbrains.kotlin.jvm" version "1.9.10"
+    id "org.jetbrains.kotlin.plugin.allopen" version "1.9.10"
     id "io.quarkus"
     id "pmd"
 }
@@ -23,11 +23,12 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.4.1"
+    vertxVersion = "4.4.6"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
 dependencies {
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     // runtimeOnly("org.openrewrite:rewrite-java:7.38.0")
     implementation "io.quarkus:quarkus-resteasy-jackson"
@@ -45,7 +46,7 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation "io.quarkiverse.neo4j:quarkus-neo4j:3.0.0"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:3.4.0"
 
     implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
@@ -53,7 +54,6 @@ dependencies {
     implementation "io.quarkus:quarkus-vertx-http"
     implementation "io.quarkus:quarkus-smallrye-reactive-messaging-kafka"
     implementation "org.apache.kafka:kafka-clients"
-    implementation "com.h2database:h2"
     implementation("org.jooq:jooq:3.18.0")
     implementation("org.jooq:jooq-codegen-maven:3.18.0")
     implementation("org.jooq:jooq-meta:3.18.0")
@@ -62,20 +62,18 @@ dependencies {
     implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
     implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
+    implementation "cubrid:cubrid-jdbc:11.2.0.0035"
     implementation "io.vertx:vertx-rx-java2:$vertxVersion"
     implementation "io.quarkus:quarkus-smallrye-health"
     implementation "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
-    implementation "com.google.firebase:firebase-admin:9.1.1"
+    implementation "com.google.firebase:firebase-admin:9.2.0"
+    implementation group: 'com.google.guava', name: 'guava', version: '32.1.2-jre'
 
-    // implementation group: 'net.java.dev.jna', name: 'platform', version: '3.5.2'  // for graalvm
-
+//    implementation group: 'net.java.dev.jna', name: 'platform', version: '3.5.2'  // for graalvm
 //    implementation group: "jakarta.xml.bind", name: "jakarta.xml.bind-api", version: "4.0.0"
 //    runtimeOnly group: "com.sun.xml.bind", name: "jaxb-impl", version: "4.0.0"
 
-    implementation "cubrid:cubrid-jdbc:11.1.1.0028"
-
     implementation("dmo.fs.utils:generate:0.0.1")
-
 
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
     testImplementation "io.rest-assured:rest-assured"
@@ -83,7 +81,7 @@ dependencies {
 }
 
 group 'dmo.fs'
-version '3.0.0'
+version '3.2.0'
 
 sourceCompatibility = "17"
 java {
@@ -96,7 +94,7 @@ compileJava {
     options.compilerArgs << "-Xlint:unchecked"
 }
 
-task runWith(type: JavaExec) {
+tasks.register('runWith', JavaExec) {
     environment "USE_HANDICAP", "true"
 }
 
@@ -118,14 +116,14 @@ def dir = System.getProperty("user.dir")
     The "run" task can be used to set Environment Variables before executing "quarkusDev"
  */
 
-task copyDatabaseConfig(type: Copy) {
+tasks.register('copyDatabaseConfig', Copy) {
     dependsOn gradle.includedBuild("generate").task(":build")
 }
 /*
   Using a java class to generate jooq objects - allows for multiple db's - see ./generate directory
   Composite build - implementation("dmo.fs.utils:generate:0.0.1") - this avoids the circular dependancy error
 */
-task jooqGenerate(type: JavaExec) {
+tasks.register('jooqGenerate', JavaExec) {
     group "Execution"
     doFirst {
         classpath = sourceSets.main.runtimeClasspath
@@ -137,18 +135,18 @@ task jooqGenerate(type: JavaExec) {
     dependsOn copyDatabaseConfig
 }
 
-task run(type:Exec) {
+tasks.register('run', Exec) {
 //   workingDir dir
-  if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {
-    environment "GOOGLE_APPLICATION_CREDENTIALS", "$usr/auth/service-account-key.json"
-  }
-  //on windows:
-  if(OS.indexOf("win") >= 0) {
-    commandLine "cmd", "/c", ".\\gradlew", "quarkusDev"
-  } else {
-  //on linux
-    commandLine "./gradlew", "quarkusDev"
-  }
+    if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {
+        environment "GOOGLE_APPLICATION_CREDENTIALS", "$usr/auth/service-account-key.json"
+    }
+    //on windows:
+    if (OS.indexOf("win") >= 0) {
+        commandLine "cmd", "/c", ".\\gradlew", "quarkusDev"
+    } else {
+        //on linux
+        commandLine "./gradlew", "quarkusDev"
+    }
     dependsOn gradle.includedBuild("generate").task(":build")
 }
 jar {

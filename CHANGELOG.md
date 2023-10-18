@@ -1,5 +1,17 @@
 # Changelog
 
+## [v3.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.0) (2023-10-18)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.1.0...v3.2.0)
+
+* Upgraded Quarkus to 3.4.3
+* Upgraded javascript dependencies
+* Added an OpenAPI implementation to allow for dodex groups
+* H2 database is now quarkus supported
+* Made `mariadb` table lower case to be more compatible with jooq generated code  
+  __Note:__ Set DEFAULT_DB to `sqlite3` before running `gradlew jooqGenerate`
+* The vert.x message: __You're already on a Vert.x context, are you sure you want to create a new Vertx instance?__ cannot be helped when using mutiny, reactive and rxjava3 together.
+
 ## [v3.1.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.1.0) (2023-06-03)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.0.0...v3.1.0)

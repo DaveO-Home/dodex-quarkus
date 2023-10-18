@@ -39,7 +39,7 @@ public class SpaRoutes {
         this.vertx = vertx;
         this.router = router.getDelegate();
         sessionStore = LocalSessionStore.create(vertx);
-        spaDatabaseReactive.databaseSetup().onSuccess(none -> {
+    spaDatabaseReactive.databaseSetup().onSuccess(none -> {
             setGetLoginRoute();
             setPutLoginRoute();
             setLogoutRoute();

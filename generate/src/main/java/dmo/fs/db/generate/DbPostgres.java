@@ -45,7 +45,7 @@ public abstract class DbPostgres extends DbDefinitionBase implements HandicapDat
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 						"ALTER TABLE public.undelivered OWNER to dummy;"),
 		CREATEGOLFER(
-				"CREATE TABLE IF NOT EXISTS GOLFER (" +
+				"CREATE TABLE IF NOT EXISTS golfer (" +
 						"PIN VARCHAR(8) primary key NOT NULL," +
 						"FIRST_NAME VARCHAR(32) NOT NULL," +
 						"LAST_NAME VARCHAR(32) NOT NULL," +
@@ -62,7 +62,7 @@ public abstract class DbPostgres extends DbDefinitionBase implements HandicapDat
 		CREATECOURSE(
 				"CREATE SEQUENCE IF NOT EXISTS public.course_id_seq INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;" +
 						"ALTER SEQUENCE public.course_id_seq OWNER TO dummy;" +
-						"CREATE TABLE IF NOT EXISTS COURSE (" +
+						"CREATE TABLE IF NOT EXISTS course (" +
 						"COURSE_SEQ INTEGER primary key DEFAULT nextval('course_id_seq'::regclass) NOT NULL," +
 						"COURSE_NAME VARCHAR(128) NOT NULL," +
 						"COURSE_COUNTRY VARCHAR(128) NOT NULL," +
@@ -71,7 +71,7 @@ public abstract class DbPostgres extends DbDefinitionBase implements HandicapDat
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 						"ALTER TABLE public.golfer OWNER to dummy;"),
 		CREATERATINGS(
-				"CREATE TABLE IF NOT EXISTS RATINGS (" +
+				"CREATE TABLE IF NOT EXISTS ratings (" +
 						"COURSE_SEQ INTEGER NOT NULL," +
 						"TEE INTEGER NOT NULL," +
 						"TEE_COLOR VARCHAR(16)," +
@@ -86,7 +86,7 @@ public abstract class DbPostgres extends DbDefinitionBase implements HandicapDat
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 						"ALTER TABLE public.golfer OWNER to dummy;"),
 		CREATESCORES(
-				"CREATE TABLE IF NOT EXISTS SCORES (" +
+				"CREATE TABLE IF NOT EXISTS scores (" +
 						"PIN VARCHAR(8) NOT NULL," +
 						"GROSS_SCORE INTEGER NOT NULL," +
 						"NET_SCORE FLOAT4," +

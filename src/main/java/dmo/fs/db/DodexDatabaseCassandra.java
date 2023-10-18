@@ -1,19 +1,16 @@
 package dmo.fs.db;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import dmo.fs.utils.DodexUtil;
+import io.quarkus.runtime.configuration.ProfileManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import dmo.fs.quarkus.Server;
-import io.quarkus.runtime.configuration.ProfileManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmo.fs.utils.DodexUtil;
 
 public class DodexDatabaseCassandra extends DbCassandraBase implements DodexCassandra {
 	private final static Logger logger = LoggerFactory.getLogger(DodexDatabaseCassandra.class.getName());

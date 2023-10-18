@@ -53,7 +53,7 @@ open class Scores(
     companion object {
 
         /**
-         * The reference instance of <code>SCORES</code>
+         * The reference instance of <code>scores</code>
          */
         val SCORES: Scores = Scores()
     }
@@ -64,47 +64,47 @@ open class Scores(
     override fun getRecordType(): Class<ScoresRecord> = ScoresRecord::class.java
 
     /**
-     * The column <code>SCORES.PIN</code>.
+     * The column <code>scores.PIN</code>.
      */
     val PIN: TableField<ScoresRecord, String?> = createField(DSL.name("PIN"), SQLDataType.CHAR(8).nullable(false), this, "")
 
     /**
-     * The column <code>SCORES.GROSS_SCORE</code>.
+     * The column <code>scores.GROSS_SCORE</code>.
      */
     val GROSS_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("GROSS_SCORE"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>SCORES.NET_SCORE</code>.
+     * The column <code>scores.NET_SCORE</code>.
      */
     val NET_SCORE: TableField<ScoresRecord, Float?> = createField(DSL.name("NET_SCORE"), SQLDataType.REAL, this, "")
 
     /**
-     * The column <code>SCORES.ADJUSTED_SCORE</code>.
+     * The column <code>scores.ADJUSTED_SCORE</code>.
      */
     val ADJUSTED_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("ADJUSTED_SCORE"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>SCORES.TEE_TIME</code>.
+     * The column <code>scores.TEE_TIME</code>.
      */
     val TEE_TIME: TableField<ScoresRecord, String?> = createField(DSL.name("TEE_TIME"), SQLDataType.CLOB.nullable(false), this, "")
 
     /**
-     * The column <code>SCORES.HANDICAP</code>.
+     * The column <code>scores.HANDICAP</code>.
      */
     val HANDICAP: TableField<ScoresRecord, Float?> = createField(DSL.name("HANDICAP"), SQLDataType.REAL, this, "")
 
     /**
-     * The column <code>SCORES.COURSE_SEQ</code>.
+     * The column <code>scores.COURSE_SEQ</code>.
      */
     val COURSE_SEQ: TableField<ScoresRecord, Int?> = createField(DSL.name("COURSE_SEQ"), SQLDataType.INTEGER, this, "")
 
     /**
-     * The column <code>SCORES.COURSE_TEES</code>.
+     * The column <code>scores.COURSE_TEES</code>.
      */
     val COURSE_TEES: TableField<ScoresRecord, Int?> = createField(DSL.name("COURSE_TEES"), SQLDataType.INTEGER, this, "")
 
     /**
-     * The column <code>SCORES.USED</code>.
+     * The column <code>scores.USED</code>.
      */
     val USED: TableField<ScoresRecord, String?> = createField(DSL.name("USED"), SQLDataType.CHAR(1), this, "")
 
@@ -112,19 +112,19 @@ open class Scores(
     private constructor(alias: Name, aliased: Table<ScoresRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
 
     /**
-     * Create an aliased <code>SCORES</code> table reference
+     * Create an aliased <code>scores</code> table reference
      */
     constructor(alias: String): this(DSL.name(alias))
 
     /**
-     * Create an aliased <code>SCORES</code> table reference
+     * Create an aliased <code>scores</code> table reference
      */
     constructor(alias: Name): this(alias, null)
 
     /**
-     * Create a <code>SCORES</code> table reference
+     * Create a <code>scores</code> table reference
      */
-    constructor(): this(DSL.name("SCORES"), null)
+    constructor(): this(DSL.name("scores"), null)
 
     constructor(child: Table<out Record>, key: ForeignKey<out Record, ScoresRecord>): this(Internal.createPathAlias(child, key), child, key, SCORES, null)
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
@@ -134,7 +134,7 @@ open class Scores(
     private lateinit var _course: Course
 
     /**
-     * Get the implicit join path to the <code>GOLFER</code> table.
+     * Get the implicit join path to the <code>golfer</code> table.
      */
     fun golfer(): Golfer {
         if (!this::_golfer.isInitialized)
@@ -147,7 +147,7 @@ open class Scores(
         get(): Golfer = golfer()
 
     /**
-     * Get the implicit join path to the <code>COURSE</code> table.
+     * Get the implicit join path to the <code>course</code> table.
      */
     fun course(): Course {
         if (!this::_course.isInitialized)

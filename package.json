@@ -1,6 +1,6 @@
 {
   "name": "dodex-quarkus",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "A java asynchronous server for Dodex using quarkus",
   "main": "index.js",
   "scripts": {
@@ -27,13 +27,14 @@
     "cassandra",
     "h2",
     "akka",
-    "javascrip",
+    "javascript",
     "fuse-box",
     "react",
     "karma",
     "jasmine",
     "dodex",
     "gRPC",
+    "openAPI",
     "jooq"
   ],
   "author": "DaveO",
@@ -44,5 +45,8 @@
   "homepage": "https://github.com/DaveO-Home/dodex-quarkus#readme",
   "dependencies": {
     "localtunnel": "^2.0.2"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.7.0"
   }
 }

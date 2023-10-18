@@ -103,7 +103,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteSetUsedUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("SCORES"))
+                update(table("scores"))
                     .set(field("USED"), '*')
                     .where(
                         (field("PIN")
@@ -124,7 +124,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteResetUsedUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("SCORES"))
+                update(table("scores"))
                     .setNull(field("USED"))
                     .where((field("PIN").eq("$").and(field("USED").eq("$"))))
             )
@@ -140,7 +140,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteHandicapUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER")).set(field("HANDICAP"), "$").where((field("PIN").eq("$")))
+                update(table("golfer")).set(field("HANDICAP"), "$").where((field("PIN").eq("$")))
             )
         }
 
@@ -157,7 +157,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteScoreUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("SCORES"))
+                update(table("scores"))
                     .set(field("HANDICAP"), "$")
                     .set(field("NET_SCORE"), "$")
                     .where(

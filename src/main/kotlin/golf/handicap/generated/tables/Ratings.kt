@@ -54,7 +54,7 @@ open class Ratings(
     companion object {
 
         /**
-         * The reference instance of <code>RATINGS</code>
+         * The reference instance of <code>ratings</code>
          */
         val RATINGS: Ratings = Ratings()
     }
@@ -65,52 +65,52 @@ open class Ratings(
     override fun getRecordType(): Class<RatingsRecord> = RatingsRecord::class.java
 
     /**
-     * The column <code>RATINGS.COURSE_SEQ</code>.
+     * The column <code>ratings.COURSE_SEQ</code>.
      */
     val COURSE_SEQ: TableField<RatingsRecord, Int?> = createField(DSL.name("COURSE_SEQ"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>RATINGS.TEE</code>.
+     * The column <code>ratings.TEE</code>.
      */
     val TEE: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>RATINGS.TEE_COLOR</code>.
+     * The column <code>ratings.TEE_COLOR</code>.
      */
     val TEE_COLOR: TableField<RatingsRecord, String?> = createField(DSL.name("TEE_COLOR"), SQLDataType.VARCHAR(16), this, "")
 
     /**
-     * The column <code>RATINGS.TEE_RATING</code>.
+     * The column <code>ratings.TEE_RATING</code>.
      */
     val TEE_RATING: TableField<RatingsRecord, Float?> = createField(DSL.name("TEE_RATING"), SQLDataType.REAL.nullable(false), this, "")
 
     /**
-     * The column <code>RATINGS.TEE_SLOPE</code>.
+     * The column <code>ratings.TEE_SLOPE</code>.
      */
     val TEE_SLOPE: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE_SLOPE"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>RATINGS.TEE_PAR</code>.
+     * The column <code>ratings.TEE_PAR</code>.
      */
-    val TEE_PAR: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE_PAR"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field("'72'", SQLDataType.INTEGER)), this, "")
+    val TEE_PAR: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE_PAR"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("'72'"), SQLDataType.INTEGER)), this, "")
 
     private constructor(alias: Name, aliased: Table<RatingsRecord>?): this(alias, null, null, aliased, null)
     private constructor(alias: Name, aliased: Table<RatingsRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
 
     /**
-     * Create an aliased <code>RATINGS</code> table reference
+     * Create an aliased <code>ratings</code> table reference
      */
     constructor(alias: String): this(DSL.name(alias))
 
     /**
-     * Create an aliased <code>RATINGS</code> table reference
+     * Create an aliased <code>ratings</code> table reference
      */
     constructor(alias: Name): this(alias, null)
 
     /**
-     * Create a <code>RATINGS</code> table reference
+     * Create a <code>ratings</code> table reference
      */
-    constructor(): this(DSL.name("RATINGS"), null)
+    constructor(): this(DSL.name("ratings"), null)
 
     constructor(child: Table<out Record>, key: ForeignKey<out Record, RatingsRecord>): this(Internal.createPathAlias(child, key), child, key, RATINGS, null)
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
@@ -120,7 +120,7 @@ open class Ratings(
     private lateinit var _course: Course
 
     /**
-     * Get the implicit join path to the <code>COURSE</code> table.
+     * Get the implicit join path to the <code>course</code> table.
      */
     fun course(): Course {
         if (!this::_course.isInitialized)

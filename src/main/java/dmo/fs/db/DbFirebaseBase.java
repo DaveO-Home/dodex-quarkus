@@ -31,7 +31,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
-// import io.vertx.reactivex.core.http.ServerWebSocket;
 
 public abstract class DbFirebaseBase {
 	private static final Logger logger = LoggerFactory.getLogger(DbFirebaseBase.class.getName());

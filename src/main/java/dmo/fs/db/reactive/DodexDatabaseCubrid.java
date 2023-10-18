@@ -203,7 +203,10 @@ public class DodexDatabaseCubrid extends DbCubrid {
             ;
 
 		Vertx vertx = Server.vertx;
-		
+
+		setJDBCConnectOptions(connectOptions);
+		setPoolOptions(poolOptions);
+
 		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
 	}
 

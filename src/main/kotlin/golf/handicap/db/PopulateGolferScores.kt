@@ -55,40 +55,40 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
                     else setupSqliteSetUsedUpdate()
             }
             GETRESETUSEDUPDATE =
-                if (qmark) setupResetUsedUpdate().replace(regEx, "?")
+                if (qmark) setupResetUsedUpdate().replace(regEx, "?").replace("\"", "")
                 else setupResetUsedUpdate().replace("\"", "")
             GETRESETUSEDSQLITEUPDATE =
-                if (qmark) setupSqliteResetUsedUpdate().replace(regEx, "?")
+                if (qmark) setupSqliteResetUsedUpdate().replace(regEx, "?").replace("\"", "")
                 else setupSqliteResetUsedUpdate()
             GETHANDICAPUPDATE =
-                if (qmark) setupHandicapUpdate().replace(regEx, "?")
+                if (qmark) setupHandicapUpdate().replace(regEx, "?").replace("\"", "")
                 else setupHandicapUpdate().replace("\"", "")
             GETHANDICAPSQLITEUPDATE =
-                if (qmark) setupSqliteHandicapUpdate().replace(regEx, "?")
+                if (qmark) setupSqliteHandicapUpdate().replace(regEx, "?").replace("\"", "")
                 else setupSqliteHandicapUpdate()
             GETSCORESUPDATE =
-                if (qmark) setupScoreUpdate().replace(regEx, "?")
+                if (qmark) setupScoreUpdate().replace(regEx, "?").replace("\"", "")
                 else setupScoreUpdate().replace("\"", "")
             GETSCORESSQLITEUPDATE =
-                if (qmark) setupSqliteScoreUpdate().replace(regEx, "?")
+                if (qmark) setupSqliteScoreUpdate().replace(regEx, "?").replace("\"", "")
                 else setupSqliteScoreUpdate().replace("\"", "")
             GETGOLFERDATA =
-                if (qmark) setupGetGolferData().replace(regEx, "?")
+                if (qmark) setupGetGolferData().replace(regEx, "?").replace("\"", "")
                 else setupGetGolferData().replace("\"", "")
             GETGOLFERPUBLICDATA =
-                if (qmark) setupGetPublicGolferData().replace(regEx, "?")
+                if (qmark) setupGetPublicGolferData().replace(regEx, "?").replace("\"", "")
                 else setupGetPublicGolferData().replace("\"", "")
             GETREMOVESCORE =
-                if (qmark) setupRemoveScore().replace(regEx, "?")
+                if (qmark) setupRemoveScore().replace(regEx, "?").replace("\"", "")
                 else setupRemoveScore().replace("\"", "")
             GETREMOVESCORESUB =
-                if (qmark) setupRemoveScoreSub().replace(regEx, "?")
+                if (qmark) setupRemoveScoreSub().replace(regEx, "?").replace("\"", "")
                 else setupRemoveScoreSub().replace("\"", "")
             GETLASTSCORE =
-                if (qmark) setupGetLastScore().replace(regEx, "?")
+                if (qmark) setupGetLastScore().replace(regEx, "?").replace("\"", "")
                 else setupGetLastScore().replace("\"", "")
             GETGOLFERSCORES =
-                if (qmark) setupGetGolferScores().replace(regEx, "?")
+                if (qmark) setupGetGolferScores().replace(regEx, "?").replace("\"", "")
                 else setupGetGolferScores().replace("\"", "")
         }
 
@@ -141,7 +141,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteHandicapUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER")).set(field("HANDICAP"), "$").where((field("PIN").eq("$")))
+                update(table("golfer")).set(field("HANDICAP"), "$").where((field("PIN").eq("$")))
             )
         }
 
@@ -158,7 +158,7 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
         @JvmStatic
         private fun setupSqliteScoreUpdate(): String {
             return create!!.renderNamedParams(
-                update(table("SCORES"))
+                update(table("scores"))
                     .set(field("HANDICAP"), "$")
                     .set(field("NET_SCORE"), "$")
                     .where(

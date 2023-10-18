@@ -13,6 +13,7 @@ import io.vertx.mutiny.ext.web.Route;
 import io.vertx.mutiny.ext.web.Router;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpServer;
+import io.vertx.reactivex.core.file.FileSystem;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
@@ -30,10 +31,11 @@ public class Server implements QuarkusApplication {
     private static Promise<Router> routesPromise = Promise.promise();
     private static Integer port;
     private static Boolean isUsingHandicap = false;
-    private static String defaultDbName = "";
+    private static String defaultDbName = "sqlite3";
     private static boolean color = true;
     public static boolean isProduction;
     public static final Vertx vertx = Vertx.vertx();
+    FileSystem fs = vertx.fileSystem();
 
     public static void main(String... args) {
         Quarkus.run(Server.class, args);
@@ -74,6 +76,7 @@ public class Server implements QuarkusApplication {
             supportedDBs.add("postgres");
             supportedDBs.add("mariadb");
             boolean isUseHandicapSet = "true".equals(System.getenv().get("USE_HANDICAP"));
+
             if (isUsingHandicap && supportedDBs.contains(defaultDbName) && isUseHandicapSet) {
                 logger.warn(
                         String.format(
@@ -103,12 +106,51 @@ public class Server implements QuarkusApplication {
                 logger.info("{}{}{}{}{}{}", ColorUtilConstants.GREEN_BOLD_BRIGHT, "HTTP Started on http://", host, ":",
                         port, ColorUtilConstants.RESET);
             }
-        }).onFailure().invoke(Throwable::printStackTrace).subscribeAsCompletionStage().isDone();
+        }).onFailure().invoke(Throwable::printStackTrace)
+            .onItem().invoke(v -> checkInstallation(fs))
+            .subscribeAsCompletionStage().toCompletableFuture().get();
 
         Quarkus.waitForExit();
         server.close();
 
         return 0;
+    }
+
+    private void checkInstallation (FileSystem fs) {
+            String handicapBase = "../../../../";
+            String quarkusBase = "../../";
+        if (!isProduction) {
+            String fileDir = "./src/spa-react/node_modules/";
+            if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
+                logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
+                    "To install the test spa application, execute 'npm install --legacy-peer-deps' in 'src/spa-react/'"
+                    , ColorUtilConstants.RESET);
+            }
+            fileDir = "./src/main/resources/META-INF/resources/group/";
+            if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
+                logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
+                    "To install the dodex group addon, execute 'npm run group:prod' in './src/grpc/client/'"
+                    , ColorUtilConstants.RESET);
+            }
+            fileDir = "./src/main/resources/META-INF/resources/node_modules/";
+            if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
+                logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
+                    "To install dodex , execute 'npm install' in 'src/main/resources/META-INF/resources/'"
+                    , ColorUtilConstants.RESET);
+            }
+            fileDir = "./src/firebase/node_modules/";
+            if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
+                logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
+                    "To install the firebase client , execute 'npm install' in './src/firebase/'"
+                    , ColorUtilConstants.RESET);
+            }
+            fileDir = "./src/grpc/client/node_modules/";
+            if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
+                logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
+                    "To install the gRPC client , execute 'npm install' and 'npm run esbuild:build' in './src/grpc/client/'"
+                    , ColorUtilConstants.RESET);
+            }
+        }
     }
 
     private String parsePath(Route route) {

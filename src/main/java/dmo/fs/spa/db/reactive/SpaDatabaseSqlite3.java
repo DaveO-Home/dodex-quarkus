@@ -27,7 +27,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SpaDatabaseSqlite3 extends DbSqlite3 {
-	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseSqlite3.class.getName());
+	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseSqlite3.class.getName());
 	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
@@ -128,7 +128,7 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 

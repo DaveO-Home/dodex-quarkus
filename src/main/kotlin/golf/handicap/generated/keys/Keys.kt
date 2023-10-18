@@ -24,14 +24,14 @@ import org.jooq.impl.Internal
 // UNIQUE and PRIMARY KEY definitions
 // -------------------------------------------------------------------------
 
-val COURSE__PK_COURSE: UniqueKey<CourseRecord> = Internal.createUniqueKey(Course.COURSE, DSL.name("pk_COURSE"), arrayOf(Course.COURSE.COURSE_SEQ), true)
-val GOLFER__PK_GOLFER: UniqueKey<GolferRecord> = Internal.createUniqueKey(Golfer.GOLFER, DSL.name("pk_GOLFER"), arrayOf(Golfer.GOLFER.PIN), true)
-val RATINGS__PK_RATINGS: UniqueKey<RatingsRecord> = Internal.createUniqueKey(Ratings.RATINGS, DSL.name("pk_RATINGS"), arrayOf(Ratings.RATINGS.COURSE_SEQ, Ratings.RATINGS.TEE), true)
+val COURSE__PK_COURSE: UniqueKey<CourseRecord> = Internal.createUniqueKey(Course.COURSE, DSL.name("pk_course"), arrayOf(Course.COURSE.COURSE_SEQ), true)
+val GOLFER__PK_GOLFER: UniqueKey<GolferRecord> = Internal.createUniqueKey(Golfer.GOLFER, DSL.name("pk_golfer"), arrayOf(Golfer.GOLFER.PIN), true)
+val RATINGS__PK_RATINGS: UniqueKey<RatingsRecord> = Internal.createUniqueKey(Ratings.RATINGS, DSL.name("pk_ratings"), arrayOf(Ratings.RATINGS.COURSE_SEQ, Ratings.RATINGS.TEE), true)
 
 // -------------------------------------------------------------------------
 // FOREIGN KEY definitions
 // -------------------------------------------------------------------------
 
-val RATINGS__FK_RATINGS_PK_COURSE: ForeignKey<RatingsRecord, CourseRecord> = Internal.createForeignKey(Ratings.RATINGS, DSL.name("fk_RATINGS_pk_COURSE"), arrayOf(Ratings.RATINGS.COURSE_SEQ), golf.handicap.generated.keys.COURSE__PK_COURSE, arrayOf(Course.COURSE.COURSE_SEQ), true)
-val SCORES__FK_SCORES_PK_COURSE: ForeignKey<ScoresRecord, CourseRecord> = Internal.createForeignKey(Scores.SCORES, DSL.name("fk_SCORES_pk_COURSE"), arrayOf(Scores.SCORES.COURSE_SEQ), golf.handicap.generated.keys.COURSE__PK_COURSE, arrayOf(Course.COURSE.COURSE_SEQ), true)
-val SCORES__FK_SCORES_PK_GOLFER: ForeignKey<ScoresRecord, GolferRecord> = Internal.createForeignKey(Scores.SCORES, DSL.name("fk_SCORES_pk_GOLFER"), arrayOf(Scores.SCORES.PIN), golf.handicap.generated.keys.GOLFER__PK_GOLFER, arrayOf(Golfer.GOLFER.PIN), true)
+val RATINGS__FK_RATINGS_PK_COURSE: ForeignKey<RatingsRecord, CourseRecord> = Internal.createForeignKey(Ratings.RATINGS, DSL.name("fk_ratings_pk_course"), arrayOf(Ratings.RATINGS.COURSE_SEQ), golf.handicap.generated.keys.COURSE__PK_COURSE, arrayOf(Course.COURSE.COURSE_SEQ), true)
+val SCORES__FK_SCORES_PK_COURSE: ForeignKey<ScoresRecord, CourseRecord> = Internal.createForeignKey(Scores.SCORES, DSL.name("fk_scores_pk_course"), arrayOf(Scores.SCORES.COURSE_SEQ), golf.handicap.generated.keys.COURSE__PK_COURSE, arrayOf(Course.COURSE.COURSE_SEQ), true)
+val SCORES__FK_SCORES_PK_GOLFER: ForeignKey<ScoresRecord, GolferRecord> = Internal.createForeignKey(Scores.SCORES, DSL.name("fk_scores_pk_golfer"), arrayOf(Scores.SCORES.PIN), golf.handicap.generated.keys.GOLFER__PK_GOLFER, arrayOf(Golfer.GOLFER.PIN), true)

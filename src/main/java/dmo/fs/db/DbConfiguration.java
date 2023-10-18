@@ -1,24 +1,22 @@
 package dmo.fs.db;
 
+import dmo.fs.db.reactive.DodexDatabaseCubrid;
+import dmo.fs.db.reactive.DodexDatabaseSqlite3;
+import dmo.fs.db.reactive.DodexReactiveDatabase;
+import dmo.fs.utils.DodexUtil;
+import io.quarkus.runtime.configuration.ProfileManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmo.fs.db.reactive.DodexDatabaseCubrid;
-import dmo.fs.db.reactive.DodexDatabaseH2;
-import dmo.fs.db.reactive.DodexReactiveDatabase;
-import dmo.fs.db.reactive.DodexDatabaseSqlite3;
-import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
-
 public abstract class DbConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
-    private static final Map<String, String> map = new ConcurrentHashMap<>();
+    protected static final Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
+    protected static final Map<String, String> map = new ConcurrentHashMap<>();
     protected static Properties properties = new Properties();
 
     protected static Boolean isUsingSqlite3 = false;
@@ -30,17 +28,17 @@ public abstract class DbConfiguration {
     protected static Boolean isUsingCassandra = false;
     protected static Boolean isUsingFirebase = false;
     protected static Boolean isUsingNeo4j = false;
-    private static String defaultDb = "sqlite3";
-    private static boolean overrideDefaultDb;
-    private static final DodexUtil dodexUtil = new DodexUtil();
-    private static DodexDatabase dodexDatabase;
+    protected static String defaultDb = "sqlite3";
+    protected static boolean overrideDefaultDb;
+    protected static final DodexUtil dodexUtil = new DodexUtil();
+    protected static DodexDatabase dodexDatabase;
     protected static DodexCassandra dodexCassandra;
-    private static DodexFirebase dodexFirebase;
-    private static DodexNeo4j dodexNeo4j;
-    private static DodexReactiveDatabase dodexReactiveDatabase;
-    private static final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+    protected static DodexFirebase dodexFirebase;
+    protected static DodexNeo4j dodexNeo4j;
+    protected static DodexReactiveDatabase dodexReactiveDatabase;
+    protected static final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
-    private enum DbTypes {
+    protected enum DbTypes {
         POSTGRES("postgres"),
         SQLITE3("sqlite3"),
         MARIADB("mariadb"),
@@ -109,19 +107,17 @@ public abstract class DbConfiguration {
         if(!overrideDefaultDb) {
             defaultDb = dodexUtil.getDefaultDb().toLowerCase();
         }
-
         if(defaultDb.equals(DbTypes.POSTGRES.db) && dodexDatabase == null) {
             dodexDatabase = new DodexDatabasePostgres();
             isUsingPostgres = true;
         } 
-        else if(defaultDb.equals(DbTypes.SQLITE3.db) && dodexReactiveDatabase == null) {
+        else if(defaultDb.equals(DbTypes.SQLITE3.db)) {
             dodexReactiveDatabase = new DodexDatabaseSqlite3();
             isUsingSqlite3 = true;
             return (T) dodexReactiveDatabase;
-        } else if(defaultDb.equals(DbTypes.H2.db) && dodexReactiveDatabase == null) {
-            dodexReactiveDatabase = new DodexDatabaseH2();
+        } else if(defaultDb.equals(DbTypes.H2.db) && dodexDatabase == null) {
+            dodexDatabase = new DodexDatabaseH2();
             isUsingH2 = true;
-            return (T) dodexReactiveDatabase;
         }
         else if(defaultDb.equals(DbTypes.MARIADB.db) && dodexDatabase == null) {
             dodexDatabase = new DodexDatabaseMariadb();
@@ -131,12 +127,12 @@ public abstract class DbConfiguration {
             dodexDatabase = new DodexDatabaseIbmDB2();
             isUsingIbmDB2 = true;
         }
-        else if(defaultDb.equals(DbTypes.CASSANDRA.db) && dodexCassandra == null) {
+        else if(defaultDb.equals(DbTypes.CASSANDRA.db)) {
             dodexCassandra = new DodexDatabaseCassandra();
             isUsingCassandra = true;
             return (T) dodexCassandra;
         }
-        else if(defaultDb.equals(DbTypes.CUBRID.db) && dodexReactiveDatabase == null) {
+        else if(defaultDb.equals(DbTypes.CUBRID.db)) {
             dodexReactiveDatabase = new DodexDatabaseCubrid();
             isUsingCubrid = true;
             return (T) dodexReactiveDatabase;
@@ -162,14 +158,13 @@ public abstract class DbConfiguration {
                 dodexDatabase = new DodexDatabasePostgres(overrideMap, overrideProps);
                 isUsingPostgres = true;
             } 
-            else if(defaultDb.equals(DbTypes.SQLITE3.db) && dodexReactiveDatabase == null) {
+            else if(defaultDb.equals(DbTypes.SQLITE3.db)) {
                 dodexReactiveDatabase = new DodexDatabaseSqlite3(overrideMap, overrideProps);
                 isUsingSqlite3 = true;
                 return (T) dodexReactiveDatabase;
-            } else if(defaultDb.equals(DbTypes.H2.db) && dodexReactiveDatabase == null) {
-                dodexReactiveDatabase = new DodexDatabaseH2();
+            } else if(defaultDb.equals(DbTypes.H2.db) && dodexDatabase == null) {
+                dodexDatabase = new DodexDatabaseH2();
                 isUsingH2 = true;
-                return (T) dodexReactiveDatabase;
             }
             else if(defaultDb.equals(DbTypes.MARIADB.db) && dodexDatabase == null) {
                 dodexDatabase = new DodexDatabaseMariadb(overrideMap, overrideProps);
@@ -178,11 +173,11 @@ public abstract class DbConfiguration {
             else if(defaultDb.equals(DbTypes.IBMDB2.db) && dodexDatabase == null) {
                 dodexDatabase = new DodexDatabaseIbmDB2(overrideMap, overrideProps);
                 isUsingIbmDB2 = true;
-            } else if(defaultDb.equals(DbTypes.CASSANDRA.db) && dodexCassandra == null) {
+            } else if(defaultDb.equals(DbTypes.CASSANDRA.db)) {
                 dodexCassandra = new DodexDatabaseCassandra(overrideMap, overrideProps);
                 isUsingCassandra = true;
                 return (T) dodexCassandra;
-            } else if(defaultDb.equals(DbTypes.CUBRID.db) && dodexReactiveDatabase == null) {
+            } else if(defaultDb.equals(DbTypes.CUBRID.db)) {
                 dodexReactiveDatabase = new DodexDatabaseCubrid(overrideMap, overrideProps);
                 isUsingCubrid = true;
             } else if(defaultDb.equals(DbTypes.FIREBASE.db)) {

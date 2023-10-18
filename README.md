@@ -5,7 +5,7 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 ## Install Assumptions
 
 1. Java 17/18/19 installed with JAVA_HOME set.
-2. Gradle 7.6 installed. If you have sdkman installed, execute `sdk install gradle 7.6` otherwise executing gradlew should install gradle.
+2. Gradle 8.1.1 installed. If you have sdkman installed, execute `sdk install gradle 8.1.1` otherwise executing gradlew should install gradle.
 3. Javascript **node** with **npm** package manager installed.
 
 __Note:__ The static directory was changed from **src/main/resources/static** to **src/main/resources/META-INF/resources** in compliance with v2.5.
@@ -32,6 +32,7 @@ __Note:__ The static directory was changed from **src/main/resources/static** to
 7. The Cassandra database has been added via an `Akka` micro-service. See; <https://www.npmjs.com/package/dodex-akka>.
 8. Added Cassandra database to the **React** demo allowing the **login** component to use Cassandra.
 9. See the **Firebase section** for using Google's **Firestore** backend.
+10. To generate `jooq` code, set `DEFAUT_DB=sqlite3` and execute `./gradlew jooqGenerate`. The code is generated to `src/main/kotlin/golf/handicap/generated`.
 
    ___Note:___ In dev mode(`gradlew quarkusDev`), when modifying Java code, all you have to do is refresh the browser window. You can also use `gradlew run`(in build.gradle) to set ENVIRONMENT variables first.
 
@@ -49,7 +50,7 @@ __Note:__ The static directory was changed from **src/main/resources/static** to
     2. Execute `./gradlew quarkusBuild -Dquarkus.package.type=uber-jar` to build the production fat jar.
         * **Important** When building the **Uber** jar, set **DEFAULT_DB**=h2 or mariadb or postgres and **USE_HANDICAP**=true
 
-3. Execute `java -jar build/dodex-quarkus-2.1.0-runner.jar` to startup the production server.
+3. Execute `java -jar build/dodex-quarkus-3.2.0-runner.jar` to startup the production server.
 4. Execute url `http://localhost:8088/ddex/index.html` or `.../ddex/bootstrap.html` in a browser. __Note:__ This is a different port and url than development. Also __Note;__ The default database on the backend is "Sqlite3", no further configuation is necessay. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2 implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` and `<install directory>/generate/src/main/resources` for configuration.
 5. Swapping among databases; Use environment variable __`DEFAULT_DB`__ by setting it to either `sqlite3` ,`postgres`, `cubrid`, `mariadb`, `ibmdb2`, `h2`, `cassandra`, `firebase`, `neo4j` or set the default database in `database_config.json`.
 6. When Dodex-quarkus is configured for the Cubrid database, the database must be created using UTF-8. For example `cubrid createdb dodex en_US.utf8`.
@@ -149,28 +150,31 @@ __The Old Fashion Method:__ Execute the supplied script - `dodexvm17`. This will
 4. execute `kubectl create -f kube/quarkus.yml`
 5. execute `minikube service quarkus-service` to start **dodex-quarkus** in the default browser - add **--url** to get just the URL
 6. verify that **dodex-quarkus** started properly - execute `./execpod` and `cat ./logs/quarkus.log` - enter `exit` to exit the pod
-    ``` 
-        For postgres make sure postgres.conf has entry: 
-                
+   
+For postgres make sure postgres.conf has entry:
+
+```
              listen_addresses = '*'          # what IP address(es) to listen on;
-                
-        and  pg_hba.conf has entry:
+```                
+and  pg_hba.conf has entry:
 
-             host    all    all    <ip from minikube quarkus-service --url>/32   <whatever you use for security> (default for dodex-quarkus "password")
-                   
-        and database_config.json(also in ../dodex-quarkus/generate...resources/database(_spa)_confg.json) entry:
-
-             postgres...
+```
+             host    all    all    <ip from minikube vertx-service --url>/32   <whatever you use for security> (default for dodex-vertx "password")
+```                   
+and database_config.json(also in ../dodex-vertx/generate...resources/database(_spa)_confg.json) entry: postgres... (both dev/prod)
+```          
               "config": {
-              "host": "<ip value from `hostname -i`>", - (both dev/prod)
+              "host": "<ip value from `hostname -i`>",
+```
+`netstat -an |grep 5432` should look like this
 
-        netstat -an |grep 5432 should look like this
-
+```
              tcp        0      0 0.0.0.0:5432            0.0.0.0:*               LISTEN     
              tcp6       0      0 :::5432                 :::*                    LISTEN     
              unix  2      [ ACC ]     STREAM     LISTENING     57905233 /var/run/postgresql/.s.PGSQL.5432
              unix  2      [ ACC ]     STREAM     LISTENING     57905234 /tmp/.s.PGSQL.5432
-    ```
+```
+
 #### Development
 1. Make changes to the **dodex-quarkus** code
 2. execute `gradlew clean`
@@ -269,6 +273,52 @@ Simply execute `export DEFAULT_DB=neo4j` to use, after database setup.
     * in the browser's `developer tools` console execute `stop();` and `start();` to stop/start the polling. Polling is started by default.
     
     __Note:__ you can open the messaging dialog with `ctrl-doubleclick` on the dials
+
+## Dodex Groups using OpenAPI
+
+* A default javascript client is included in __.../dodex-quarkus/src/main/resources/static/group/__. It can be regenerated in __.../dodex-quarkus/handicap/src/grpc/client/__ by executing __`npm run group:prod`__.
+* The group javascript client is in __.../src/grpc/client/js/dodex/groups.js__ and __group.js__.  
+  __Note:__ The client is included in the __Handicap__ application by default.
+* See __.../src/main/resources/META-INF/openapi.yaml__ for OpenAPI declarations. You and view the configuration for development at __`localhost:8089/q/swagger-ui/`__.
+* The implementation uses a `rest` api in the `OpenApiRouter` class.
+
+### Installing in Dodex
+1. Implementing in a javascript module; see __.../dodex-quarkus/handicap/src/grpc/client/js/dodex/index.js__
+    * `import { groupListener } from "./groups";`
+    * in the dodex init configuration, add
+    ```
+   ...
+    .then(function () {
+         groupListener();
+   ...
+    ```
+2. Implementing with inline html; see __.../dodex-quarkus/main/resources/test/index.html__
+    * `<script src="../group/main.min.js"></script>`
+    * in the dodex init configuration, add
+    ```
+   ...
+    .then(function () {
+         window.groupListener();
+   ...
+    ```
+3. Using dodex-messaging group functionality  
+   __Note:__ Grouping is only used to limit the list of "handles" when sending private messages.
+* Adding a group using `@group+<name>`
+    * select __Private Message__ from the __more__ button dropdown to get the list of handles.
+    * enter `@group+<name>` for example `@group+aces`
+    * select the handles to include and click "Send". Members can be added at any subsequent time.
+* Removing a group using `@group-<name>`
+    * enter `@group-<name>` for example `@group-aces` and click "Send". Click the confirmation popup to complete.
+* Removing a member
+    * enter `@group-<name>` for example `@group-aces`
+    * select a "handle" from the dropdown list and click "Send"
+* Selecting a group using `@group=<name>`
+    * enter `@group=<name>` for example `@group=aces` and click "Send"
+    * Select from reduced set of "handles" to send private message.
+
+__Note:__ By default the entry `"dodex.groups.checkForOwner"` in __application-conf.json__ is set to __false__. This means that any "handle" can delete a "group" or "member". Setting the entry to __true__ prevents global administration, however, if the owner "handle" changes, group administration is lost.  
+        Also, Groups will work with "sqlite3" without setting USE_HANDICAP=true. For 'h2', 'mariadb' and 'postgres', USE_HANDICAP=true is required.
+
 
 ### Kotlin, gRPC Web Application
 

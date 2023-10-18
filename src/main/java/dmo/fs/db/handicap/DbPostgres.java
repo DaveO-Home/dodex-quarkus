@@ -7,7 +7,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 	protected final static String CHECKUSERSQL = "SELECT to_regclass('public.users')";
 	protected final static String CHECKMESSAGESSQL = "SELECT to_regclass('public.messages')";
 	protected final static String CHECKUNDELIVEREDSQL = "SELECT to_regclass('public.undelivered')";
-  	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('golfer', 'course', 'scores', 'ratings');";
+  	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('golfer', 'course', 'scores', 'ratings', 'groups', 'member');";
 	protected final static String SELECTONE = "SELECT 1;";
 	private enum CreateTable {
 		CREATEUSERS(
@@ -47,7 +47,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 						"ALTER TABLE public.undelivered OWNER to dummy;"),
 		CREATEGOLFER(
-				"CREATE TABLE IF NOT EXISTS public.GOLFER (" +
+				"CREATE TABLE IF NOT EXISTS public.golfer (" +
 						"PIN VARCHAR(8) primary key NOT NULL," +
 						"FIRST_NAME VARCHAR(32) NOT NULL," +
 						"LAST_NAME VARCHAR(32) NOT NULL," +
@@ -64,7 +64,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 		CREATECOURSE(
 				"CREATE SEQUENCE IF NOT EXISTS public.course_id_seq INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;" +
 						"ALTER SEQUENCE public.course_id_seq OWNER TO dummy;" +
-				"CREATE TABLE IF NOT EXISTS public.COURSE (" +
+				"CREATE TABLE IF NOT EXISTS public.course (" +
 						"COURSE_SEQ INTEGER primary key DEFAULT nextval('course_id_seq'::regclass) NOT NULL," +
 						"COURSE_NAME VARCHAR(128) NOT NULL," +
 						"COURSE_COUNTRY VARCHAR(128) NOT NULL," +
@@ -73,7 +73,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 				"ALTER TABLE public.COURSE OWNER to dummy;"),
 		CREATERATINGS(
-				"CREATE TABLE IF NOT EXISTS public.RATINGS (" +
+				"CREATE TABLE IF NOT EXISTS public.ratings (" +
 						"COURSE_SEQ INTEGER NOT NULL," +
 						"TEE INTEGER NOT NULL," +
 						"TEE_COLOR VARCHAR(16)," +
@@ -88,7 +88,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
 				"ALTER TABLE public.RATINGS OWNER to dummy;"),
 		CREATESCORES(
-				"CREATE TABLE IF NOT EXISTS public.SCORES (" +
+				"CREATE TABLE IF NOT EXISTS public.scores (" +
 						"PIN VARCHAR(8) NOT NULL," +
 						"GROSS_SCORE INTEGER NOT NULL," +
 						"NET_SCORE FLOAT4," +
@@ -109,7 +109,32 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 						"ON DELETE NO ACTION " +
 						"ON UPDATE NO ACTION NOT VALID)" +
 						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
-				"ALTER TABLE public.SCORES OWNER to dummy;");
+				"ALTER TABLE public.SCORES OWNER to dummy;"),
+		CREATEGROUPS(
+				// "CREATE SEQUENCE group_id_seq INCREMENT 1 START 19 MINVALUE 1 MAXVALUE 2147483647 CACHE 1; " +
+				// "ALTER SEQUENCE group_id_seq OWNER TO dummy;" +
+				"CREATE TABLE IF NOT EXISTS public.groups (" +
+						"id integer GENERATED ALWAYS AS IDENTITY, " +
+						"name varchar(24) COLLATE pg_catalog.\"default\"," +
+						"owner INTEGER NOT NULL DEFAULT 0," +
+						"created timestamp with time zone NOT NULL," +
+						"updated timestamp with time zone DEFAULT NULL," +
+						"CONSTRAINT groups_pkey PRIMARY KEY (id)," +
+						"CONSTRAINT name_ukey UNIQUE (name))" +
+						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
+						"ALTER TABLE public.groups OWNER to dummy;"),
+		CREATEMEMBER(
+				"CREATE TABLE IF NOT EXISTS public.member (" +
+						"GROUP_ID INTEGER NOT NULL DEFAULT 0," +
+						"USER_ID INTEGER NOT NULL DEFAULT 0," +
+						"CONSTRAINT member_group_id_foreign FOREIGN KEY (group_id)" +
+						"REFERENCES public.groups (id) MATCH SIMPLE " +
+						"ON UPDATE NO ACTION ON DELETE NO ACTION NOT VALID," +
+						"CONSTRAINT member_user_id_foreign FOREIGN KEY (user_id)" +
+						"REFERENCES public.users (id) MATCH SIMPLE " +
+						"ON UPDATE NO ACTION ON DELETE NO ACTION NOT VALID)" +
+						"WITH (OIDS = FALSE) TABLESPACE pg_default;" +
+						"ALTER TABLE public.member OWNER to dummy;");
 
 		String sql;
 

@@ -29,31 +29,30 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
         @JvmStatic
         fun buildSql() {
             GETCOURSESBYSTATE =
-                if (qmark) setupCoursesByState().replace(regEx, "?")
+                if (qmark) setupCoursesByState().replace(regEx, "?").replace("\"", "")
                 else setupCoursesByState().replace("\"", "")
 
             GETCOURSEBYNAME =
-                if (qmark) setupCourseByName().replace(regEx, "?")
+                if (qmark) setupCourseByName().replace(regEx, "?").replace("\"", "")
                 else setupCourseByName().replace("\"", "")
 
             GETCOURSEBYTEE =
-                if (qmark) setupCourseByRating().replace(regEx, "?")
+                if (qmark) setupCourseByRating().replace(regEx, "?").replace("\"", "")
                 else setupCourseByRating().replace("\"", "")
 
             GETCOURSEINSERT =
-                if (qmark) setupCourseInsert().replace(regEx, "?")
+                if (qmark) setupCourseInsert().replace(regEx, "?").replace("\"", "")
                 else setupCourseInsert().replace("\"", "")
 
             GETRATINGINSERT =
-                if (qmark) setupRatingInsert().replace(regEx, "?")
+                if (qmark) setupRatingInsert().replace(regEx, "?").replace("\"", "")
                 else setupRatingInsert().replace("\"", "")
-
             GETRATINGUPDATE =
-                if (qmark) setupRatingUpdate().replace(regEx, "?")
+                if (qmark) setupRatingUpdate().replace(regEx, "?").replace("\"", "")
                 else setupRatingUpdate().replace("\"", "")
 
             GETSQLITERATINGUPDATE =
-                if (qmark) setupSqliteRatingUpdate().replace(regEx, "?")
+                if (qmark) setupSqliteRatingUpdate().replace(regEx, "?").replace("\"", "")
                 else setupSqliteRatingUpdate().replace("\"", "")
         }
 
@@ -231,7 +230,7 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
             parameters.addString(courseMap["state"] as String)
             parameters.addInteger(courseMap["tee"] as Int)
 
-            conn.preparedQuery(sql).execute(parameters).onFailure().invoke { err ->
+            conn.preparedQuery(sql?.replace("\"", "")).execute(parameters).onFailure().invoke { err ->
                 LOGGER.severe(
                     String.format(
                         "%sError querying course by tee - %s%s %s\n%s",
@@ -302,22 +301,24 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
                     }
                 }
                 .onTermination().invoke { ->
-                    conn.close().subscribeAsCompletionStage()
-                    var message = "Success"
-                    courseMap["status"] = 0
-                    if (didError) {
-                        message = "Failure"
-                        courseMap["status"] = -1
-                    }
+                    conn.close().subscribeAsCompletionStage().thenApply {
+                        var message = "Success"
+                        courseMap["status"] = 0
+                        if (didError) {
+                            message = "Failure"
+                            courseMap["status"] = -1
+                        }
 
-                    val jsonString: String = JsonObject(courseMap).toString()
-                    val handicapData = HandicapData.newBuilder()
-                        .setMessage(message)
-                        .setCmd(2)
-                        .setJson(jsonString)
-                        .build()
-                    promise.complete(handicapData)
-                }.subscribeAsCompletionStage()
+                        val jsonString: String = JsonObject(courseMap).toString()
+                        val handicapData = HandicapData.newBuilder()
+                            .setMessage(message)
+                            .setCmd(2)
+                            .setJson(jsonString)
+                            .build()
+                        promise.complete(handicapData)
+                    }
+                }
+                .subscribeAsCompletionStage()
         }.subscribeAsCompletionStage()
 
         return promise.future()
@@ -409,6 +410,7 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
 
         getCourse(courseMap).onItem().invoke { queriedCourse ->
             var isInserted = false
+
             if (queriedCourse.courseKey == 0) {
                 pool!!.withTransaction { conn ->
                     val courseKey = "courseKey"
@@ -417,7 +419,7 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
                     parameters.addString(courseMap["country"] as String)
                     parameters.addString(courseMap["state"] as String)
 
-                    val cf = conn.preparedQuery(GETCOURSEINSERT)
+                    val cf = conn.preparedQuery(GETCOURSEINSERT?.replace("\"",""))
                         .execute(parameters).onItem().invoke { rows ->
                             for (row in rows) {
                                 courseMap[courseKey] = row.getInteger(0)
@@ -432,7 +434,6 @@ class PopulateCourse : SqlConstants(), IPopulateCourse {
                             } else if (DbConfiguration.isUsingMariadb() && courseMap[courseKey] == null) {
                                 courseMap["courseKey"] = rows.property(MySQLClient.LAST_INSERTED_ID)
                             }
-
                             isInserted = true
                         }
                         .onFailure().invoke { err ->

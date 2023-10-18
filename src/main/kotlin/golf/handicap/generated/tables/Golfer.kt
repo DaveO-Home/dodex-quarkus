@@ -52,7 +52,7 @@ open class Golfer(
     companion object {
 
         /**
-         * The reference instance of <code>GOLFER</code>
+         * The reference instance of <code>golfer</code>
          */
         val GOLFER: Golfer = Golfer()
     }
@@ -63,47 +63,47 @@ open class Golfer(
     override fun getRecordType(): Class<GolferRecord> = GolferRecord::class.java
 
     /**
-     * The column <code>GOLFER.PIN</code>.
+     * The column <code>golfer.PIN</code>.
      */
     val PIN: TableField<GolferRecord, String?> = createField(DSL.name("PIN"), SQLDataType.CHAR(8).nullable(false), this, "")
 
     /**
-     * The column <code>GOLFER.FIRST_NAME</code>.
+     * The column <code>golfer.FIRST_NAME</code>.
      */
     val FIRST_NAME: TableField<GolferRecord, String?> = createField(DSL.name("FIRST_NAME"), SQLDataType.VARCHAR(32).nullable(false), this, "")
 
     /**
-     * The column <code>GOLFER.LAST_NAME</code>.
+     * The column <code>golfer.LAST_NAME</code>.
      */
     val LAST_NAME: TableField<GolferRecord, String?> = createField(DSL.name("LAST_NAME"), SQLDataType.VARCHAR(32).nullable(false), this, "")
 
     /**
-     * The column <code>GOLFER.HANDICAP</code>.
+     * The column <code>golfer.HANDICAP</code>.
      */
-    val HANDICAP: TableField<GolferRecord, Float?> = createField(DSL.name("HANDICAP"), SQLDataType.REAL.defaultValue(DSL.field("0.0", SQLDataType.REAL)), this, "")
+    val HANDICAP: TableField<GolferRecord, Float?> = createField(DSL.name("HANDICAP"), SQLDataType.REAL.defaultValue(DSL.field(DSL.raw("0.0"), SQLDataType.REAL)), this, "")
 
     /**
-     * The column <code>GOLFER.COUNTRY</code>.
+     * The column <code>golfer.COUNTRY</code>.
      */
-    val COUNTRY: TableField<GolferRecord, String?> = createField(DSL.name("COUNTRY"), SQLDataType.CHAR(2).nullable(false).defaultValue(DSL.field("'US'", SQLDataType.CHAR)), this, "")
+    val COUNTRY: TableField<GolferRecord, String?> = createField(DSL.name("COUNTRY"), SQLDataType.CHAR(2).nullable(false).defaultValue(DSL.field(DSL.raw("'US'"), SQLDataType.CHAR)), this, "")
 
     /**
-     * The column <code>GOLFER.STATE</code>.
+     * The column <code>golfer.STATE</code>.
      */
-    val STATE: TableField<GolferRecord, String?> = createField(DSL.name("STATE"), SQLDataType.CHAR(2).nullable(false).defaultValue(DSL.field("'NV'", SQLDataType.CHAR)), this, "")
+    val STATE: TableField<GolferRecord, String?> = createField(DSL.name("STATE"), SQLDataType.CHAR(2).nullable(false).defaultValue(DSL.field(DSL.raw("'NV'"), SQLDataType.CHAR)), this, "")
 
     /**
-     * The column <code>GOLFER.OVERLAP_YEARS</code>.
+     * The column <code>golfer.OVERLAP_YEARS</code>.
      */
-    val OVERLAP_YEARS: TableField<GolferRecord, Int?> = createField(DSL.name("OVERLAP_YEARS"), SQLDataType.INTEGER.defaultValue(DSL.field("1", SQLDataType.INTEGER)), this, "")
+    val OVERLAP_YEARS: TableField<GolferRecord, Int?> = createField(DSL.name("OVERLAP_YEARS"), SQLDataType.INTEGER.defaultValue(DSL.field(DSL.raw("1"), SQLDataType.INTEGER)), this, "")
 
     /**
-     * The column <code>GOLFER.PUBLIC</code>.
+     * The column <code>golfer.PUBLIC</code>.
      */
-    val PUBLIC: TableField<GolferRecord, Int?> = createField(DSL.name("PUBLIC"), SQLDataType.INTEGER.defaultValue(DSL.field("0", SQLDataType.INTEGER)), this, "")
+    val PUBLIC: TableField<GolferRecord, Int?> = createField(DSL.name("PUBLIC"), SQLDataType.INTEGER.defaultValue(DSL.field(DSL.raw("0"), SQLDataType.INTEGER)), this, "")
 
     /**
-     * The column <code>GOLFER.LAST_LOGIN</code>.
+     * The column <code>golfer.LAST_LOGIN</code>.
      */
     val LAST_LOGIN: TableField<GolferRecord, BigDecimal?> = createField(DSL.name("LAST_LOGIN"), SQLDataType.NUMERIC, this, "")
 
@@ -111,19 +111,19 @@ open class Golfer(
     private constructor(alias: Name, aliased: Table<GolferRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
 
     /**
-     * Create an aliased <code>GOLFER</code> table reference
+     * Create an aliased <code>golfer</code> table reference
      */
     constructor(alias: String): this(DSL.name(alias))
 
     /**
-     * Create an aliased <code>GOLFER</code> table reference
+     * Create an aliased <code>golfer</code> table reference
      */
     constructor(alias: Name): this(alias, null)
 
     /**
-     * Create a <code>GOLFER</code> table reference
+     * Create a <code>golfer</code> table reference
      */
-    constructor(): this(DSL.name("GOLFER"), null)
+    constructor(): this(DSL.name("golfer"), null)
 
     constructor(child: Table<out Record>, key: ForeignKey<out Record, GolferRecord>): this(Internal.createPathAlias(child, key), child, key, GOLFER, null)
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA

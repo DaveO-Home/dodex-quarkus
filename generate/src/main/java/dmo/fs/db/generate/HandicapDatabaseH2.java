@@ -122,8 +122,7 @@ public class HandicapDatabaseH2 extends DbH2 {
           }
 
           if (val == null) {
-            final String usersSql = getCreateTable("USERS").replaceAll("dummy",
-                dbProperties.get("user").toString());
+            final String usersSql = getCreateTable("USERS");
 
             Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err ->
                     logger.info(String.format("Users Table Error: %s",
@@ -142,8 +141,7 @@ public class HandicapDatabaseH2 extends DbH2 {
           }
 
           if (val == null) {
-            final String sql = getCreateTable("MESSAGES").replaceAll("dummy",
-                dbProperties.get("user").toString());
+            final String sql = getCreateTable("MESSAGES");
 
             Single<RowSet<Row>> crow = conn.query(sql).rxExecute().doOnError(err -> logger.info(
                 String.format("Messages Table Error: %s", err.getMessage()))).doOnSuccess(row2 ->
@@ -164,8 +162,7 @@ public class HandicapDatabaseH2 extends DbH2 {
               }
 
               if (val == null) {
-                final String sql = getCreateTable("UNDELIVERED").replaceAll("dummy",
-                    dbProperties.get("user").toString());
+                final String sql = getCreateTable("UNDELIVERED");
 
                 Single<RowSet<Row>> crow = conn.query(sql).rxExecute().doOnError(err ->
                         logger.info(String.format("Undelivered Table Error: %s",
@@ -188,8 +185,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                       for (Row row : rows) {
                         names.add(row.getString(0));
                       }
-                      String sql = getCreateTable("GOLFER").replaceAll("dummy",
-                          dbProperties.get("user").toString());
+                      String sql = getCreateTable("GOLFER");
                       if((names.contains("golfer"))) {
                         sql = SELECTONE;
                       }
@@ -200,8 +196,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                             if (!names.contains("golfer")) {
                               logger.warn("Golfer Table Added.");
                             }
-                            String sql2 = getCreateTable("COURSE").replaceAll("dummy",
-                                dbProperties.get("user").toString());
+                            String sql2 = getCreateTable("COURSE");
                             if((names.contains("course"))) {
                               sql2 = SELECTONE;
                             }
@@ -211,8 +206,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                                   if (!names.contains("course")) {
                                     logger.warn("Course Table Added.");
                                   }
-                                  String sql3 = getCreateTable("RATINGS").replaceAll("dummy",
-                                    dbProperties.get("user").toString());
+                                  String sql3 = getCreateTable("RATINGS");
                                   if((names.contains("ratings"))) {
                                     sql3 = SELECTONE;
                                   }
@@ -222,8 +216,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                                         if (!names.contains("ratings")) {
                                           logger.warn("Ratings Table Added.");
                                         }
-                                        String sql4 = getCreateTable("SCORES").replaceAll("dummy",
-                                            dbProperties.get("user").toString());
+                                        String sql4 = getCreateTable("SCORES");
                                         if((names.contains("scores"))) {
                                           sql4 = SELECTONE;
                                         }

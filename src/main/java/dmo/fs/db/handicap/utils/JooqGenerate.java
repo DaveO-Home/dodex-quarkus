@@ -77,7 +77,7 @@ public class JooqGenerate {
                   .withIncludePrimaryKeys(true)
                   .withInputSchema(databaseDbname)
                   .withExcludes(
-                      "USERS|UNDELIVERED|MESSAGES|LOGIN|SQLITE_SEQUENCE|INFORMATION_SCHEMA|Users")
+                      "users|undelivered|messages|login|SQLITE_SEQUENCE|INFORMATION_SCHEMA|Users")
                       )
               .withGenerate(new Generate()
                   .withDeprecated(false)

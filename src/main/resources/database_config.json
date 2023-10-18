@@ -6,7 +6,7 @@
             "credentials": {
             },
             "config": {
-                "filename": "../../../dodex_tests.db",
+                "filename": "../../../dodex_tests.db;FILE_LOCK=FS",
                 "url": "jdbc:sqlite:"
             }
         },
@@ -51,7 +51,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "192.168.49.1",
                 "port": "5432",
                 "url": "jdbc:postgresql:",
                 "dbname": "dodex"

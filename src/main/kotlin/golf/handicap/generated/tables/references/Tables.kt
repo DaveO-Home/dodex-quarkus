@@ -12,21 +12,21 @@ import golf.handicap.generated.tables.Scores
 
 
 /**
- * The table <code>COURSE</code>.
+ * The table <code>course</code>.
  */
 val COURSE: Course = Course.COURSE
 
 /**
- * The table <code>GOLFER</code>.
+ * The table <code>golfer</code>.
  */
 val GOLFER: Golfer = Golfer.GOLFER
 
 /**
- * The table <code>RATINGS</code>.
+ * The table <code>ratings</code>.
  */
 val RATINGS: Ratings = Ratings.RATINGS
 
 /**
- * The table <code>SCORES</code>.
+ * The table <code>scores</code>.
  */
 val SCORES: Scores = Scores.SCORES

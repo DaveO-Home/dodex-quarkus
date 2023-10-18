@@ -8,7 +8,7 @@ public abstract class DbIbmDB2 extends DbDefinitionBase implements DodexDatabase
     
 	private enum CreateTable {
 		CREATEUSERS(
-			"CREATE TABLE USERS (" +
+			"CREATE TABLE users (" +
 				"id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY, " +
 				"name VARCHAR(255) NOT NULL, " +
 				"password VARCHAR(255) NOT NULL, " +
@@ -20,14 +20,14 @@ public abstract class DbIbmDB2 extends DbDefinitionBase implements DodexDatabase
 			"ON USERS " +
 		  "(name ASC, password ASC)"),
 		CREATEMESSAGES(
-			"CREATE TABLE MESSAGES (" +
+			"CREATE TABLE messages (" +
 				"id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY," +
 				"message VARCHAR(32672) NOT NULL," +
 				"from_handle VARCHAR(255) NOT NULL," +
 				"post_date TIMESTAMP(12) NOT NULL, " +
 				"PRIMARY KEY (id))"),
 		CREATEUNDELIVERED(
-			"CREATE TABLE UNDELIVERED (" +
+			"CREATE TABLE undelivered (" +
 				"user_id INTEGER NOT NULL," +
 				"message_id INTEGER NOT NULL, " +
 				"FOREIGN KEY (USER_ID) " +

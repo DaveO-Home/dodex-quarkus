@@ -63,7 +63,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     field("PUBLIC"),
                     field("LAST_LOGIN")
                 )
-                    .from(table("GOLFER"))
+                    .from(table("golfer"))
                     .where(field("PIN").eq("$"))
             )
         }
@@ -82,7 +82,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     field("PUBLIC"),
                     field("LAST_LOGIN")
                 )
-                    .from(table("GOLFER"))
+                    .from(table("golfer"))
                     .where(field("LAST_NAME").eq("$"))
             )
         }
@@ -101,7 +101,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     field("PUBLIC"),
                     field("LAST_LOGIN")
                 )
-                    .from(table("GOLFER"))
+                    .from(table("golfer"))
                     .where(field("LAST_NAME").eq("$"))
                     .and(field("FIRST_NAME").eq("$"))
             )
@@ -120,7 +120,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
         @JvmStatic
         fun setupInsertGolfer(): String {
             return create!!.renderNamedParams(
-                insertInto(table("GOLFER"))
+                insertInto(table("golfer"))
                     .columns(
                         field("FIRST_NAME"),
                         field("LAST_NAME"),
@@ -139,7 +139,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
         @JvmStatic
         fun setupUpdateGolferName(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER"))
+                update(table("golfer"))
                     .set(field("FIRST_NAME"), "$")
                     .set(field("LAST_NAME"), "$")
                     .where(field("pin").eq("$"))
@@ -149,7 +149,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
         @JvmStatic
         fun setupUpdateGolfer(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER"))
+                update(table("golfer"))
                     .set(field("COUNTRY"), "$")
                     .set(field("STATE"), "$")
                     .set(field("OVERLAP_YEARS"), "$")
@@ -162,13 +162,13 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
         @JvmStatic
         fun setupUpdateGolferHandicap(): String {
             return create!!.renderNamedParams(
-                update(table("GOLFER")).set(field("HANDICAP"), "$").where(field("pin").eq("$"))
+                update(table("golfer")).set(field("HANDICAP"), "$").where(field("pin").eq("$"))
             )
         }
 
         @JvmStatic
         fun setupDeleteGolfer(): String {
-            return create!!.renderNamedParams(deleteFrom(table("GOLFER")).where(field("pin").eq("$")))
+            return create!!.renderNamedParams(deleteFrom(table("golfer")).where(field("pin").eq("$")))
         }
     }
 

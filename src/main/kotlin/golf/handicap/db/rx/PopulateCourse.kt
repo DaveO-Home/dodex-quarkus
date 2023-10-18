@@ -163,7 +163,7 @@ class PopulateCourse : SqlConstants() , IPopulateCourse {
 
         @JvmStatic
         private fun setupSqliteRatingUpdate(): String {
-            return """update RATINGS 
+            return """update ratings 
 						set TEE_COLOR = ?,
 						TEE_RATING = ?,
 						TEE_SLOPE = ?,

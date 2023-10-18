@@ -226,10 +226,9 @@ public class DodexRoutes {
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
                 dodexRouter.setUsingCubrid(true);
             case "sqlite3": // non mutiny supported db's - uses Vertx reactivex instead
-            case "h2":
                 dodexRouter = CDI.current().select(DodexRouter.class).get();
                 dodexRouter.setReactive(true);
-
+            case "h2":
                 handicapPromise.future().onSuccess(r -> {
                     try {
                         new SpaRoutes(vertx.getDelegate(), router, routerPromise);

@@ -3,14 +3,14 @@ package dmo.fs.db.generate;
 
 public abstract class DbMariadb extends DbDefinitionBase implements HandicapDatabase {
 	protected final static String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='LOGIN';";
-	public final static String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='USERS';";
-	protected final static String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='MESSAGES';";
-	protected final static String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='UNDELIVERED';";
-	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('GOLFER', 'COURSE', 'SCORES', 'RATINGS')";
+	public final static String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='users';";
+	protected final static String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='messages';";
+	protected final static String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='undelivered';";
+	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('golfer', 'course', 'scores', 'ratings')";
 
 	private enum CreateTable {
 		CREATEUSERS(
-				"CREATE TABLE USERS (" +
+				"CREATE TABLE users (" +
 						"id INT NOT NULL AUTO_INCREMENT," +
 						"name VARCHAR(255) CHARACTER SET utf8mb4 collate  utf8mb4_bin NOT NULL," +
 						"password VARCHAR(255) NOT NULL," +
@@ -19,30 +19,30 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 						"PRIMARY KEY (id)," +
 						"UNIQUE INDEX name_password_UNIQUE (name ASC, password ASC));"),
 		CREATEMESSAGES(
-				"CREATE TABLE MESSAGES (" +
+				"CREATE TABLE messages (" +
 						"id INT NOT NULL AUTO_INCREMENT," +
 						"message MEDIUMTEXT NOT NULL," +
 						"from_handle VARCHAR(255) CHARACTER SET utf8mb4 collate  utf8mb4_bin NOT NULL," +
 						"post_date DATETIME NOT NULL," +
 						"PRIMARY KEY (id));"),
 		CREATEUNDELIVERED(
-				"CREATE TABLE UNDELIVERED (" +
+				"CREATE TABLE undelivered (" +
 						"user_id INT NOT NULL," +
 						"message_id INT NOT NULL," +
 						"INDEX fk_undelivered_users_idx (user_id ASC)," +
 						"INDEX fk_undelivered_messages_idx (message_id ASC)," +
 						"CONSTRAINT fk_undelivered_users " +
 						"FOREIGN KEY (user_id) " +
-						"REFERENCES USERS (id) " +
+						"REFERENCES users (id) " +
 						"ON DELETE NO ACTION " +
 						"ON UPDATE NO ACTION," +
 						"CONSTRAINT fk_undelivered_messages " +
 						"FOREIGN KEY (message_id) " +
-						"REFERENCES MESSAGES (id) " +
+						"REFERENCES messages (id) " +
 						"ON DELETE NO ACTION " +
 						"ON UPDATE NO ACTION);"),
 		CREATEGOLFER(
-				"CREATE TABLE IF NOT EXISTS GOLFER (" +
+				"CREATE TABLE IF NOT EXISTS golfer (" +
 						"PIN CHARACTER(8) primary key NOT NULL," +
 						"FIRST_NAME VARCHAR(32) NOT NULL," +
 						"LAST_NAME VARCHAR(32) NOT NULL," +
@@ -53,13 +53,13 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 						"PUBLIC BOOLEAN," +
 						"LAST_LOGIN TIMESTAMP)"),
 		CREATECOURSE(
-				"CREATE TABLE IF NOT EXISTS COURSE (" +
+				"CREATE TABLE IF NOT EXISTS course (" +
 						"COURSE_SEQ INTEGER primary key auto_increment NOT NULL," +
 						"COURSE_NAME VARCHAR(128) NOT NULL," +
 						"COURSE_COUNTRY VARCHAR(128) NOT NULL," +
 						"COURSE_STATE CHARACTER(2) NOT NULL )"),
 		CREATERATINGS(
-				"CREATE TABLE IF NOT EXISTS RATINGS (" +
+				"CREATE TABLE IF NOT EXISTS ratings (" +
 						"COURSE_SEQ INTEGER NOT NULL," +
 						"TEE INTEGER NOT NULL," +
 						"TEE_COLOR VARCHAR(16)," +
@@ -69,11 +69,11 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 						"INDEX idx_rating_course (course_seq ASC)," +
 						"CONSTRAINT fk_course_ratings " +
 						"FOREIGN KEY (COURSE_SEQ) " +
-						"REFERENCES COURSE (COURSE_SEQ) " +
+						"REFERENCES course (COURSE_SEQ) " +
 						"ON DELETE NO ACTION " +
 						"ON UPDATE NO ACTION)"),
 		CREATESCORES(
-				"CREATE TABLE IF NOT EXISTS SCORES (" +
+				"CREATE TABLE IF NOT EXISTS scores (" +
 						"PIN CHARACTER(8) NOT NULL," +
 						"GROSS_SCORE INTEGER NOT NULL," +
 						"NET_SCORE FLOAT(4,1)," +

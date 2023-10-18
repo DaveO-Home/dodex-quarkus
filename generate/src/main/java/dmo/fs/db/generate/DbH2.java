@@ -18,11 +18,11 @@ public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase 
 	protected final static String SELECTONE = "SELECT 1;";
 
 	private enum CreateTable {
-		CREATEUSERS("create table USERS (id int auto_increment NOT NULL PRIMARY KEY, name varchar(255) not null unique, password varchar(255) not null unique, ip varchar(255) not null, last_login TIMESTAMP not null)"),
-		CREATEMESSAGES("create table MESSAGES (id int auto_increment NOT NULL PRIMARY KEY, message clob not null, from_handle varchar(255) not null, post_date TIMESTAMP not null)"),
-		CREATEUNDELIVERED("create table UNDELIVERED (user_id int, message_id int, CONSTRAINT undelivered_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id), CONSTRAINT undelivered_message_id_foreign FOREIGN KEY (message_id) REFERENCES messages (id))"),
+		CREATEUSERS("create table users (id int auto_increment NOT NULL PRIMARY KEY, name varchar(255) not null unique, password varchar(255) not null unique, ip varchar(255) not null, last_login TIMESTAMP not null)"),
+		CREATEMESSAGES("create table messages (id int auto_increment NOT NULL PRIMARY KEY, message clob not null, from_handle varchar(255) not null, post_date TIMESTAMP not null)"),
+		CREATEUNDELIVERED("create table undelivered (user_id int, message_id int, CONSTRAINT undelivered_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id), CONSTRAINT undelivered_message_id_foreign FOREIGN KEY (message_id) REFERENCES messages (id))"),
 		CREATELOGIN("create table login (id integer primary key, name text not null unique, password text not null, last_login DATETIME not null)"),
-		CREATEGOLFER("CREATE TABLE IF NOT EXISTS GOLFER (" +
+		CREATEGOLFER("CREATE TABLE IF NOT EXISTS golfer (" +
 							 "PIN CHARACTER(8) primary key NOT NULL," +
 							 "FIRST_NAME VARCHAR(32) NOT NULL," +
 							 "LAST_NAME VARCHAR(32) NOT NULL," +
@@ -32,12 +32,12 @@ public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase 
 							 "OVERLAP_YEARS BOOLEAN," +
 							 "PUBLIC BOOLEAN," +
 							 "LAST_LOGIN NUMERIC)"),
-		CREATECOURSE("CREATE TABLE IF NOT EXISTS COURSE (" +
+		CREATECOURSE("CREATE TABLE IF NOT EXISTS course (" +
 							 "COURSE_SEQ INTEGER primary key auto_increment NOT NULL," +
 							 "COURSE_NAME VARCHAR(128) NOT NULL," +
 							 "COURSE_COUNTRY VARCHAR(128) NOT NULL," +
 							 "COURSE_STATE CHARACTER(2) NOT NULL )"),
-		CREATERATINGS("CREATE TABLE IF NOT EXISTS RATINGS (" +
+		CREATERATINGS("CREATE TABLE IF NOT EXISTS ratings (" +
 							  "COURSE_SEQ INTEGER NOT NULL," +
 							  "TEE INTEGER NOT NULL," +
 							  "TEE_COLOR VARCHAR(16)," +
@@ -46,7 +46,7 @@ public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase 
 							  "TEE_PAR INTEGER DEFAULT '72' NOT NULL, PRIMARY KEY (COURSE_SEQ, TEE)," +
 							  "CONSTRAINT FK_COURSE_SEQ_RATING FOREIGN KEY ( COURSE_SEQ ) " +
 							  "REFERENCES COURSE ( COURSE_SEQ ))"),
-		CREATESCORES("CREATE TABLE IF NOT EXISTS SCORES (" +
+		CREATESCORES("CREATE TABLE IF NOT EXISTS scores (" +
 							 "PIN CHARACTER(8) NOT NULL," +
 							 "GROSS_SCORE INTEGER NOT NULL," +
 							 "NET_SCORE REAL," +
@@ -60,7 +60,7 @@ public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase 
 							 "REFERENCES GOLFER ( PIN ))");
 
 
-		String sql;		
+		String sql;
 
         CreateTable(String sql) {
             this.sql = sql;

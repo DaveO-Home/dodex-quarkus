@@ -19,7 +19,7 @@ public abstract class DbConfiguration {
     private static Boolean isUsingMariadb = false;
     private static Boolean isUsingIbmDB2 = false;
     private static Boolean isUsingH2 = false;
-    private static String defaultDb = "h2";
+    private static String defaultDb = "sqlite3";
     private static final DodexUtil dodexUtil = new DodexUtil();
     private static HandicapDatabase handicapDatabase;
 
