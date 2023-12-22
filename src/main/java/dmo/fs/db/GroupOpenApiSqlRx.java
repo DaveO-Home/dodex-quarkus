@@ -23,10 +23,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.*;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SessionScoped
 @Dependent
@@ -291,7 +288,7 @@ public class GroupOpenApiSqlRx extends GroupOpenApiSql {
                             config.getBoolean("dodex.groups.checkForOwner");
                     groupJson.put("checkForOwner", isCheckForOwner);
                     groupJson.put("isValidForOperation", groupJson.getInteger("status") != -1 &&
-                        !isCheckForOwner || groupJson.getInteger("checkGroupOwnerId") == groupJson.getInteger("groupOwnerId"));
+                        !isCheckForOwner || Objects.equals(groupJson.getInteger("checkGroupOwnerId"), groupJson.getInteger("groupOwnerId")));
                     if (!groupJson.getBoolean("isValidForOperation")) {
                       groupJson.put("errorMessage", "Contact owner for group administration");
                     }

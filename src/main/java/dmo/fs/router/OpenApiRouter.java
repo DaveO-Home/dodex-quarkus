@@ -1,15 +1,20 @@
 package dmo.fs.router;
 
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.handicap.DbConfiguration;
+import dmo.fs.db.handicap.HandicapDatabase;
 import dmo.fs.db.GroupOpenApiSql;
 import dmo.fs.db.GroupOpenApiSqlRx;
+import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.Group;
 
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.SessionScoped;
-import jakarta.inject.Inject;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import org.jooq.DSLContext;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,10 +98,13 @@ public class OpenApiRouter {
     @Produces(MediaType.APPLICATION_JSON)
     public Group openApiById(Group newGroup) throws SQLException, IOException, InterruptedException, ExecutionException {
         JsonObject getGroupJson = new JsonObject(newGroup.getMap());
-        isDebug = false;
+ 
         if(DbConfiguration.isUsingSqlite3()) {
             if (groupOpenApiSqlRx == null) {
                 groupOpenApiSqlRx = new GroupOpenApiSqlRx();
+                if(!"true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
+                    DbConfiguration.getDefaultDb(); // setup database for groups if not using handicap
+                }
             }
             return groupOpenApiSqlRx.getMembersList(getGroupJson).onComplete(getGroupObject -> {
                 if (isDebug) {
@@ -106,10 +114,13 @@ public class OpenApiRouter {
         } else {
             if (groupOpenApiSql == null) {
                 groupOpenApiSql = new GroupOpenApiSql();
+                if(!"true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
+                    DbConfiguration.getDefaultDb(); // setup database for groups if not using handicap
+                }
             }
             return groupOpenApiSql.getMembersList(getGroupJson).onComplete(getGroupObject -> {
                 if (isDebug) {
-                    logger.info("OpenApi By Group Id: {}", getGroupObject.result().getMap());
+                    logger.info("OpenApi By Group Id: {} -- {}", getGroupObject.result().getMap(), getGroupObject);
                 }
             }).toCompletionStage().toCompletableFuture().get().mapTo(Group.class);
         }

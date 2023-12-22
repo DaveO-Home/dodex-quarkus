@@ -51,39 +51,39 @@ import io.vertx.mutiny.sqlclient.SqlClientHelper;
 import io.vertx.mutiny.sqlclient.Tuple;
 
 public abstract class DbDefinitionBase {
-    private static final Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
     protected static final String QUERYUSERS = "select * from users where password=$";
     protected static final String QUERYMESSAGES = "select * from messages where id=$";
     protected static final String QUERYUNDELIVERED = "Select message_id, name, message, from_handle, post_date from users, undelivered, messages where users.id = user_id and messages.id = message_id and users.id = $1";
 
     protected static DSLContext create;
 
-    private static String GETALLUSERS;
-    private static String GETUSERBYNAME;
-    private static String GETINSERTUSER;
-    private static String GETUPDATEUSER;
-    private static String GETREMOVEUNDELIVERED;
-    private static String GETREMOVEMESSAGE;
-    private static String GETUNDELIVEREDMESSAGE;
-    private static String GETDELETEUSER;
-    private static String GETADDMESSAGE;
-    private static String GETADDUNDELIVERED;
-    private static String GETUSERNAMES;
-    private static String GETUSERBYID;
-    private static String GETREMOVEUSERUNDELIVERED;
-    private static String GETUSERUNDELIVERED;
-    private static String GETDELETEUSERBYID;
-    private static String GETSQLITEUPDATEUSER;
-    private static String GETREMOVEUSERS;
-    private static String GETCUSTOMDELETEMESSAGES;
-    private static String GETCUSTOMDELETEUSERS;
-    private static String GETMARIAINSERTUSER;
-    private static String GETMARIAADDMESSAGE;
-    private static String GETMARIADELETEUSER;
-    private static String GETMESSAGEIDBYHANDLEDATE;
-    private Boolean isTimestamp;
+    protected static String GETALLUSERS;
+    protected static String GETUSERBYNAME;
+    protected static String GETINSERTUSER;
+    protected static String GETUPDATEUSER;
+    protected static String GETREMOVEUNDELIVERED;
+    protected static String GETREMOVEMESSAGE;
+    protected static String GETUNDELIVEREDMESSAGE;
+    protected static String GETDELETEUSER;
+    protected static String GETADDMESSAGE;
+    protected static String GETADDUNDELIVERED;
+    protected static String GETUSERNAMES;
+    protected static String GETUSERBYID;
+    protected static String GETREMOVEUSERUNDELIVERED;
+    protected static String GETUSERUNDELIVERED;
+    protected static String GETDELETEUSERBYID;
+    protected static String GETSQLITEUPDATEUSER;
+    protected static String GETREMOVEUSERS;
+    protected static String GETCUSTOMDELETEMESSAGES;
+    protected static String GETCUSTOMDELETEUSERS;
+    protected static String GETMARIAINSERTUSER;
+    protected static String GETMARIAADDMESSAGE;
+    protected static String GETMARIADELETEUSER;
+    protected static String GETMESSAGEIDBYHANDLEDATE;
+    protected Boolean isTimestamp;
     protected Pool pool;
-    private boolean qmark = true;
+    protected boolean qmark = true;
 
     public <T> void setupSql(T pool) {
         // Non-Blocking Drivers
@@ -126,10 +126,9 @@ public abstract class DbDefinitionBase {
         GETCUSTOMDELETEMESSAGES = setupCustomDeleteMessage();
         GETCUSTOMDELETEUSERS = setupCustomDeleteUsers();
         GETMESSAGEIDBYHANDLEDATE = qmark ? setupMessageByHandleDate().replaceAll("\\$\\d", "?") : setupRemoveUsers();
-
     }
 
-    private static String setupAllUsers() {
+    protected static String setupAllUsers() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("users")).where(field("NAME").ne("$")));
@@ -139,7 +138,7 @@ public abstract class DbDefinitionBase {
         return GETALLUSERS;
     }
 
-    private static String setupMessageByHandleDate() {
+    protected static String setupMessageByHandleDate() {
         return create.renderNamedParams(
                 select(field("ID"))
                         .from(table("messages")).where(field("FROM_HANDLE").eq("$").and(field("POST_DATE").eq("$"))));
@@ -149,7 +148,7 @@ public abstract class DbDefinitionBase {
         return GETMESSAGEIDBYHANDLEDATE;
     }
     
-    private static String setupUserByName() {
+    protected static String setupUserByName() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("users")).where(field("NAME").eq("$")));
@@ -159,7 +158,7 @@ public abstract class DbDefinitionBase {
         return GETUSERBYNAME;
     }
 
-    private static String setupUserById() {
+    protected static String setupUserById() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("users")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
@@ -169,7 +168,7 @@ public abstract class DbDefinitionBase {
         return GETUSERBYID;
     }
 
-    private static String setupInsertUser() {
+    protected static String setupInsertUser() {
         return create.renderNamedParams(
                 insertInto(table("users")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$").returning(field("ID")));
@@ -179,7 +178,7 @@ public abstract class DbDefinitionBase {
         return GETINSERTUSER;
     }
 
-    private static String setupMariaInsertUser() {
+    protected static String setupMariaInsertUser() {
         return create.renderNamedParams(
                 insertInto(table("users")).columns(field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .values("$", "$", "$", "$"));
@@ -189,7 +188,7 @@ public abstract class DbDefinitionBase {
         return GETMARIAINSERTUSER;
     }
 
-    private static String setupUpdateUser() {
+    protected static String setupUpdateUser() {
         return create.renderNamedParams(insertInto(table("users"))
                 .columns(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                 .values("$1", "$2", "$3", "$4", "$5").onConflict(field("PASSWORD")).doUpdate()
@@ -224,7 +223,7 @@ public abstract class DbDefinitionBase {
         return GETCUSTOMDELETEMESSAGES;
     }
 
-    private static String setupRemoveUndelivered() {
+    protected static String setupRemoveUndelivered() {
         return create.renderNamedParams(
                 deleteFrom(table("undelivered")).where(field("USER_ID").eq("$1"), field("MESSAGE_ID").eq("$2")));
     }
@@ -233,7 +232,7 @@ public abstract class DbDefinitionBase {
         return GETREMOVEUNDELIVERED;
     }
 
-    private static String setupRemoveUserUndelivered() {
+    protected static String setupRemoveUserUndelivered() {
         return create.renderNamedParams(deleteFrom(table("undelivered")).where(field("USER_ID").eq("$")));
     }
 
@@ -241,7 +240,7 @@ public abstract class DbDefinitionBase {
         return GETREMOVEUSERUNDELIVERED;
     }
 
-    private static String setupRemoveMessage() {
+    protected static String setupRemoveMessage() {
         return create
                 .renderNamedParams(
                         deleteFrom(table("messages")).where(create.renderNamedParams(field("ID").eq("$1")
@@ -254,7 +253,7 @@ public abstract class DbDefinitionBase {
         return GETREMOVEMESSAGE;
     }
 
-    private static String setupRemoveUsers() {
+    protected static String setupRemoveUsers() {
         return create.renderNamedParams(deleteFrom(table("users")).where(create.renderNamedParams(
                 field("ID").eq("$").and(create.renderNamedParams(notExists(select().from(table("users"))
                         .join(table("undelivered")).on(field("ID").eq(field("USER_ID"))).and(field("ID").eq("$"))))))));
@@ -264,7 +263,7 @@ public abstract class DbDefinitionBase {
         return GETREMOVEUSERS;
     }
 
-    private static String setupUndeliveredMessage() {
+    protected static String setupUndeliveredMessage() {
         return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID")).from(table("messages"))
                 .join(table("undelivered")).on(field("ID").eq(field("MESSAGE_ID"))).and(field("ID").eq("$"))
                 .and(field("USER_ID").eq("$")));
@@ -274,7 +273,7 @@ public abstract class DbDefinitionBase {
         return GETUNDELIVEREDMESSAGE;
     }
 
-    private static String setupUserUndelivered() {
+    protected static String setupUserUndelivered() {
         return create.renderNamedParams(select(field("USER_ID"), field("MESSAGE_ID"), field("MESSAGE"),
                 field("POST_DATE"), field("FROM_HANDLE")).from(table("users")).join(table("undelivered"))
                         .on(field("users.ID").eq(field("USER_ID")).and(field("users.ID").eq("$")))
@@ -285,7 +284,7 @@ public abstract class DbDefinitionBase {
         return GETUSERUNDELIVERED;
     }
 
-    private static String setupDeleteUser() {
+    protected static String setupDeleteUser() {
         return create.renderNamedParams(deleteFrom(table("users"))
                 .where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")).returning(field("ID")));
     }
@@ -294,7 +293,7 @@ public abstract class DbDefinitionBase {
         return GETDELETEUSER;
     }
 
-    private static String setupMariaDeleteUser() {
+    protected static String setupMariaDeleteUser() {
         return create.renderNamedParams(
                 deleteFrom(table("users")).where(field("NAME").eq("$1"), field("PASSWORD").eq("$2")));
     }
@@ -303,7 +302,7 @@ public abstract class DbDefinitionBase {
         return GETMARIADELETEUSER;
     }
 
-    private static String setupDeleteUserById() {
+    protected static String setupDeleteUserById() {
         return create.renderNamedParams(deleteFrom(table("users")).where(field("ID").eq("$1")).returning(field("ID")));
     }
 
@@ -311,7 +310,7 @@ public abstract class DbDefinitionBase {
         return GETDELETEUSERBYID;
     }
 
-    private static String setupAddMessage() {
+    protected static String setupAddMessage() {
         return create.renderNamedParams(
                 insertInto(table("messages")).columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE"))
                         .values("$", "$", "$").returning(field("ID")));
@@ -321,7 +320,7 @@ public abstract class DbDefinitionBase {
         return GETADDMESSAGE;
     }
 
-    private static String setupMariaAddMessage() {
+    protected static String setupMariaAddMessage() {
         return create.renderNamedParams(insertInto(table("messages"))
                 .columns(field("MESSAGE"), field("FROM_HANDLE"), field("POST_DATE")).values("$", "$", "$"));
     }
@@ -330,7 +329,7 @@ public abstract class DbDefinitionBase {
         return GETMARIAADDMESSAGE;
     }
 
-    private static String setupAddUndelivered() {
+    protected static String setupAddUndelivered() {
         return create.renderNamedParams(
                 insertInto(table("undelivered")).columns(field("USER_ID"), field("MESSAGE_ID")).values("$", "$"));
     }
@@ -339,7 +338,7 @@ public abstract class DbDefinitionBase {
         return GETADDUNDELIVERED;
     }
 
-    private static String setupUserNames() {
+    protected static String setupUserNames() {
         return create.renderNamedParams(
                 select(field("ID"), field("NAME"), field("PASSWORD"), field("IP"), field("LAST_LOGIN"))
                         .from(table("users")).where(field("NAME").ne("$")));
@@ -413,7 +412,7 @@ public abstract class DbDefinitionBase {
         return promise;
     }
 
-    private Tuple getTupleParameters(MessageUser messageUser) {
+    protected Tuple getTupleParameters(MessageUser messageUser) {
         Timestamp timeStamp = new Timestamp(new Date().getTime());
         long date = new Date().getTime();
         OffsetDateTime time = OffsetDateTime.now();

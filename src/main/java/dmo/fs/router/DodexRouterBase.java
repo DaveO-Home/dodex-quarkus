@@ -39,7 +39,7 @@ import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.reactivex.jdbcclient.JDBCPool;
 
 public abstract class DodexRouterBase {
-    private static final Logger logger = LoggerFactory.getLogger(DodexRouterBase.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(DodexRouterBase.class.getName());
     protected final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
     protected boolean isReactive;
     protected boolean isSetupDone;
@@ -50,7 +50,7 @@ public abstract class DodexRouterBase {
     protected final Promise<Pool> cleanupPromise = Promise.promise();
     protected Map<String, Session> sessions = new ConcurrentHashMap<>();
     protected String remoteAddress;
-    private final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
+    protected final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
     @Inject
     Vertx vertx;
@@ -98,7 +98,7 @@ public abstract class DodexRouterBase {
                          * Send list of registered users with connected notification
                          */
                         userJson.future().invoke(json -> {
-                            session.getAsyncRemote().sendObject("connected:" + json); // Users for private messages
+                            session.getAsyncRemote().sendObject("connected:" + json); // Users for protected messages
                         }).subscribeAsCompletionStage().isDone();
                         /*
                          * Send undelivered messages and remove user related messages.
@@ -154,7 +154,7 @@ public abstract class DodexRouterBase {
                         if (ke != null) {
                             ke.setValue(1);
                         }
-                    // private message
+                    // protected message
                     } else if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> {
                         boolean isMatched = false;
                         isMatched = h.contains(handle);
@@ -175,12 +175,12 @@ public abstract class DodexRouterBase {
                 });
 
             if ("".equals(selectedUsers) && !"".equals(command)) {
-                session.getAsyncRemote().sendObject("Private user not selected");
+                session.getAsyncRemote().sendObject("protected user not selected");
             } else {
                 session.getAsyncRemote().sendObject("ok");
                 if(!onlineUsers.isEmpty()) {
                     if(ke != null) {
-                        ke.setValue("private", onlineUsers.size());
+                        ke.setValue("protected", onlineUsers.size());
                     }
                 }
             }
@@ -191,7 +191,7 @@ public abstract class DodexRouterBase {
             final List<String> selected = Arrays.asList(selectedUsers.split(","));
             final List<String> disconnectedUsers = selected.stream().filter(user -> !onlineUsers.contains(user))
                     .collect(Collectors.toList());
-            // Save private message to send when to-user logs in
+            // Save protected message to send when to-user logs in
             if (!disconnectedUsers.isEmpty()) {
                 Promise<Long> futureId;
                 try {
@@ -280,6 +280,10 @@ public abstract class DodexRouterBase {
                 : startupMessage;
         logger.info(String.format("%sStarting Web Socket...%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage,
                 ColorUtilConstants.RESET));
+    }
+
+    public DodexDatabase getDodexDatabase() {
+        return dodexDatabase;
     }
 
     public boolean isReactive() {

@@ -1,8 +1,8 @@
 
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.9.10"
-    id "org.jetbrains.kotlin.plugin.allopen" version "1.9.10"
+    id "org.jetbrains.kotlin.jvm" version "1.9.21"
+    id "org.jetbrains.kotlin.plugin.allopen" version "1.9.21"
     id "io.quarkus"
     id "pmd"
 }
@@ -23,7 +23,7 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.4.6"
+    vertxVersion = "4.5.0"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
@@ -46,7 +46,7 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation "io.quarkiverse.neo4j:quarkus-neo4j:3.4.0"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:3.6.0"
 
     implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
@@ -89,18 +89,19 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+def usr = System.getProperty("user.home")
+def OS = System.getProperty("os.name").toLowerCase()
+def dir = System.getProperty("user.dir")
+
 compileJava {
     options.encoding = "UTF-8"
     options.compilerArgs << "-Xlint:unchecked"
 }
 
-tasks.register('runWith', JavaExec) {
-    environment "USE_HANDICAP", "true"
-}
-
 compileKotlin {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17
     kotlinOptions.javaParameters = true
+    dependsOn compileQuarkusGeneratedSourcesJava
 }
 
 compileTestKotlin {
@@ -108,10 +109,6 @@ compileTestKotlin {
     dependsOn compileKotlin
 }
 
-
-def usr = System.getProperty("user.home")
-def OS = System.getProperty("os.name").toLowerCase()
-def dir = System.getProperty("user.dir")
 /*
     The "run" task can be used to set Environment Variables before executing "quarkusDev"
  */

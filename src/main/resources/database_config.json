@@ -6,7 +6,7 @@
             "credentials": {
             },
             "config": {
-                "filename": "../../../dodex_tests.db;FILE_LOCK=FS",
+                "filename": "../../../dodex_tests.db",
                 "url": "jdbc:sqlite:"
             }
         },
@@ -166,7 +166,7 @@
         },
         "prod": { 
             "credentials": {
-            },
+        },
             "config": {
                 "filename": "",
                 "url": ""

@@ -21,12 +21,12 @@ import io.reactivex.disposables.Disposable;
 import io.vertx.mutiny.core.Vertx;
 
 public class DodexUtil {
-    private static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
-    private static final String REMOVEUSER = ";removeuser";
-    private static final String USERS = ";users";
-    private static String env = "dev";
+    protected static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
+    protected static final String REMOVEUSER = ";removeuser";
+    protected static final String USERS = ";users";
+    protected static String env = "dev";
     String defaultDb = "sqlite3";
-    private static Vertx vertx = Vertx.vertx();
+    protected static Vertx vertx = Vertx.vertx();
     public void await(Disposable disposable) {
         while (!disposable.isDisposed()) {
             try {
@@ -54,7 +54,7 @@ public class DodexUtil {
         return returnObject;
     }
 
-    private static Map<String, String> processCommand(String command, String data) {
+    protected static Map<String, String> processCommand(String command, String data) {
         String selectedUsers = "";
         Map<String, String> returnObject = new ConcurrentHashMap<>();
         String switchValue = command == null ? "" : command;
@@ -90,9 +90,9 @@ public class DodexUtil {
         Split out command and data from client message.
     */
     public static class ClientInfoUtilHelper {
-        private final static String[] commands = { REMOVEUSER, USERS };
+        protected final static String[] commands = { REMOVEUSER, USERS };
 
-        private static Function<String, String> command = (clientData) -> {
+        protected static Function<String, String> command = (clientData) -> {
             for (String clientCommand : commands) {
                 if (clientData.contains(clientCommand)) {
                     return clientCommand;
@@ -121,7 +121,7 @@ public class DodexUtil {
             return clientData.substring(clientData.lastIndexOf("!!") + 2);
         };
 
-        private ClientInfoUtilHelper() {
+        protected ClientInfoUtilHelper() {
         }
     }
 

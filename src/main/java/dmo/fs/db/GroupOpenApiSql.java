@@ -684,7 +684,7 @@ public class GroupOpenApiSql {
     return promise.future();
   }
 
-  protected Future<JsonObject> checkOnGroupOwner(JsonObject groupJson) {
+  protected Future<JsonObject> checkOnGroupOwner(JsonObject groupJson) throws InterruptedException {
     Promise<JsonObject> waitFor = Promise.promise();
 
     pool.rxGetConnection().doOnSuccess(conn -> conn.preparedQuery(getGroupByName())
