@@ -1,6 +1,5 @@
-package handicap
+package golf.handicap
 
-import golf.handicap.Course
 import java.sql.Connection
 
 

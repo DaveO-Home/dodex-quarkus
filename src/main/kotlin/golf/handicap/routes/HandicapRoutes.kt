@@ -1,6 +1,5 @@
 package golf.handicap.routes
 
-import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.mutiny.ext.web.Router
 

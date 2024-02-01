@@ -12,6 +12,8 @@ import io.smallrye.mutiny.Uni
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mutiny.core.Promise
+import io.vertx.mutiny.sqlclient.Pool
+import io.vertx.mutiny.sqlclient.SqlConnection
 import io.vertx.mutiny.sqlclient.Tuple
 import org.jooq.*
 import org.jooq.impl.*
@@ -480,85 +482,78 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
     }
 
     @Throws(Exception::class)
-    fun setUsed(pin: String?, course: Int, teeTime: String): Uni<Int> {
+    fun setUsed(conn: SqlConnection, pin: String?, course: Int, teeTime: String): Uni<Int> {
         val usedPromise: Promise<Int> = Promise.promise()
         var count = 0
 
-        pool!!.withTransaction { conn ->
-            val parameters: Tuple = Tuple.tuple()
-            parameters.addString("*")
-            parameters.addString(pin)
-            parameters.addInteger(course)
-            parameters.addString(teeTime)
+        val parameters: Tuple = Tuple.tuple()
+        parameters.addString("*")
+        parameters.addString(pin)
+        parameters.addInteger(course)
+        parameters.addString(teeTime)
 
-            val sql: String? = if (DbConfiguration.isUsingSqlite3()) {
-                GETSETUSEDSQLITEUPDATE
-            } else {
-                GETSETUSEDUPDATE
+        val sql: String? = if (DbConfiguration.isUsingSqlite3()) {
+            GETSETUSEDSQLITEUPDATE
+        } else if (DbConfiguration.isUsingH2()) {
+            GETSETUSEDUPDATE?.uppercase()
+        } else {
+            GETSETUSEDUPDATE
+        }
+
+        conn.preparedQuery(sql)
+            .execute(parameters)
+            .onItem().invoke { rows ->
+                count += rows.rowCount()
             }
-
-            conn.preparedQuery(sql)
-                .execute(parameters)
-                .onItem().invoke { rows ->
-                    count += rows.rowCount()
-                }
-                .onFailure().invoke { err ->
-                    LOGGER.warning(
-                        String.format(
-                            "Used Parameters/Sql: %s %s -- %s",
-                            parameters.deepToString(),
-                            sql, err.message
-                        )
+            .onFailure().invoke { err ->
+                LOGGER.warning(
+                    String.format(
+                        "Used Parameters/Sql: %s %s -- %s",
+                        parameters.deepToString(),
+                        sql, err.message
                     )
-                }.onTermination().invoke { ->
-                    conn.close().subscribeAsCompletionStage()
-                    usedPromise.complete(count)
-                }
-                .subscribeAsCompletionStage()
-            Uni.createFrom().item(count)
-        }.subscribeAsCompletionStage()
+                )
+            }.onTermination().invoke { ->
+                usedPromise.complete(count)
+            }
+            .subscribeAsCompletionStage()
 
         return usedPromise.future()
     }
 
     @Throws(Exception::class)
-    fun clearUsed(pin: String?): Uni<Int> {
+    fun clearUsed(connection: SqlConnection, pin: String?): Uni<Int> {
         val usedPromise: Promise<Int> = Promise.promise()
         var count = 0
 
-        pool!!.withTransaction { conn ->
-            val parameters: Tuple = Tuple.tuple()
-            parameters.addString(null)
+        val parameters: Tuple = Tuple.tuple()
+        parameters.addString(null)
 
-            val sql: String? = if (DbConfiguration.isUsingSqlite3()) {
-                GETRESETUSEDSQLITEUPDATE
-            } else {
-                GETRESETUSEDUPDATE
-            }
-            parameters.addString(pin)
-            parameters.addString("*")
-
-            val cf = conn.preparedQuery(sql)
-                .execute(parameters)
-                .onItem().invoke { rows ->
-                    count += rows.rowCount()
-                }
-                .onFailure().invoke { err ->
-                    LOGGER.severe(
-                        String.format(
-                            "%sError Cleaning Used - %s%s",
-                            ColorUtilConstants.RED,
-                            err.message,
-                            ColorUtilConstants.RESET
-                        )
-                    )
-                }.onTermination().invoke { ->
-                    usedPromise.complete(count)
-                    conn.close()
-                }.subscribeAsCompletionStage()
-            Uni.createFrom().item(cf)
+        val sql: String? = if (DbConfiguration.isUsingSqlite3()) {
+            GETRESETUSEDSQLITEUPDATE
+        } else {
+            GETRESETUSEDUPDATE
         }
-            .subscribeAsCompletionStage()
+        parameters.addString(pin)
+        parameters.addString("*")
+
+        connection.preparedQuery(sql)
+            .execute(parameters)
+            .onItem().invoke { rows ->
+                count += rows.rowCount()
+            }
+            .onFailure().invoke { err ->
+                LOGGER.severe(
+                    String.format(
+                        "%sError Cleaning Used - %s%s",
+                        ColorUtilConstants.RED,
+                        err.message,
+                        ColorUtilConstants.RESET
+                    )
+                )
+            }.onTermination().invoke { ->
+                usedPromise.complete(count)
+            }.subscribeAsCompletionStage()
 
         return usedPromise.future()
     }
@@ -621,6 +616,10 @@ class PopulateGolferScores : SqlConstants(), IPopulateGolferScores {
             .subscribeAsCompletionStage()
 
         return usedPromise.future()
+    }
+
+    fun getSqlPool(): Pool? {
+        return pool
     }
 
     init {

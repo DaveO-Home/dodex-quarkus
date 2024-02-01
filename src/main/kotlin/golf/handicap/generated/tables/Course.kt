@@ -6,19 +6,28 @@ package golf.handicap.generated.tables
 
 import golf.handicap.generated.DefaultSchema
 import golf.handicap.generated.keys.COURSE__PK_COURSE
+import golf.handicap.generated.keys.RATINGS__FK_RATINGS_PK_COURSE
+import golf.handicap.generated.keys.SCORES__FK_SCORES_PK_COURSE
+import golf.handicap.generated.tables.Ratings.RatingsPath
+import golf.handicap.generated.tables.Scores.ScoresPath
 import golf.handicap.generated.tables.records.CourseRecord
 
-import java.util.function.Function
+import kotlin.collections.Collection
 
+import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.ForeignKey
 import org.jooq.Identity
+import org.jooq.InverseForeignKey
 import org.jooq.Name
+import org.jooq.Path
+import org.jooq.PlainSQL
+import org.jooq.QueryPart
 import org.jooq.Record
-import org.jooq.Records
-import org.jooq.Row4
+import org.jooq.SQL
 import org.jooq.Schema
-import org.jooq.SelectField
+import org.jooq.Select
+import org.jooq.Stringly
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.TableOptions
@@ -35,19 +44,23 @@ import org.jooq.impl.TableImpl
 @Suppress("UNCHECKED_CAST")
 open class Course(
     alias: Name,
-    child: Table<out Record>?,
-    path: ForeignKey<out Record, CourseRecord>?,
+    path: Table<out Record>?,
+    childPath: ForeignKey<out Record, CourseRecord>?,
+    parentPath: InverseForeignKey<out Record, CourseRecord>?,
     aliased: Table<CourseRecord>?,
-    parameters: Array<Field<*>?>?
+    parameters: Array<Field<*>?>?,
+    where: Condition?
 ): TableImpl<CourseRecord>(
     alias,
     DefaultSchema.DEFAULT_SCHEMA,
-    child,
     path,
+    childPath,
+    parentPath,
     aliased,
     parameters,
     DSL.comment(""),
-    TableOptions.table()
+    TableOptions.table(),
+    where,
 ) {
     companion object {
 
@@ -82,8 +95,9 @@ open class Course(
      */
     val COURSE_STATE: TableField<CourseRecord, String?> = createField(DSL.name("COURSE_STATE"), SQLDataType.CHAR(2).nullable(false), this, "")
 
-    private constructor(alias: Name, aliased: Table<CourseRecord>?): this(alias, null, null, aliased, null)
-    private constructor(alias: Name, aliased: Table<CourseRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
+    private constructor(alias: Name, aliased: Table<CourseRecord>?): this(alias, null, null, null, aliased, null, null)
+    private constructor(alias: Name, aliased: Table<CourseRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
+    private constructor(alias: Name, aliased: Table<CourseRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
 
     /**
      * Create an aliased <code>course</code> table reference
@@ -100,13 +114,54 @@ open class Course(
      */
     constructor(): this(DSL.name("course"), null)
 
-    constructor(child: Table<out Record>, key: ForeignKey<out Record, CourseRecord>): this(Internal.createPathAlias(child, key), child, key, COURSE, null)
+    constructor(path: Table<out Record>, childPath: ForeignKey<out Record, CourseRecord>?, parentPath: InverseForeignKey<out Record, CourseRecord>?): this(Internal.createPathAlias(path, childPath, parentPath), path, childPath, parentPath, COURSE, null, null)
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    open class CoursePath : Course, Path<CourseRecord> {
+        constructor(path: Table<out Record>, childPath: ForeignKey<out Record, CourseRecord>?, parentPath: InverseForeignKey<out Record, CourseRecord>?): super(path, childPath, parentPath)
+        private constructor(alias: Name, aliased: Table<CourseRecord>): super(alias, aliased)
+        override fun `as`(alias: String): CoursePath = CoursePath(DSL.name(alias), this)
+        override fun `as`(alias: Name): CoursePath = CoursePath(alias, this)
+        override fun `as`(alias: Table<*>): CoursePath = CoursePath(alias.qualifiedName, this)
+    }
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
     override fun getIdentity(): Identity<CourseRecord, Int?> = super.getIdentity() as Identity<CourseRecord, Int?>
     override fun getPrimaryKey(): UniqueKey<CourseRecord> = COURSE__PK_COURSE
+
+    private lateinit var _ratings: RatingsPath
+
+    /**
+     * Get the implicit to-many join path to the <code>ratings</code> table
+     */
+    fun ratings(): RatingsPath {
+        if (!this::_ratings.isInitialized)
+            _ratings = RatingsPath(this, null, RATINGS__FK_RATINGS_PK_COURSE.inverseKey)
+
+        return _ratings;
+    }
+
+    val ratings: RatingsPath
+        get(): RatingsPath = ratings()
+
+    private lateinit var _scores: ScoresPath
+
+    /**
+     * Get the implicit to-many join path to the <code>scores</code> table
+     */
+    fun scores(): ScoresPath {
+        if (!this::_scores.isInitialized)
+            _scores = ScoresPath(this, null, SCORES__FK_SCORES_PK_COURSE.inverseKey)
+
+        return _scores;
+    }
+
+    val scores: ScoresPath
+        get(): ScoresPath = scores()
     override fun `as`(alias: String): Course = Course(DSL.name(alias), this)
     override fun `as`(alias: Name): Course = Course(alias, this)
-    override fun `as`(alias: Table<*>): Course = Course(alias.getQualifiedName(), this)
+    override fun `as`(alias: Table<*>): Course = Course(alias.qualifiedName, this)
 
     /**
      * Rename this table
@@ -121,21 +176,55 @@ open class Course(
     /**
      * Rename this table
      */
-    override fun rename(name: Table<*>): Course = Course(name.getQualifiedName(), null)
-
-    // -------------------------------------------------------------------------
-    // Row4 type methods
-    // -------------------------------------------------------------------------
-    override fun fieldsRow(): Row4<Int?, String?, String?, String?> = super.fieldsRow() as Row4<Int?, String?, String?, String?>
+    override fun rename(name: Table<*>): Course = Course(name.qualifiedName, null)
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    fun <U> mapping(from: (Int?, String?, String?, String?) -> U): SelectField<U> = convertFrom(Records.mapping(from))
+    override fun where(condition: Condition?): Course = Course(qualifiedName, if (aliased()) this else null, condition)
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    fun <U> mapping(toType: Class<U>, from: (Int?, String?, String?, String?) -> U): SelectField<U> = convertFrom(toType, Records.mapping(from))
+    override fun where(conditions: Collection<Condition>): Course = where(DSL.and(conditions))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun where(vararg conditions: Condition?): Course = where(DSL.and(*conditions))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun where(condition: Field<Boolean?>?): Course = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(condition: SQL): Course = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String): Course = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg binds: Any?): Course = where(DSL.condition(condition, *binds))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg parts: QueryPart): Course = where(DSL.condition(condition, *parts))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun whereExists(select: Select<*>): Course = where(DSL.exists(select))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun whereNotExists(select: Select<*>): Course = where(DSL.notExists(select))
 }

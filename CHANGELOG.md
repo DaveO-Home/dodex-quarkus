@@ -1,5 +1,13 @@
 # Changelog
 
+## [v3.2.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.2) (2024-02-01)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.0...v3.2.2)
+
+* Upgraded Quarkus to 3.6.7
+* Upgraded javascript dependencies
+* Fixed handicap, which scores are used in handicap - removed database conflicts
+
 ## [v3.2.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.0) (2023-10-18)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.1.0...v3.2.0)

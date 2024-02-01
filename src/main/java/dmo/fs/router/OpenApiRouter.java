@@ -40,7 +40,7 @@ public class OpenApiRouter {
     @Produces(MediaType.APPLICATION_JSON)
     public Group openApiAddGroup(Group requestGroup) throws SQLException, IOException, InterruptedException, ExecutionException {
         JsonObject addGroupJson = new JsonObject(requestGroup.getMap());
-        isDebug = false;
+//        isDebug = false;
         if(DbConfiguration.isUsingSqlite3()) {
             if(groupOpenApiSqlRx == null) {
                 groupOpenApiSqlRx = new GroupOpenApiSqlRx();
@@ -70,7 +70,7 @@ public class OpenApiRouter {
     @Produces(MediaType.APPLICATION_JSON)
     public Group openApiDeleteGroup(Group requestGroup) throws SQLException, IOException, InterruptedException, ExecutionException {
         JsonObject deleteGroupJson = new JsonObject(requestGroup.getMap());
-        isDebug = false;
+//        isDebug = false;
         if(DbConfiguration.isUsingSqlite3()) {
             if(groupOpenApiSqlRx == null) {
                 groupOpenApiSqlRx = new GroupOpenApiSqlRx();
@@ -98,7 +98,7 @@ public class OpenApiRouter {
     @Produces(MediaType.APPLICATION_JSON)
     public Group openApiById(Group newGroup) throws SQLException, IOException, InterruptedException, ExecutionException {
         JsonObject getGroupJson = new JsonObject(newGroup.getMap());
- 
+//        isDebug = false;
         if(DbConfiguration.isUsingSqlite3()) {
             if (groupOpenApiSqlRx == null) {
                 groupOpenApiSqlRx = new GroupOpenApiSqlRx();

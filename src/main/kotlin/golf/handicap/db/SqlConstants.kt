@@ -55,6 +55,12 @@ open class SqlConstants {
             this.pool = pool
         }
 
+        @Throws(SQLException::class)
+        @JvmStatic
+        fun getSqlPool(): Pool? {
+            return pool
+        }
+
         @Throws(SQLException::class, NullPointerException::class)
         @JvmStatic
         fun setDslContext(create: DSLContext?) {

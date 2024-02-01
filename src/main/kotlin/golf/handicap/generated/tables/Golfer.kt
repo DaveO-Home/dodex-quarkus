@@ -6,19 +6,27 @@ package golf.handicap.generated.tables
 
 import golf.handicap.generated.DefaultSchema
 import golf.handicap.generated.keys.GOLFER__PK_GOLFER
+import golf.handicap.generated.keys.SCORES__FK_SCORES_PK_GOLFER
+import golf.handicap.generated.tables.Scores.ScoresPath
 import golf.handicap.generated.tables.records.GolferRecord
 
 import java.math.BigDecimal
-import java.util.function.Function
 
+import kotlin.collections.Collection
+
+import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.ForeignKey
+import org.jooq.InverseForeignKey
 import org.jooq.Name
+import org.jooq.Path
+import org.jooq.PlainSQL
+import org.jooq.QueryPart
 import org.jooq.Record
-import org.jooq.Records
-import org.jooq.Row9
+import org.jooq.SQL
 import org.jooq.Schema
-import org.jooq.SelectField
+import org.jooq.Select
+import org.jooq.Stringly
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.TableOptions
@@ -35,19 +43,23 @@ import org.jooq.impl.TableImpl
 @Suppress("UNCHECKED_CAST")
 open class Golfer(
     alias: Name,
-    child: Table<out Record>?,
-    path: ForeignKey<out Record, GolferRecord>?,
+    path: Table<out Record>?,
+    childPath: ForeignKey<out Record, GolferRecord>?,
+    parentPath: InverseForeignKey<out Record, GolferRecord>?,
     aliased: Table<GolferRecord>?,
-    parameters: Array<Field<*>?>?
+    parameters: Array<Field<*>?>?,
+    where: Condition?
 ): TableImpl<GolferRecord>(
     alias,
     DefaultSchema.DEFAULT_SCHEMA,
-    child,
     path,
+    childPath,
+    parentPath,
     aliased,
     parameters,
     DSL.comment(""),
-    TableOptions.table()
+    TableOptions.table(),
+    where,
 ) {
     companion object {
 
@@ -107,8 +119,9 @@ open class Golfer(
      */
     val LAST_LOGIN: TableField<GolferRecord, BigDecimal?> = createField(DSL.name("LAST_LOGIN"), SQLDataType.NUMERIC, this, "")
 
-    private constructor(alias: Name, aliased: Table<GolferRecord>?): this(alias, null, null, aliased, null)
-    private constructor(alias: Name, aliased: Table<GolferRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
+    private constructor(alias: Name, aliased: Table<GolferRecord>?): this(alias, null, null, null, aliased, null, null)
+    private constructor(alias: Name, aliased: Table<GolferRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
+    private constructor(alias: Name, aliased: Table<GolferRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
 
     /**
      * Create an aliased <code>golfer</code> table reference
@@ -125,12 +138,38 @@ open class Golfer(
      */
     constructor(): this(DSL.name("golfer"), null)
 
-    constructor(child: Table<out Record>, key: ForeignKey<out Record, GolferRecord>): this(Internal.createPathAlias(child, key), child, key, GOLFER, null)
+    constructor(path: Table<out Record>, childPath: ForeignKey<out Record, GolferRecord>?, parentPath: InverseForeignKey<out Record, GolferRecord>?): this(Internal.createPathAlias(path, childPath, parentPath), path, childPath, parentPath, GOLFER, null, null)
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    open class GolferPath : Golfer, Path<GolferRecord> {
+        constructor(path: Table<out Record>, childPath: ForeignKey<out Record, GolferRecord>?, parentPath: InverseForeignKey<out Record, GolferRecord>?): super(path, childPath, parentPath)
+        private constructor(alias: Name, aliased: Table<GolferRecord>): super(alias, aliased)
+        override fun `as`(alias: String): GolferPath = GolferPath(DSL.name(alias), this)
+        override fun `as`(alias: Name): GolferPath = GolferPath(alias, this)
+        override fun `as`(alias: Table<*>): GolferPath = GolferPath(alias.qualifiedName, this)
+    }
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
     override fun getPrimaryKey(): UniqueKey<GolferRecord> = GOLFER__PK_GOLFER
+
+    private lateinit var _scores: ScoresPath
+
+    /**
+     * Get the implicit to-many join path to the <code>scores</code> table
+     */
+    fun scores(): ScoresPath {
+        if (!this::_scores.isInitialized)
+            _scores = ScoresPath(this, null, SCORES__FK_SCORES_PK_GOLFER.inverseKey)
+
+        return _scores;
+    }
+
+    val scores: ScoresPath
+        get(): ScoresPath = scores()
     override fun `as`(alias: String): Golfer = Golfer(DSL.name(alias), this)
     override fun `as`(alias: Name): Golfer = Golfer(alias, this)
-    override fun `as`(alias: Table<*>): Golfer = Golfer(alias.getQualifiedName(), this)
+    override fun `as`(alias: Table<*>): Golfer = Golfer(alias.qualifiedName, this)
 
     /**
      * Rename this table
@@ -145,21 +184,55 @@ open class Golfer(
     /**
      * Rename this table
      */
-    override fun rename(name: Table<*>): Golfer = Golfer(name.getQualifiedName(), null)
-
-    // -------------------------------------------------------------------------
-    // Row9 type methods
-    // -------------------------------------------------------------------------
-    override fun fieldsRow(): Row9<String?, String?, String?, Float?, String?, String?, Int?, Int?, BigDecimal?> = super.fieldsRow() as Row9<String?, String?, String?, Float?, String?, String?, Int?, Int?, BigDecimal?>
+    override fun rename(name: Table<*>): Golfer = Golfer(name.qualifiedName, null)
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    fun <U> mapping(from: (String?, String?, String?, Float?, String?, String?, Int?, Int?, BigDecimal?) -> U): SelectField<U> = convertFrom(Records.mapping(from))
+    override fun where(condition: Condition?): Golfer = Golfer(qualifiedName, if (aliased()) this else null, condition)
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    fun <U> mapping(toType: Class<U>, from: (String?, String?, String?, Float?, String?, String?, Int?, Int?, BigDecimal?) -> U): SelectField<U> = convertFrom(toType, Records.mapping(from))
+    override fun where(conditions: Collection<Condition>): Golfer = where(DSL.and(conditions))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun where(vararg conditions: Condition?): Golfer = where(DSL.and(*conditions))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun where(condition: Field<Boolean?>?): Golfer = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(condition: SQL): Golfer = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String): Golfer = where(DSL.condition(condition))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg binds: Any?): Golfer = where(DSL.condition(condition, *binds))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg parts: QueryPart): Golfer = where(DSL.condition(condition, *parts))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun whereExists(select: Select<*>): Golfer = where(DSL.exists(select))
+
+    /**
+     * Create an inline derived table from this table
+     */
+    override fun whereNotExists(select: Select<*>): Golfer = where(DSL.notExists(select))
 }

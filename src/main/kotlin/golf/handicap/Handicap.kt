@@ -2,10 +2,12 @@ package golf.handicap
 
 import dmo.fs.utils.ColorUtilConstants
 import golf.handicap.db.PopulateGolferScores
+import io.reactivex.rxjava3.observables.GroupedObservable
 import io.smallrye.mutiny.Uni
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mutiny.core.Promise
+import io.vertx.mutiny.sqlclient.SqlConnection
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
@@ -15,9 +17,10 @@ import java.util.logging.Logger
 
 class Handicap {
     companion object {
-        private val LOGGER = Logger.getLogger(Handicap::class.java.name)
+//        private val LOGGER = Logger.getLogger(Handicap::class.java.name)
     }
 
+    private val LOGGER = Logger.getLogger(Handicap::class.java.name)
     private var diffkeys = Array(20) { " " }
     private var diffScores = FloatArray(20) { -100f }
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -109,49 +112,75 @@ class Handicap {
                     var rowsUpdated = 0
                     usedClass = used[diffkeys[19]]
 
-                    golferScores.clearUsed(usedClass!!.pin).onItem().invoke { count ->
-                        rowsUpdated += count
-                        var idx = 19
-
-                        while (idx > -1 && diffkeys[idx] != "") {
-                            usedClass = used[diffkeys[idx]]
-                            if (usedClass != null && usedClass!!.used) {
-                                golferScores.setUsed(usedClass!!.pin, usedClass!!.course!!, usedClass!!.teeTime)
-                                    .invoke { used ->
-                                        rowsUpdated += used
-                                    }.subscribeAsCompletionStage()
-                            }
-                            idx--
-                        }
-
-                        latestTee["handicap"] = handicap.toFloat()
-                        handicapPromise.complete(latestTee)
+                    val pool = golferScores.getSqlPool()
+                    val connection: Uni<SqlConnection> = pool!!.connection { conn ->
+                        Uni.createFrom().item(conn)
                     }
-                        .onFailure().invoke { err ->
+                    connection.onItem().invoke { conn ->
+                        conn.begin().onItem().invoke { tx ->
+                            golferScores.clearUsed(conn, usedClass!!.pin).onItem().invoke { count ->
+                                rowsUpdated += count
+
+                                GroupedObservable.fromIterable(diffkeys.reversed().toMutableList())
+                                    .subscribe { diffKey ->
+                                        usedClass = used[diffKey]
+                                        if (usedClass != null && usedClass!!.used && diffKey != "") {
+                                            golferScores.setUsed(
+                                                conn,
+                                                usedClass!!.pin,
+                                                usedClass!!.course!!,
+                                                usedClass!!.teeTime
+                                            )
+                                                .onItem().invoke { usedCount ->
+                                                    rowsUpdated += usedCount
+                                                }
+                                                .onFailure().invoke { err ->
+                                                    LOGGER.severe(
+                                                        String.format(
+                                                            "%sError Setting Used - %s%s",
+                                                            ColorUtilConstants.RED,
+                                                            err.message,
+                                                            ColorUtilConstants.RESET
+                                                        )
+                                                    )
+                                                    handicapPromise.complete(latestTee)
+                                                    conn.close().subscribe()
+                                                }
+                                        }
+                                    }
+                                tx.commit().subscribeAsCompletionStage()
+                            }
+                                .onFailure().invoke { err ->
+                                    LOGGER.severe(
+                                        String.format(
+                                            "%sError Clearing Used - %s%s",
+                                            ColorUtilConstants.RED,
+                                            err.message,
+                                            ColorUtilConstants.RESET
+                                        )
+                                    )
+                                    latestTee["handicap"] = handicap.toFloat()
+                                    handicapPromise.complete(latestTee)
+                                }
+                                .onTermination().invoke { ->
+                                    latestTee["handicap"] = handicap.toFloat()
+                                    connection.onItem().invoke { c ->
+                                        c.close()
+                                    }.subscribeAsCompletionStage()
+                                    handicapPromise.complete(latestTee)
+                                }
+                                .subscribeAsCompletionStage()
+                        }.onFailure().invoke { err ->
                             LOGGER.severe(
                                 String.format(
-                                    "%sError Clearing Used - %s%s",
+                                    "%sError On Setting Handicap - %s%s",
                                     ColorUtilConstants.RED,
                                     err.message,
                                     ColorUtilConstants.RESET
                                 )
                             )
-
-                            latestTee["handicap"] = handicap.toFloat()
-                            handicapPromise.complete(latestTee)
-                        }
-                        .subscribeAsCompletionStage()
-                }.onFailure().invoke { err ->
-                    LOGGER.severe(
-                        String.format(
-                            "%sError On Setting Handicap - %s%s",
-                            ColorUtilConstants.RED,
-                            err.message,
-                            ColorUtilConstants.RESET
-                        )
-                    )
-                    latestTee["handicap"] = handicap.toFloat()
-                    handicapPromise.complete(latestTee)
+                        }.subscribeAsCompletionStage()
+                    }.subscribeAsCompletionStage()
                 }.subscribeAsCompletionStage()
             }
         }.subscribeAsCompletionStage()
@@ -182,21 +211,12 @@ class Handicap {
         }
     }
 
-    inner class Used(pin: String?, course: Int?, teeTime: String) {
-        var pin: String?
-        var course: Int?
-        var teeTime: String
+    inner class Used(var pin: String?, var course: Int?, var teeTime: String) {
         var used = false
         override fun toString(): String {
             return StringBuffer().append(pin).append(" ").append(course).append(" ")
                 .append(teeTime).append(" ").append(used)
                 .toString()
-        }
-
-        init {
-            this.pin = pin
-            this.course = course
-            this.teeTime = teeTime
         }
     }
 }

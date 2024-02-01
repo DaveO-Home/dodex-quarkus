@@ -4,8 +4,8 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 
 ## Install Assumptions
 
-1. Java 17/18/19 installed with JAVA_HOME set.
-2. Gradle 8.1.1 installed. If you have sdkman installed, execute `sdk install gradle 8.1.1` otherwise executing gradlew should install gradle.
+1. Java 17+ installed with JAVA_HOME set.
+2. Gradle 8.5 installed. If you have sdkman installed, execute `sdk install gradle 8.1.1` otherwise executing gradlew should install gradle.
 3. Javascript **node** with **npm** package manager installed.
 
 __Note:__ The static directory was changed from **src/main/resources/static** to **src/main/resources/META-INF/resources** in compliance with v2.5.
