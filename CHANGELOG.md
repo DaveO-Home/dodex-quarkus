@@ -1,5 +1,13 @@
 # Changelog
 
+## [v3.2.3](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.3) (2024-02-05)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.2...v3.2.3)
+
+* Upgraded to Quarkus 3.7.1
+* Upgraded to Gradle 8.6
+* Made sure quarkus gradle plugin version and dependencies versions are consistent(gradle.properties)
+
 ## [v3.2.2](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.2) (2024-02-01)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.0...v3.2.2)

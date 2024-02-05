@@ -23,7 +23,7 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.5.0"
+    vertxVersion = "4.5.2"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
