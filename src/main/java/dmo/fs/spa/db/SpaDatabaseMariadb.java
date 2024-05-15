@@ -27,7 +27,7 @@ import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseMariadb extends DbMariadb {
-	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseMariadb.class.getName());
+	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseMariadb.class.getName());
 	protected Properties dbProperties; // = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap; // = new ConcurrentHashMap<>();
@@ -86,14 +86,14 @@ public class SpaDatabaseMariadb extends DbMariadb {
 				if (val == null) {
 					final String usersSql = getCreateTable("LOGIN");
 					conn.query(usersSql).execute().onFailure().invoke(error ->
-						logger.error("{}Login Table Error: {}{}", ColorUtilConstants.RED, error,
+						logger.error("{}Login Table Error0: {}{}", ColorUtilConstants.RED, error,
 							ColorUtilConstants.RESET)).onItem().invoke(c ->
 						logger.info("{}Login Table Added.{}", ColorUtilConstants.BLUE_BOLD_BRIGHT,
 							ColorUtilConstants.RESET)).subscribeAsCompletionStage().isDone();
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error ->
-				logger.error("{}Check Login Table Error: {}{}", ColorUtilConstants.RED, error,
+				logger.error("{}Check Login Table Error1: {}{}", ColorUtilConstants.RED, error,
 					ColorUtilConstants.RESET)).subscribeAsCompletionStage().isDone();
 			setupPromise.complete();
 			return Uni.createFrom().item(conn);
@@ -111,7 +111,7 @@ public class SpaDatabaseMariadb extends DbMariadb {
 		return new SpaLoginImpl();
 	}
 
-	private static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 

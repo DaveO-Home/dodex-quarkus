@@ -1,7 +1,7 @@
 
 package dmo.fs.db.handicap;
 
-import dmo.fs.db.GroupOpenApiSql;
+import dmo.fs.db.openapi.GroupOpenApiSql;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import golf.handicap.db.PopulateCourse;
 import golf.handicap.db.PopulateGolfer;
@@ -26,18 +26,18 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 public abstract class DbDefinitionBase {
-  private final static Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
+  protected final static Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
 
   protected static DSLContext create;
 
-  private Boolean isTimestamp;
+  protected Boolean isTimestamp;
   protected Vertx vertx;
   protected static Pool pool;
-  private static PgConnectOptions pgConnectOptions;
-  private static MySQLConnectOptions mySQLConnectOptions;
-  private static JDBCConnectOptions jdbcConnectOptions;
-  private static PoolOptions poolOptions;
-  private static boolean qmark = true;
+  protected static PgConnectOptions pgConnectOptions;
+  protected static MySQLConnectOptions mySQLConnectOptions;
+  protected static JDBCConnectOptions jdbcConnectOptions;
+  protected static PoolOptions poolOptions;
+  protected static boolean qmark = true;
 
   public static <T> void setupSql(T pool4) throws IOException, SQLException {
     // Non-Blocking Drivers
@@ -56,7 +56,6 @@ public abstract class DbDefinitionBase {
 
     Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
     create = DSL.using(DodexUtil.getSqlDialect(), settings);
-
     /* @TODO: convert GroupOpenApiSql to mutiny */
     if (pool4 instanceof PgPool) {
       io.vertx.rxjava3.pgclient.PgPool poolRx =
@@ -71,6 +70,7 @@ public abstract class DbDefinitionBase {
               io.vertx.rxjava3.jdbcclient.JDBCPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), jdbcConnectOptions, poolOptions);
       GroupOpenApiSql.setPool(poolRx);
     }
+
     GroupOpenApiSql.setCreate(create);
     GroupOpenApiSql.setQmark(qmark);
     GroupOpenApiSql.buildSql();

@@ -13,13 +13,16 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
+import io.vertx.jdbcclient.JDBCPool;
+import io.vertx.mutiny.mysqlclient.MySQLClient;
+import io.vertx.mutiny.sqlclient.PropertyKind;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.wsnext.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
@@ -33,21 +36,22 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.Tuple;
 
 public abstract class SqlBuilder {
-    private static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class.getName());
     protected static final String QUERYLOGIN = "select * from LOGIN where name=?";
 
-    private static DSLContext create;
+    protected static DSLContext create;
 
-    private static String GETLOGINBYNP;
-    private static String GETLOGINBYNAME;
-    private static String GETINSERTLOGIN;
-    private static String GETREMOVELOGIN;
-    private static String GETUPDATELOGIN;
-    private static String GETLOGINBYID;
-    private static String GETSQLITEUPDATELOGIN;
-    private Boolean isTimestamp;
-    private static Pool pool;
-    private static Boolean qmark = true;
+    protected static String GETLOGINBYNP;
+    protected static String GETLOGINBYNAME;
+    protected static String GETINSERTLOGIN;
+    protected static String GETREMOVELOGIN;
+    protected static String GETUPDATELOGIN;
+    protected static String GETLOGINBYID;
+    protected static String GETSQLITEUPDATELOGIN;
+    protected static String GETMARIAINSERTLOGIN;
+    protected Boolean isTimestamp;
+    protected static Pool pool;
+    protected static Boolean qmark = true;
 
     public static <T> void setupSql(T pool4) {
         // Non-Blocking Drivers
@@ -71,9 +75,10 @@ public abstract class SqlBuilder {
         GETLOGINBYID = qmark ? setupLoginById().replaceAll("\\$\\d", "?") : setupLoginById();
         GETUPDATELOGIN = qmark ? setupUpdateLogin().replaceAll("\\$\\d*", "?") : setupUpdateLogin();
         GETSQLITEUPDATELOGIN = qmark ? setupSqliteUpdateLogin().replaceAll("\\$\\d*", "?") : setupSqliteUpdateLogin();
+        GETMARIAINSERTLOGIN = qmark ? setupMariaInsertLogin().replaceAll("\\$\\d", "?") : setupMariaInsertLogin();
     }
 
-    private static String setupLoginByNamePassword() {
+    protected static String setupLoginByNamePassword() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
     }
@@ -82,7 +87,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYNP;
     }
 
-    private static String setupLoginByName() {
+    protected static String setupLoginByName() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")));
     }
@@ -91,7 +96,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYNAME;
     }
 
-    private static String setupLoginById() {
+    protected static String setupLoginById() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")));
     }
@@ -100,7 +105,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYID;
     }
 
-    private static String setupInsertLogin() {
+    protected static String setupInsertLogin() {
         return create.renderNamedParams(
                 insertInto(table("LOGIN")).columns(field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                         .values("$", "$", "$").returning(field("ID")));
@@ -110,7 +115,17 @@ public abstract class SqlBuilder {
         return GETINSERTLOGIN;
     }
 
-    private static String setupUpdateLogin() {
+    protected static String setupMariaInsertLogin() {
+        return create.renderNamedParams(
+            insertInto(table("LOGIN")).columns(field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
+                .values("$", "$", "$"));
+    }
+
+    public static String getMariaInsertLogin() {
+        return GETMARIAINSERTLOGIN;
+    }
+
+    protected static String setupUpdateLogin() {
         return create.renderNamedParams(
                 update(table("LOGIN")).set(field("LAST_LOGIN"), "$").where(field("ID").eq("$")).returning());
     }
@@ -127,7 +142,7 @@ public abstract class SqlBuilder {
         return GETSQLITEUPDATELOGIN;
     }
 
-    private static String setupRemoveLogin() {
+    protected static String setupRemoveLogin() {
         return create
                 .renderNamedParams(deleteFrom(table("LOGIN")).where(field("NAME").eq("$"), field("PASSWORD").eq("$")));
     }
@@ -221,15 +236,29 @@ public abstract class SqlBuilder {
 
         pool.getConnection().onItem().call(conn -> {
             Tuple parameters = Tuple.of(spaLogin.getName(), spaLogin.getPassword(), lastLogin);
+            String sql = getInsertLogin();
+            if (DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingIbmDB2()) {
+                sql = getMariaInsertLogin();
+                if(DbConfiguration.isUsingIbmDB2()) {
+                    sql = String.format("%s %s%s", "select id from FINAL TABLE(", sql, ")");
+                }
+            }
 
-            conn.preparedQuery(getInsertLogin()).execute(parameters).onItem().call(rows -> {
+            conn.preparedQuery(sql).execute(parameters).onItem().call(rows -> {
                 for (Row row : rows) {
                     spaLogin.setId(row.getLong(0));
                     spaLogin.setLastLogin(current);
                 }
+                if (DbConfiguration.isUsingMariadb()) {
+                    spaLogin.setId(rows.property(MySQLClient.LAST_INSERTED_ID));
+                }
+//                else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid()) {
+//                    spaLogin.setId(rows.property((PropertyKind<Row>) JDBCPool.GENERATED_KEYS).getLong(0));
+//                }
                 promise.complete(spaLogin);
-                conn.close().subscribeAsCompletionStage().isDone();
-                return null;
+
+                boolean done = conn.close().subscribeAsCompletionStage().isDone();
+                return Uni.createFrom().item(done);
             }).onFailure().invoke(err -> {
                 spaLogin.setStatus("-4");
                 promise.complete(spaLogin);
@@ -280,7 +309,7 @@ public abstract class SqlBuilder {
         return promise;
     }
 
-    private Promise<Integer> updateCustomLogin(SpaLogin spaLogin) {
+    protected Promise<Integer> updateCustomLogin(SpaLogin spaLogin) {
         Promise<Integer> promise = Promise.promise();
 
         pool.getConnection().onItem().call(conn -> {
@@ -301,7 +330,7 @@ public abstract class SqlBuilder {
 
             spaLogin.setLastLogin(timeStamp);
 
-            if (DbConfiguration.isUsingCubrid()) {
+            if (DbConfiguration.isUsingCubrid() || DbConfiguration.isUsingIbmDB2()) {
                 // Cubrid fails with NullPointer using "preparedQuery"
                 String query = create.query(getSqliteUpdateLogin(), dateTime, spaLogin.getId()).toString();
 

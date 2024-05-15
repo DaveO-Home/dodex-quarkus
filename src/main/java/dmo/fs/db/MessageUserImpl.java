@@ -6,11 +6,11 @@ import java.util.Optional;
 
 public class MessageUserImpl implements MessageUser {
 
-    private Long id;
-    private String name;
-    private String password;
-    private String ip;
-    private Timestamp lastLogin;
+    protected Long id;
+    protected String name;
+    protected String password;
+    protected String ip;
+    protected Timestamp lastLogin;
 
     @Override
     public void setId(final Long id) {

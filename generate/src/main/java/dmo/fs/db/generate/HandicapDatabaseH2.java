@@ -46,7 +46,7 @@ public class HandicapDatabaseH2 extends DbH2 {
     dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
     dbProperties = dodexUtil.mapToProperties(dbMap);
 
-    if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
+    if (dbOverrideProps != null && !dbOverrideProps.isEmpty()) {
       this.dbProperties = dbOverrideProps;
     }
     if (dbOverrideMap != null) {

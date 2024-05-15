@@ -2,7 +2,7 @@
 
 package golf.handicap.db.rx
 
-import dmo.fs.db.DbConfiguration
+import dmo.fs.db.wsnext.DbConfiguration
 import dmo.fs.utils.ColorUtilConstants
 import golf.handicap.*
 import golf.handicap.Golfer
@@ -197,7 +197,6 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     conn.preparedQuery(sql)
                         .rxExecute(parameters)
                         .doOnSuccess { rows ->
-                            LOGGER.info("Got Rows on GETGolfer: " + rows.size())
                             golfer.message = "Golfer not found"
                             var golferClone: Golfer? = null
                             for (row in rows) {
@@ -451,7 +450,6 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                 parameters.addString(golfer.pin)
 
                 val sql: String? = UPDATEGOLFER
-                LOGGER.info("Update Golfer SQL: $UPDATEGOLFER -- " + parameters.deepToString())
                 conn.preparedQuery(sql)
 //                    .rxExecute(parameters)
                     .rxExecute(parameters)

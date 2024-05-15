@@ -3,25 +3,16 @@ package dmo.fs;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbPostgres;
+import dmo.fs.db.wsnext.postgres.DbPostgres;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
-import dmo.fs.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.core.Vertx;

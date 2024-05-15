@@ -1,7 +1,7 @@
 package dmo.fs.spa.db.reactive;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
@@ -90,7 +90,9 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 						});
 
 					crow.subscribe(result -> {
-						conn.rxClose().doOnSubscribe(data -> tx.rxCommit().subscribe()).subscribe();
+						tx.rxCommit().doOnComplete(() -> {
+							conn.rxClose().subscribe();
+						}).subscribe();
 
 						try {
 							setupSql(pool);

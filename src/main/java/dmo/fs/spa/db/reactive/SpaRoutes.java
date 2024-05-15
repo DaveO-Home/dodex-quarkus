@@ -27,8 +27,8 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
 public class SpaRoutes {
-    private static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
-    private static final String FAILURE = "{\"status\":\"-99\"}";
+    protected static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
+    protected static final String FAILURE = "{\"status\":\"-99\"}";
     protected Vertx vertx;
     protected Router router;
     protected SessionStore sessionStore;
@@ -39,6 +39,7 @@ public class SpaRoutes {
         this.vertx = vertx;
         this.router = router.getDelegate();
         sessionStore = LocalSessionStore.create(vertx);
+
     spaDatabaseReactive.databaseSetup().onSuccess(none -> {
             setGetLoginRoute();
             setPutLoginRoute();
@@ -53,8 +54,16 @@ public class SpaRoutes {
         Route route = router.route(HttpMethod.POST, "/userlogin").handler(sessionHandler);
 
         if ("dev".equals(DodexUtil.getEnv())) {
-            route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.POST));
+            route.handler(CorsHandler.create().allowedMethod(HttpMethod.POST));
         }
+
+        route.failureHandler(routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            if(response.getStatusCode() != 200) {
+                logger.info("Login Post Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+            }
+        });
+
         route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
             SpaApplication spaApplication = null;
             try {
@@ -114,10 +123,18 @@ public class SpaRoutes {
         Route route = router.route(HttpMethod.PUT, "/userlogin").handler(sessionHandler);
 
         if ("dev".equals(DodexUtil.getEnv())) {
-            route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.PUT));
+            route.handler(CorsHandler.create().allowedMethod(HttpMethod.PUT));
         }
-
+        route.failureHandler(routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            if(response.getStatusCode() != 200) {
+                logger.info("Login Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+            }
+        });
         route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
+//            HttpServerResponse response = routingContext.response();
+
+//            response.putHeader("content-type", "application/json");
             SpaApplication spaApplication = null;
             try {
                 spaApplication = new SpaApplication();
@@ -204,8 +221,15 @@ public class SpaRoutes {
         SessionHandler sessionHandler = SessionHandler.create(sessionStore);
         Route route = router.route(HttpMethod.DELETE, "/userlogin").handler(sessionHandler);
         if ("dev".equals(DodexUtil.getEnv())) {
-            route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.DELETE));
+            route.handler(CorsHandler.create().allowedMethod(HttpMethod.DELETE));
         }
+
+        route.failureHandler(routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            if(response.getStatusCode() != 200) {
+                logger.info("Login Delete Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+            }
+        });
 
         route.handler(routingContext -> {
             Session session = routingContext.session();
@@ -244,8 +268,15 @@ public class SpaRoutes {
         Route route = router.route(HttpMethod.DELETE, "/userlogin/unregister").handler(sessionHandler);
 
         if ("dev".equals(DodexUtil.getEnv())) {
-            route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.DELETE));
+            route.handler(CorsHandler.create().allowedMethod(HttpMethod.DELETE));
         }
+
+        route.failureHandler(routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            if(response.getStatusCode() != 200) {
+                logger.info("Login Post Unregister: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+            }
+        });
 
         route.handler(routingContext -> {
             SpaApplication spaApplication = null;

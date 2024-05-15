@@ -9,11 +9,11 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.core.file.FileSystem;
+import io.vertx.mutiny.core.http.HttpServer;
 import io.vertx.mutiny.ext.web.Route;
 import io.vertx.mutiny.ext.web.Router;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.http.HttpServer;
-import io.vertx.reactivex.core.file.FileSystem;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
@@ -26,16 +26,17 @@ import java.util.concurrent.ExecutionException;
 
 @QuarkusMain
 public class Server implements QuarkusApplication {
-    private static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
-    private static final Promise<HttpServer> serverPromise = Promise.promise();
-    private static Promise<Router> routesPromise = Promise.promise();
-    private static Integer port;
-    private static Boolean isUsingHandicap = false;
-    private static String defaultDbName = "sqlite3";
-    private static boolean color = true;
+    protected static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
+    protected static final Promise<HttpServer> serverPromise = Promise.promise();
+    protected static Promise<Router> routesPromise = Promise.promise();
+    protected static Integer port;
+    protected static Boolean isUsingHandicap = false;
+    protected static String defaultDbName = "sqlite3";
+    protected static boolean color = true;
     public static boolean isProduction;
-    public static final Vertx vertx = Vertx.vertx();
-    FileSystem fs = vertx.fileSystem();
+    protected static final Vertx vertxMutiny = Vertx.vertx();
+    public static final io.vertx.reactivex.core.Vertx vertx = io.vertx.reactivex.core.Vertx.vertx();
+    FileSystem fs = vertxMutiny.fileSystem();
 
     public static void main(String... args) {
         Quarkus.run(Server.class, args);
@@ -47,11 +48,11 @@ public class Server implements QuarkusApplication {
         ObjectMapper jsonMapper = new ObjectMapper();
         JsonNode node;
 
-        HttpServer server = vertx.createHttpServer();
+        HttpServer server = vertxMutiny.createHttpServer();
         Config config = ConfigProvider.getConfig();
         isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
 
-        serverPromise.complete(server); // passing HttpServer instance to "DodexRoutes" for reactivex setup
+        serverPromise.complete(server); // passing HttpServer instance to "DodexRoutes" for reactive setup
         String host = isProduction ? config.getValue("quarkus.http.host", String.class)
                 : config.getValue("%dev.quarkus.http.host", String.class); // see application.properties
         port = isProduction ? config.getValue("quarkus.http.port", Integer.class)
@@ -86,6 +87,7 @@ public class Server implements QuarkusApplication {
                         )
                 );
             }
+
             if (!isProduction) {
                 router.get("/bye").handler(rc -> {
                     rc.response().end("bye").subscribeAsCompletionStage().isDone();
@@ -111,19 +113,21 @@ public class Server implements QuarkusApplication {
             .subscribeAsCompletionStage().toCompletableFuture().get();
 
         Quarkus.waitForExit();
-        server.close();
+        server.close().subscribeAsCompletionStage().get();
 
         return 0;
     }
 
-    private void checkInstallation (FileSystem fs) {
+    protected void checkInstallation (FileSystem fs) {
             String handicapBase = "../../../../";
             String quarkusBase = "../../";
         if (!isProduction) {
             String fileDir = "./src/spa-react/node_modules/";
             if (!(fs.existsBlocking(handicapBase + fileDir) || fs.existsBlocking(quarkusBase + fileDir))) {
                 logger.info("{}{}{}", ColorUtilConstants.CYAN_BOLD_BRIGHT,
-                    "To install the test spa application, execute 'npm install --legacy-peer-deps' in 'src/spa-react/'"
+                    String.format("%s\n%s\n%s","To install the test spa application, execute 'npm install --legacy-peer-deps' in 'src/spa-react/'",
+                    "then 'cd ./devl' and execute 'npx gulp prd'(this bypasses the tests); to view, use 'http://localhost:8089/spa/react-fusebox/appl/testapp.html'",
+                    "or execute 'npx gulp rebuild'(dev build without tests); to view, use 'http://localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html'")
                     , ColorUtilConstants.RESET);
             }
             fileDir = "./src/main/resources/META-INF/resources/group/";
@@ -153,7 +157,7 @@ public class Server implements QuarkusApplication {
         }
     }
 
-    private String parsePath(Route route) {
+    protected String parsePath(Route route) {
         if (!route.isRegexPath()) {
             return route.getPath();
         }

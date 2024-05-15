@@ -1,11 +1,11 @@
 
 package dmo.fs.db.reactive;
 
-import dmo.fs.db.DbConfiguration;
-import dmo.fs.db.GroupOpenApiSql;
+import dmo.fs.db.openapi.GroupOpenApiSql;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
+import io.quarkus.websockets.next.WebSocketConnection;
 import io.reactivex.functions.Action;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -14,10 +14,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.jdbcclient.JDBCPool;
-import io.vertx.reactivex.mysqlclient.MySQLClient;
 import io.vertx.reactivex.sqlclient.*;
 import io.vertx.sqlclient.PoolOptions;
-import jakarta.websocket.Session;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
@@ -336,34 +334,25 @@ public abstract class DbReactiveSqlBase {
         return GETUSERNAMES;
     }
     
-    public Future<MessageUser> addUser(Session ws, MessageUser messageUser) {
+    public Future<MessageUser> addUser(WebSocketConnection ws, MessageUser messageUser) {
         Promise<MessageUser> promise = Promise.promise();
         Timestamp current = new Timestamp(new Date().getTime());
         OffsetDateTime time = OffsetDateTime.now();
 
-        Object lastLogin = DbConfiguration.isUsingPostgres() ? time : current;
-
         pool.getConnection(c -> {
-            Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword(), messageUser.getIp(),
-                    lastLogin);
+            Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword(),
+              messageUser.getIp() == null ? "unknown" : messageUser.getIp(), current);
             SqlConnection conn = c.result();
             String sql = getInsertUser();
-
-            if (DbConfiguration.isUsingMariadb()) {
-                sql = getMariaInsertUser();
-            }
 
             conn.preparedQuery(sql).rxExecute(parameters).doOnSuccess(rows -> {
                 for (Row row : rows) {
                     messageUser.setId(row.getLong(0));
                 }
-                if (DbConfiguration.isUsingMariadb()) {
-                    messageUser.setId(rows.property(MySQLClient.LAST_INSERTED_ID));
-                } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid())
-//                        || DbConfiguration.isUsingH2())
-                {
+                if(messageUser.getId() == null) {
                     messageUser.setId(rows.property(JDBCPool.GENERATED_KEYS).getLong(0));
                 }
+
                 messageUser.setLastLogin(current);
                 conn.close();
                 promise.tryComplete(messageUser);
@@ -382,7 +371,7 @@ public abstract class DbReactiveSqlBase {
         return promise.future();
     }
 
-    public Future<Integer> updateUser(Session ws, MessageUser messageUser) {
+    public Future<Integer> updateUser(WebSocketConnection ws, MessageUser messageUser) {
         Promise<Integer> promise = Promise.promise();
 
         pool.getConnection(c -> {
@@ -390,9 +379,7 @@ public abstract class DbReactiveSqlBase {
 
             Tuple parameters = getTupleParameters(messageUser);
 
-            String sql = DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3() ||
-                    DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingH2() ? 
-                        getSqliteUpdateUser() : getUpdateUser();
+            String sql = DbConfiguration.isUsingSqlite3() ? getSqliteUpdateUser() : getUpdateUser();
 
             conn.preparedQuery(sql).rxExecute(parameters).doOnSuccess(rows -> {
                 conn.close();
@@ -400,7 +387,7 @@ public abstract class DbReactiveSqlBase {
             }).doOnError(err -> {
                 logger.error(String.format("%sError Updating user Reactive: %s%s", ColorUtilConstants.RED, err,
                         ColorUtilConstants.RESET));
-                ws.getAsyncRemote().sendText(err.toString());
+                ws.sendText(err.toString()).subscribeAsCompletionStage().isDone();
                 conn.close();
             }).subscribe(rows -> {
                 //
@@ -420,11 +407,8 @@ public abstract class DbReactiveSqlBase {
         OffsetDateTime time = OffsetDateTime.now();
         Tuple parameters;
 
-        if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingSqlite3() || 
-                DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingH2()) {
-            parameters = Tuple.of(
-                    DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb() || DbConfiguration.isUsingH2() ?
-                        timeStamp : date, messageUser.getId());
+        if (DbConfiguration.isUsingSqlite3()) {
+            parameters = Tuple.of(date, messageUser.getId());
             return parameters;
         }
 
@@ -435,7 +419,7 @@ public abstract class DbReactiveSqlBase {
         return parameters;
     }
 
-    public Future<Long> deleteUser(Session ws, MessageUser messageUser) {
+    public Future<Long> deleteUser(WebSocketConnection ws, MessageUser messageUser) {
         Promise<Long> promise = Promise.promise();
 
         pool.getConnection(c -> {
@@ -443,9 +427,6 @@ public abstract class DbReactiveSqlBase {
             SqlConnection conn = c.result();
 
             String sql = getDeleteUser();
-            if (DbConfiguration.isUsingMariadb()) {
-                sql = getMariaDeleteUser();
-            }
 
             conn.preparedQuery(sql).rxExecute(parameters).doOnSuccess(rows -> {
                 Long id = 0L;
@@ -477,43 +458,35 @@ public abstract class DbReactiveSqlBase {
         return promise.future();
     }
 
-    public Future<Long> addMessage(Session ws, MessageUser messageUser, String message) {
+    public Future<Long> addMessage(WebSocketConnection ws, MessageUser messageUser, String message) {
         Promise<Long> promise = Promise.promise();
 
         OffsetDateTime time = OffsetDateTime.now();
         Timestamp current = new Timestamp(new Date().getTime());
 
-        Object postDate = DbConfiguration.isUsingPostgres() ? time : current;
-        Tuple parameters = Tuple.of(message, messageUser.getName(), postDate);
+        Tuple parameters = Tuple.of(message, messageUser.getName(), current);
 
         pool.getConnection(ar -> {
             if (ar.succeeded()) {
                 SqlConnection conn = ar.result();
 
                 String sql = getAddMessage();
-                if (DbConfiguration.isUsingIbmDB2()) {
-                    sql = String.format("%s%s%s", "SELECT id FROM FINAL TABLE (", getAddMessage(), ")");
-                } else if (DbConfiguration.isUsingMariadb()) {
-                    sql = getMariaAddMessage();
-                }
 
                 conn.preparedQuery(sql).rxExecute(parameters).doOnSuccess(rows -> {
                     Long id = 0L;
                     for (Row row : rows) {
                         id = row.getLong(0);
                     }
-                    if (DbConfiguration.isUsingMariadb()) {
-                        id = rows.property(MySQLClient.LAST_INSERTED_ID);
-                    } else if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingCubrid())
-                    {
+                    if(id == null) {
                         id = rows.property(JDBCPool.GENERATED_KEYS).getLong(0);
                     }
+
                     conn.close();
                     promise.complete(id);
                 }).doOnError(err -> {
                     logger.error(String.format("%sError adding messaage: %s%s", ColorUtilConstants.RED, err,
                             ColorUtilConstants.RESET));
-                    ws.getAsyncRemote().sendText(err.toString());
+                    ws.sendText(err.toString()).subscribeAsCompletionStage().isDone();
                     conn.close();
                 }).subscribe(rows -> {
                     //
@@ -555,7 +528,7 @@ public abstract class DbReactiveSqlBase {
         return promise.future();
     }
 
-    public Future<Void> addUndelivered(Session ws, List<String> undelivered, Long messageId) {
+    public Future<Void> addUndelivered(WebSocketConnection ws, List<String> undelivered, Long messageId) {
         Promise<Void> promise = Promise.promise();
         try {
             for (String name : undelivered) {
@@ -572,7 +545,7 @@ public abstract class DbReactiveSqlBase {
                 });
             }
         } catch (Exception e) {
-            ws.getAsyncRemote().sendText(e.getMessage());
+            ws.sendText(e.getMessage()).subscribeAsCompletionStage().isDone();
         }
         return promise.future();
     }
@@ -604,16 +577,14 @@ public abstract class DbReactiveSqlBase {
 
     public abstract MessageUser createMessageUser();
 
-    public Future<MessageUser> selectUser(MessageUser messageUser, Session ws) {
+    public Future<MessageUser> selectUser(MessageUser messageUser, WebSocketConnection ws) {
         MessageUser resultUser = createMessageUser();
         Promise<MessageUser> promise = Promise.promise();
-
         Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword());
 
         pool.getConnection(c -> {
             SqlConnection conn = c.result();
 
-            
             conn.preparedQuery(getUserById()).execute(parameters, ar -> {
                 if (ar.succeeded()) {
                     Future<Integer> future1 = null;
@@ -699,7 +670,7 @@ public abstract class DbReactiveSqlBase {
         return promise.future();
     }
 
-    public Future<Map<String, Integer>> processUserMessages(Session ws, MessageUser messageUser) {
+    public Future<Map<String, Integer>> processUserMessages(WebSocketConnection ws, MessageUser messageUser) {
         RemoveUndelivered removeUndelivered = new RemoveUndelivered();
         RemoveMessage removeMessage = new RemoveMessage();
         CompletePromise completePromise = new CompletePromise();
@@ -723,13 +694,11 @@ public abstract class DbReactiveSqlBase {
                         String message = row.getString(2);
                         String handle = row.getString(4);
                         messageUser.setLastLogin(row.getValue(3));
-                        if(DbConfiguration.isUsingH2()) {
-                            messageUser.setLastLogin(Timestamp.valueOf(row.getLocalDateTime(3)));
-                        }
 
                         // Send messages back to client
-                        ws.getAsyncRemote().sendText(
-                                handle + formatDate.format(messageUser.getLastLogin()) + " " + message);
+                        ws.sendText(
+                                handle + formatDate.format(messageUser.getLastLogin()) + " " + message)
+                          .subscribeAsCompletionStage().isDone();
                         removeUndelivered.getMessageIds().add(row.getLong(1));
                         removeMessage.getMessageIds().add(row.getLong(1));
                     }
@@ -902,8 +871,7 @@ public abstract class DbReactiveSqlBase {
                 pool.getConnection(c -> {
                     Tuple parameters = Tuple.of(messageId, messageId);
                     String sql = null;
-                    if (DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb()
-                            || DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingH2()) {
+                    if (DbConfiguration.isUsingSqlite3()) {
                         sql = getCustomDeleteMessages();
                     } else {
                         parameters = Tuple.of(messageId);

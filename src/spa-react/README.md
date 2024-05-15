@@ -54,7 +54,7 @@ The basic idea is to build a single page(spa) production application ensuring co
   
   __Note__ Npm will produce vulnerability warnings, these are mostly from the testing tools, specifically `jasmine-jquery` which is no longer actively maintained.
   
-  The test build(`gulp test` or `gulp prod`) will generate the spa application in `src/main/resources/static/dist_test/react-fusebox` and production in `src/main/resources/static/dist/react-fusebox`. The application is accessible after rebuilding(`gradlew quarkusDev`) the Quarkus test server. When modifying Java or Javascript code, refreshing the browser window will re-deploy the backend application and the Quarkus server. For Javascript changes you need `gulp watch` running or you have to execute `gulp rebuild` or `gulp test`.
+  The test build(`gulp test` or `gulp prod`) will generate the spa application in `src/main/resources/static/dist_test/react-fusebox` and production in `src/main/resources/META-INF/resources/spa/react-fusebox`. The application is accessible after rebuilding(`gradlew quarkusDev`) the Quarkus test server. When modifying Java or Javascript code, refreshing the browser window will re-deploy the backend application and the Quarkus server. For Javascript changes you need `gulp watch` running or you have to execute `gulp rebuild` or `gulp test`.
 
   __Important;__ Added Quarkus property `%dev.quarkus.vertx.caching=false` to allow Java and Javascript development using the Quarkus hot reload.
 
@@ -62,7 +62,7 @@ The basic idea is to build a single page(spa) production application ensuring co
 
   After building the application(see Production Build and Test Build), view the application with a Browser @
 
-  `localhost:8089/dist/react-fusebox/appl/testapp.html` or `localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html`.
+  `localhost:8089/spa/react-fusebox/appl/testapp.html` or `localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html`.
 
 ## Production Build
 
@@ -70,15 +70,15 @@ The basic idea is to build a single page(spa) production application ensuring co
 
 1. Start the Quarkus test server `cd <install>` and execute `gradlew quarkusDev`.
 2. `cd <install>/src/spa-react/devl`. This is the directory used for building the front-end and testing the application(both front-end and back-end).
-3. Execute `gulp prod` or `npx gulp prod` if you do not have Gulp installed globally. This should run all tests and if successful will produce the production bundle and static content in `src/main/resources/static/dist/react-fusebox`.
+3. Execute `gulp prod` or `npx gulp prod` if you do not have Gulp installed globally. This should run all tests and if successful will produce the production bundle and static content in `src/main/resources/META-INF/resources/spa/react-fusebox`.
    __Note;__ the javascript linting uses `eslint:recommended` which forces double-quoted strings and semi-colon statement endings etc. This can be changed in `<install>/src/spa-react/devl/.eslintrc.js`.
-4. View the application using the production bundle at `localhost:8089/dist/react-fusebox/appl/testapp.html`.
+4. View the application using the production bundle at `localhost:8089/spa/react-fusebox/appl/testapp.html`.
 5. You can run `gulp prd` to bypass the testing.
-6. Executing `gulp prd -l` will produce a local version in `<install>/src/dist/react-fusebox` for viewing with Node without the Java back-end. Execute `node koa` from the `devl` directory and view in a browser at `localhost:3088/dist/react-fusebox/appl/testapp.html`.
+6. Executing `gulp prd -l` will produce a local version in `<install>/src/spa/react-fusebox` for viewing with Node without the Java back-end. Execute `node koa` from the `devl` directory and view in a browser at `localhost:3088/spa/react-fusebox/appl/testapp.html`.
 
     __Note;__ see dodex-quarkus for building the production jar.
 
-    __Important:__ the test directory `dist_test` is removed from the quarkus server during the production build. Execute `gulp rebuild` or `gulp test` to rebuild the test front-end application.
+    __Important:__ the test directory `spa_test` is removed from the quarkus server during the production build. Execute `gulp rebuild` or `gulp test` to rebuild the test front-end application.
 
 ## Test Build
 
@@ -94,11 +94,11 @@ Run these commands from `src/spa-react/devl`.
     * default, run once with headless browser
     * builds the ***React*** application using ***Fuse-Box***
     * copies static content
-    * location `src/main/resources/static/dist_test` (accessible to Quarkus)
+    * location `src/main/resources/META-INF/resources/spa_test` (accessible to Quarkus)
     * executes the unit tests in `src/spa-react/tests`
     * executes the integration tests in `src/spa-react/appl/jasmine`
     * reports the results to the console, see below
-    * view in browser @ `http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html`
+    * view in browser @ `http://localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html`
 2. `gulp rebuild`
     * rebuild and redeploy the ***React*** application without testing, refresh browser to see results.
 3. `gulp acceptance`
@@ -125,16 +125,16 @@ Run these commands from `src/spa-react/devl`.
     * Runs ***Fuse-Box*** hot module reload for the `React` application.
     * Runs a Node http Server and makes front-end javascript changes visible
     * Back-end Java is not accessible
-    * Use browser to view @ `http://localhost:3087/dist_test/react-fusebox/appl/testapp_dev.html`
+    * Use browser to view @ `http://localhost:3087/spa_test/react-fusebox/appl/testapp_dev.html`
 10. `gulp preview`
     * Runs ***Fuse-Box*** to build production front-end without minify and starts a node http server
-    * Use browser to view @ `http://localhost:3087/dist/react-fusebox/appl/testapp.html`
+    * Use browser to view @ `http://localhost:3087/spa/react-fusebox/appl/testapp.html`
 
 Running tests in local mode (no backend java integration tests)
 
 1. The test tasks `test, acceptance, watch, tdd, rebuild, hmr, preview, prod` can all be executed with the `-l` parameter e.g. `gulp test -l`.
-2. The builds are located in `src/dist_test` or `src/dist`.
-3. When running `gulp hmr -l` view with `http://localhost:3087/dist_test/react-fusebox/appl/testapp_dev.html`
+2. The builds are located in `src/spa_test` or `src/spa`.
+3. When running `gulp hmr -l` view with `http://localhost:3087/spa_test/react-fusebox/appl/testapp_dev.html`
 
 ### Java Integration Testing
 

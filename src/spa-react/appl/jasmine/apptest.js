@@ -145,9 +145,9 @@ export default function (App) {
 
 async function karmaDisplay() {
     // Load of test page(without html, head & body) to append to the Karma iframe
-    let url = "http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html";
+    let url = "http://localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html";
     if(window._local) {
-        url = "/base/dist_test/react-fusebox/appl/app_bootstrap.html";
+        url = "/base/spa_test/react-fusebox/appl/app_bootstrap.html";
     }
     const originalConsoleError = console.error;
     console.error = (...args) => {

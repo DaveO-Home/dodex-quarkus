@@ -53,7 +53,7 @@ if (browsers) {
  */
 const pat = function (done) {
     if (!browsers) {
-        global.whichBrowser = ["ChromeHeadless", "FirefoxHeadless"];
+        global.whichBrowser = [/*"ChromeHeadless",*/ "FirefoxHeadless"];
     }
 
     karmaServer(done, true, false);
@@ -351,13 +351,13 @@ function fuseboxConfig(mode, props) {
     
     // local means the test applications will not be in the vertx classpath and is only used for local javascript frontend development/testing
     if(local) {
-        distDir = mode === "prod" ? path.join(__dirname, "../../dist/react-fusebox") :
-            mode === "preview" ? path.join(__dirname, "../../dist/react-fusebox") : path.join(__dirname, "../../dist_test/react-fusebox");
+        distDir = mode === "prod" ? path.join(__dirname, "../../spa/react-fusebox") :
+            mode === "preview" ? path.join(__dirname, "../../spa/react-fusebox") : path.join(__dirname, "../../spa_test/react-fusebox");
     } 
     // remote(default) puts the application in the vertx classpath and can be accessed in the resulting vertx verticle.
     else {
-        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") :
-            mode === "preview" ? path.join(__dirname, "../../main/resources/META-INF/resources/dist/react-fusebox") : path.join(__dirname, "../../main/resources/META-INF/resources/dist_test/react-fusebox");
+        distDir = mode === "prod" ? path.join(__dirname, "../../main/resources/META-INF/resources/spa/react-fusebox") :
+            mode === "preview" ? path.join(__dirname, "../../main/resources/META-INF/resources/spa/react-fusebox") : path.join(__dirname, "../../main/resources/META-INF/resources/spa_test/react-fusebox");
     }
 
     let defaultServer = props.useServer;
@@ -498,7 +498,7 @@ function snap(url, puppeteer, snapshot, close, done) {
 
 function takeSnapShot(snapshot, close, done) {
     const puppeteer = require("puppeteer");
-    let url = "http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html#";
+    let url = "http://localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html#";
 
     snap(url, puppeteer, snapshot, close, done);
 }

@@ -25,7 +25,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "//192.168.1.75",
+                "host": "//192.168.49.1",
                 "url": "jdbc:postgresql:",
                 "dbname": "/dodex"
             }
@@ -37,7 +37,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "//0.0.0.0",
+                "host": "//192.168.49.1",
                 "url": "jdbc:postgresql:",
                 "dbname": "/dodex"
             }
@@ -90,7 +90,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "localhost",
                 "port": "3306",
                 "url": "jdbc:mariadb:",
                 "dbname": "test"
@@ -98,7 +98,7 @@
         }
     },
     "ibmdb2": {
-        "dev": { 
+        "dev": {
             "credentials": {
                 "user": "db2inst1",
                 "password": "dodex",
@@ -112,7 +112,7 @@
                 "tabschema": "DB2INST1"
             }
         },
-        "prod": { 
+        "prod": {
             "credentials": {
                 "user": "user",
                 "password": "password",

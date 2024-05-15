@@ -13,13 +13,14 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
+import io.reactivex.Single;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
@@ -36,21 +37,21 @@ import io.vertx.reactivex.sqlclient.SqlConnection;
 import io.vertx.reactivex.sqlclient.Tuple;
 
 public abstract class SqlBuilder {
-    private static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class.getName());
     protected static final String QUERYLOGIN = "select * from LOGIN where name=?";
 
-    private static DSLContext create;
+    protected static DSLContext create;
 
-    private static String GETLOGINBYNP;
-    private static String GETLOGINBYNAME;
-    private static String GETINSERTLOGIN;
-    private static String GETREMOVELOGIN;
-    private static String GETUPDATELOGIN;
-    private static String GETLOGINBYID;
-    private static String GETSQLITEUPDATELOGIN;
-    private Boolean isTimestamp;
-    private static Pool pool;
-    private static Boolean qmark = true;
+    protected static String GETLOGINBYNP;
+    protected static String GETLOGINBYNAME;
+    protected static String GETINSERTLOGIN;
+    protected static String GETREMOVELOGIN;
+    protected static String GETUPDATELOGIN;
+    protected static String GETLOGINBYID;
+    protected static String GETSQLITEUPDATELOGIN;
+    protected Boolean isTimestamp;
+    protected static Pool pool;
+    protected static Boolean qmark = true;
 
     public static <T> void setupSql(T pool4) throws SQLException {
         // Non-Blocking Drivers
@@ -78,7 +79,7 @@ public abstract class SqlBuilder {
         GETSQLITEUPDATELOGIN = qmark ? setupSqliteUpdateLogin().replaceAll("\\$\\d*", "?") : setupSqliteUpdateLogin();
     }
 
-    private static String setupLoginByNamePassword() {
+    protected static String setupLoginByNamePassword() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")).and(field("PASSWORD").eq("$")));
     }
@@ -87,7 +88,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYNP;
     }
 
-    private static String setupLoginByName() {
+    protected static String setupLoginByName() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")));
     }
@@ -96,7 +97,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYNAME;
     }
 
-    private static String setupLoginById() {
+    protected static String setupLoginById() {
         return create.renderNamedParams(select(field("ID"), field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                 .from(table("LOGIN")).where(field("NAME").eq("$")));
     }
@@ -105,7 +106,7 @@ public abstract class SqlBuilder {
         return GETLOGINBYID;
     }
 
-    private static String setupInsertLogin() {
+    protected static String setupInsertLogin() {
         return create.renderNamedParams(
                 insertInto(table("LOGIN")).columns(field("NAME"), field("PASSWORD"), field("LAST_LOGIN"))
                         .values("$", "$", "$").returning(field("ID")));
@@ -115,7 +116,7 @@ public abstract class SqlBuilder {
         return GETINSERTLOGIN;
     }
 
-    private static String setupUpdateLogin() {
+    protected static String setupUpdateLogin() {
         return create.renderNamedParams(update(table("LOGIN")).set(field("LAST_LOGIN"), "$")
             .where(field("ID").eq("$")).returning());
     }
@@ -132,7 +133,7 @@ public abstract class SqlBuilder {
         return GETSQLITEUPDATELOGIN;
     }
 
-    private static String setupRemoveLogin() {
+    protected static String setupRemoveLogin() {
         return create
                 .renderNamedParams(deleteFrom(table("LOGIN")).where(field("NAME").eq("$"), field("PASSWORD").eq("$")));
     }
@@ -218,40 +219,39 @@ public abstract class SqlBuilder {
 
     public Future<SpaLogin> addLogin(SpaLogin spaLogin) {
         Promise<SpaLogin> promise = Promise.promise();
-        Timestamp current = new Timestamp(new Date().getTime());
-        OffsetDateTime time = OffsetDateTime.now();
-
-        Object lastLogin = DbConfiguration.isUsingPostgres() ? time : current;
+        Timestamp lastLogin = new Timestamp(new Date().getTime());
 
         spaLogin.setStatus("0");
 
-        pool.getConnection(c -> {
-            Tuple parameters = Tuple.of(spaLogin.getName(), spaLogin.getPassword(), lastLogin);
-            SqlConnection conn = c.result();
+        pool.rxGetConnection().doOnSuccess(conn -> {
+            String sql = create.query(getInsertLogin(), spaLogin.getName(), spaLogin.getPassword(), lastLogin).toString()
+              .replace("timestamp", "");
 
-            conn.preparedQuery(getInsertLogin()).rxExecute(parameters).doOnSuccess(rows -> {
-                for (Row row : rows) {
-                    spaLogin.setId(row.getLong(0));
-                    spaLogin.setLastLogin(current);
-                }
-
-                conn.close();
-                promise.complete(spaLogin);
-            }).doOnError(err -> {
-                conn.close();
-                spaLogin.setStatus("-4");
-                logger.error(String.format("%sError adding login: %s%s", ColorUtilConstants.RED, err,
-                        ColorUtilConstants.RESET));
-            }).subscribe(rows -> {
-                //
-            }, err -> {
-                conn.close();
-                spaLogin.setStatus("-4");
-                promise.complete(spaLogin);
-                logger.error(String.format("%sError adding login: %s%s", ColorUtilConstants.RED, err,
-                        ColorUtilConstants.RESET));
-            });
-        });
+            conn.rxBegin().flatMap(tx -> {
+                conn.query(sql).rxExecute().doOnSuccess(rows -> {
+                    for (Row row : rows) {
+                        spaLogin.setId(row.getLong(0));
+                        spaLogin.setLastLogin(lastLogin);
+                    }
+                    tx.commit();
+                    conn.close();
+                    promise.complete(spaLogin);
+                }).doOnError(err -> {
+                    tx.rollback();
+                    conn.close();
+                    spaLogin.setStatus("-4");
+                    logger.error(String.format("%sError adding login: %s%s", ColorUtilConstants.RED, err,
+                      ColorUtilConstants.RESET));
+                }).subscribe
+                  (v -> {}, err -> {
+                    spaLogin.setStatus("-4");
+                    promise.complete(spaLogin);
+                    logger.error(String.format("%sError adding login: %s%s", ColorUtilConstants.RED, err,
+                      ColorUtilConstants.RESET));
+                });
+                return Single.just(conn);
+            }).subscribe();
+        }).subscribe();
 
         return promise.future();
     }
@@ -309,8 +309,7 @@ public abstract class SqlBuilder {
             String sql = getUpdateLogin();
             LocalDateTime lTime = LocalDateTime.now();
 
-            Object dateTime = DbConfiguration.isUsingIbmDB2()? lTime: 
-                DbConfiguration.isUsingSqlite3()? date: DbConfiguration.isUsingCubrid()? timeStamp: time;
+            Object dateTime =  DbConfiguration.isUsingSqlite3()? date: timeStamp;
 
             spaLogin.setLastLogin(timeStamp);
 

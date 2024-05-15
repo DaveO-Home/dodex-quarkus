@@ -1,6 +1,6 @@
 {
   "name": "dodex-quarkus",
-  "version": "3.2.3",
+  "version": "3.3.0",
   "description": "A java asynchronous server for Dodex using quarkus",
   "main": "index.js",
   "scripts": {

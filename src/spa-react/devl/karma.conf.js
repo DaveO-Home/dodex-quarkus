@@ -3,9 +3,9 @@ const path = require("path");
 const bundler = "react-fusebox";
 const spa = "spa-react";
 let mocha = ["mocha"];
-let distDir = "main/resources/META-INF/resources/dist_test/";
-let base = "http://localhost:8089/dist_test/" + bundler;
-let startupHtml = "http://localhost:8089/dist_test/react-fusebox/appl/testapp_dev.html";
+let distDir = "main/resources/META-INF/resources/spa_test/";
+let base = "http://localhost:8089/spa_test/" + bundler;
+let startupHtml = "http://localhost:8089/spa_test/react-fusebox/appl/testapp_dev.html";
 try {
     fs.unlinkSync(path.join(__dirname, "karma.bootstrap2.js"));
 } catch (e) {
@@ -17,9 +17,9 @@ const result = data.replace(/local = false/, "local = " + global.local);
 fs.writeFileSync(path.join(__dirname, "karma.bootstrap2.js"), result, "utf8");
 
 if (global.local) {
-    distDir = "dist_test/";
-    base = "/base/dist_test/" + bundler;
-    startupHtml = "dist_test/" + bundler + "/appl/testapp_dev.html";
+    distDir = "spa_test/";
+    base = "/base/spa_test/" + bundler;
+    startupHtml = "spa_test/" + bundler + "/appl/testapp_dev.html";
 }
 if(global.allure === true) {
     mocha.push("allure");
@@ -44,9 +44,9 @@ module.exports = function (config) {
             "/templates/": base + "/appl/templates/",
             "/resources/": base + "/appl/resources/",
             "/dodex/data/": base + "/appl/dodex/data/",
-            "/dist_test/react-fusebox/appl/assets/": base + "/appl/assets/",
-            "/base/dist_test/react-fusebox/appl/": base + "/appl/",
-            "/README.md": "http://localhost:8089/dist_test/README.md",
+            "/spa_test/react-fusebox/appl/assets/": base + "/appl/assets/",
+            "/base/spa_test/react-fusebox/appl/": base + "/appl/",
+            "/README.md": "http://localhost:8089/spa_test/README.md",
             "/images/": base + "/images/",
             "/userlogin/unregister": "http://localhost:8089/userlogin/unregister",
             "/userlogin": "http://localhost:8089/userlogin",

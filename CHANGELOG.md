@@ -1,5 +1,14 @@
 # Changelog
 
+## [v3.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.3.0) (2024-05-13)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.3...v3.3.0)
+
+* Upgraded to Quarkus 3.10.0
+* Replaced Jakarta websocket with the new Quarkus-Next websocket. Allows for the removal of stringy code with it's conditional capability.
+* Organized db packages by database
+* Added db and router classes to their respective .../wsnext packages
+
 ## [v3.2.3](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.3) (2024-02-05)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.2...v3.2.3)

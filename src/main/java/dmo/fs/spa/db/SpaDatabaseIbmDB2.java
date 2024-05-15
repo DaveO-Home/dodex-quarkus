@@ -12,7 +12,6 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.ColorUtilConstants;
@@ -28,7 +27,7 @@ import io.vertx.db2client.DB2ConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
-	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseIbmDB2.class.getName());
+	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseIbmDB2.class.getName());
 	protected Properties dbProperties = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
@@ -116,7 +115,7 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		return new SpaLoginImpl();
 	}
 
-	private static DB2Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static DB2Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 

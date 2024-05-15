@@ -12,5 +12,7 @@
   "dodex.events.remove": false,
   "handicap.enableAdmin": false,
   "handicap.adminPin": "hand!cap",
-  "log.console.color": true
+  "log.console.color": true,
+  "quarkus.jooq.dialect": "h2",
+  "quarkus.datasource.jdbc.url": ""
 }

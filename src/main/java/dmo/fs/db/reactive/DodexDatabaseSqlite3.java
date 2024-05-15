@@ -1,7 +1,6 @@
 package dmo.fs.db.reactive;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dmo.fs.db.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
 import dmo.fs.quarkus.Server;
@@ -215,6 +214,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
                           logger.info(String.format("Member Create Table Error: %s", err.getMessage()));
                         }).doOnSuccess(row2 -> {
                           logger.info("Member Table Added.");
+                          promise.complete(pool);
                         });
 
                     crow.subscribe(result2 -> conn.rxClose().doOnSubscribe(c ->
@@ -222,6 +222,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
                         logger.info(String.format("Member Table Error: %s", err.getMessage())));
                   } else {
                     conn.rxClose().doOnSubscribe(c -> tx.rxCommit().subscribe()).subscribe();
+                    promise.complete(pool);
                   }
                 }).doOnError(err -> {
                   logger.info(String.format("Member Check Table Error: %s", err.getMessage()));
@@ -232,7 +233,6 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
     completable.doOnComplete(() -> {
       try {
         setupSql(pool);
-        promise.complete(pool);
       } catch (Exception e) {
         e.printStackTrace();
       }

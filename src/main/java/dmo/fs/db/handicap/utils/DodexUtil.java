@@ -21,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class DodexUtil {
-    private static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
-    private static final String REMOVEUSER = ";removeuser";
-    private static final String USERS = ";users";
-    private static String env = "dev";
-    private static Vertx vertx = null;;
+    protected static final Logger logger = LoggerFactory.getLogger(DodexUtil.class.getName());
+    protected static final String REMOVEUSER = ";removeuser";
+    protected static final String USERS = ";users";
+    protected static String env = "dev";
+    protected static Vertx vertx = null;;
 
-    private static io.vertx.rxjava3.core.Vertx vertxR = null;
+    protected static io.vertx.rxjava3.core.Vertx vertxR = null;
 
     String defaultDb = "sqlite3";
 
@@ -58,7 +58,7 @@ public class DodexUtil {
         return returnObject;
     }
 
-    private Map<String, String> processCommand(String command, String data)
+    protected Map<String, String> processCommand(String command, String data)
             throws InterruptedException {
         String selectedUsers = "";
         Map<String, String> returnObject = new ConcurrentHashMap<>();
@@ -73,7 +73,7 @@ public class DodexUtil {
             case REMOVEUSER:
                 // Happening in DodexRouter
                 break;
-            // Set users for private messaging.
+            // Set users for protected messaging.
             case USERS:
                 selectedUsers = data.substring(1, data.lastIndexOf(']')).replace("\"", "");
                 break;
@@ -97,9 +97,9 @@ public class DodexUtil {
      * Split out command and data from client message.
      */
     public static class ClientInfoUtilHelper {
-        private static final String[] commands = { REMOVEUSER, USERS };
+        protected static final String[] commands = { REMOVEUSER, USERS };
 
-        private static final Function<String, String> command = clientData -> {
+        protected static final Function<String, String> command = clientData -> {
             for (String clientCommand : commands) {
                 if (clientData.contains(clientCommand)) {
                     return clientCommand;
@@ -126,7 +126,7 @@ public class DodexUtil {
             return clientData.substring(clientData.lastIndexOf("!!") + 2);
         };
 
-        private ClientInfoUtilHelper() {
+        protected ClientInfoUtilHelper() {
         }
     }
 

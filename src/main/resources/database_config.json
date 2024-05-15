@@ -118,7 +118,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "localhost",
                 "port": "3306",
                 "url": "jdbc:mariadb:",
                 "dbname": "test"
@@ -126,7 +126,7 @@
         }
     },
     "ibmdb2": {
-        "dev": { 
+        "dev": {
             "credentials": {
                 "user": "db2inst1",
                 "password": "dodex",
@@ -140,7 +140,7 @@
                 "tabschema": "DB2INST1"
             }
         },
-        "prod": { 
+        "prod": {
             "credentials": {
                 "user": "db2inst1r",
                 "password": "dodex",

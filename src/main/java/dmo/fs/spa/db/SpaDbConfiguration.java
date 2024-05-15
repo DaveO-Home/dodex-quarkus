@@ -8,7 +8,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.wsnext.DbConfiguration;
 import dmo.fs.spa.db.reactive.SpaDatabaseCubrid;
 import dmo.fs.spa.db.reactive.SpaDatabaseH2;
 import dmo.fs.spa.db.reactive.SpaDatabaseReactive;
@@ -16,32 +16,14 @@ import dmo.fs.spa.db.reactive.SpaDatabaseSqlite3;
 import dmo.fs.spa.utils.SpaUtil;
 
 public class SpaDbConfiguration extends DbConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(SpaDbConfiguration.class.getName());
+    protected static final Logger logger = LoggerFactory.getLogger(SpaDbConfiguration.class.getName());
 
-    private static String defaultDb = "sqlite3";
-    private static SpaDatabase spaDatabase;
-    private static SpaCassandra spaCassandra;
-    private static SpaDatabaseReactive spaDatabaseReactive;
-    private static SpaDatabaseFirebase spaFirebase;
-    private static SpaDatabaseNeo4j spaNeo4j;
-
-    private enum DbTypes {
-        POSTGRES("postgres"),
-        SQLITE3("sqlite3"),
-        CUBRID("cubrid"),
-        MARIADB("mariadb"),
-        H2("h2"),
-        CASSANDRA("cassandra"),
-        FIREBASE("firebase"),
-        NEO4J("neo4j"),
-        IBMDB2("ibmdb2");
-
-        final String db;
-
-        DbTypes(String db) {
-            this.db = db;
-        }
-    }
+    protected static String defaultDb = "sqlite3";
+    protected static SpaDatabase spaDatabase;
+    protected static SpaCassandra spaCassandra;
+    protected static SpaDatabaseReactive spaDatabaseReactive;
+    protected static SpaDatabaseFirebase spaFirebase;
+    protected static SpaDatabaseNeo4j spaNeo4j;
 
     SpaDbConfiguration() {
         super();
@@ -131,7 +113,7 @@ public class SpaDbConfiguration extends DbConfiguration {
             } else if(defaultDb.equals(DbTypes.CASSANDRA.db) && spaCassandra == null) {
                 spaCassandra = new SpaDatabaseCassandra(overrideMap, overrideProps);
                 isUsingCassandra = true;
-                return (T) dodexCassandra;
+                return (T) spaCassandra;
             } else if(defaultDb.equals(DbTypes.FIREBASE.db) && spaFirebase == null) {
                 spaFirebase = new SpaDatabaseFirebase(overrideMap, overrideProps);
                 isUsingFirebase = true;

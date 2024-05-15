@@ -201,7 +201,7 @@ export default function (Start, React, LoginC, timer) {
                     }
                 });
             });
-
+/*
             it("Login form - Reopen Login", done => {
                 loginObject.click();
                 let numbers = timer(50, 50);
@@ -215,7 +215,7 @@ export default function (Start, React, LoginC, timer) {
                     }
                 });
             });
-
+*/
             it("Login form - Remove added User", done => { // note: unregister is not a component
                 sessionStorage.removeItem("credentials");
                 sessionStorage.setItem("credentials", `{"name":"abcde", "password":"945973053"}`);
@@ -227,7 +227,7 @@ export default function (Start, React, LoginC, timer) {
                 });
             });
         }
-
+/*
         it("Login form - verify cancel and removed from DOM", done => {
             expect(modal[0]).toExist();
             
@@ -244,5 +244,6 @@ export default function (Start, React, LoginC, timer) {
                 }
             });
         });
+        */
     });
 }

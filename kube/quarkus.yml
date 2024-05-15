@@ -31,14 +31,14 @@ spec:
       containers:
         - name: dodex-quarkus
           image: dufferdo2/dodex-quarkus:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never # IfNotPresent
           env:
             - name: DEFAULT_DB
-              value: "h2"  # h2 or postgres or mariadb
+              value: "mariadb"  # h2 or postgres or mariadb
             - name: USE_HANDICAP
               value: "true"
             - name: storage__root_directory
-              value: /data/h2
+              value: /data/db
           ports:
             - containerPort: 8071
               hostPort: 8071
@@ -47,7 +47,7 @@ spec:
             - containerPort: 9901
               hostPort: 9901
           volumeMounts:
-            - mountPath: /data/h2
+            - mountPath: /data/db
               name: quarkus-storage
           securityContext:
             capabilities:

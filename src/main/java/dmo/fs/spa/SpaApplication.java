@@ -13,10 +13,10 @@ import jakarta.enterprise.inject.spi.CDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
-import dmo.fs.router.CassandraRouter;
-import dmo.fs.router.FirebaseRouter;
-import dmo.fs.router.Neo4jRouter;
+import dmo.fs.db.wsnext.DbConfiguration;
+import dmo.fs.db.router.wsnext.CassandraRouter;
+import dmo.fs.db.router.wsnext.FirebaseRouter;
+import dmo.fs.db.router.wsnext.Neo4jRouter;
 import dmo.fs.spa.db.SpaCassandra;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SpaDbConfiguration;
@@ -32,16 +32,16 @@ import io.vertx.mutiny.core.Vertx;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
 public class SpaApplication {
-    private static final Logger logger = LoggerFactory.getLogger(SpaApplication.class.getName());
-    private EventBus eb;
-    private SpaDatabase spaDatabase;
-    private Vertx vertx;
-    private SpaCassandra spaCassandra;
-    private Boolean isCassandra = false;
-    private Boolean isFirebase = false;
-    private Boolean isNeo4j = false;
-    private SpaFirebase spaFirebase;
-    private SpaNeo4j spaNeo4j;
+    protected static final Logger logger = LoggerFactory.getLogger(SpaApplication.class.getName());
+    protected EventBus eb;
+    protected SpaDatabase spaDatabase;
+    protected Vertx vertx;
+    protected SpaCassandra spaCassandra;
+    protected Boolean isCassandra = false;
+    protected Boolean isFirebase = false;
+    protected Boolean isNeo4j = false;
+    protected SpaFirebase spaFirebase;
+    protected SpaNeo4j spaNeo4j;
 
     public SpaApplication() throws InterruptedException, IOException, SQLException {
         Object spaDb =  SpaDbConfiguration.getSpaDb();

@@ -40,7 +40,7 @@ public abstract class DbSqlite3 extends DbDefinitionBase implements HandicapData
 		return null;
 	}
 
-	private enum CreateTable {
+	protected enum CreateTable {
 		CREATEUSERS(
 				"create table users (id integer primary key, name text not null unique, password text not null unique, ip text not null, last_login DATETIME not null)"),
 		CREATEMESSAGES(

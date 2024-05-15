@@ -51,7 +51,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "192.168.49.1",
                 "port": "5432",
                 "url": "jdbc:postgresql:",
                 "dbname": "dodex"
@@ -64,7 +64,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "192.168.49.1",
                 "port": "5432",
                 "url": "jdbc:postgresql:",
                 "dbname": "dodex"
@@ -118,7 +118,7 @@
                 "ssl": "false"
             },
             "config": {
-                "host": "192.168.1.75",
+                "host": "localhost",
                 "port": "3306",
                 "url": "jdbc:mysql:",
                 "dbname": "test"

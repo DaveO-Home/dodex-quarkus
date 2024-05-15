@@ -1,6 +1,7 @@
 package dmo.fs.spa.router;
 
 import com.google.cloud.firestore.Firestore;
+import dmo.fs.db.wsnext.DbConfiguration;
 import dmo.fs.spa.SpaApplication;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SpaDbConfiguration;
@@ -35,8 +36,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class SpaRoutes {
-  private static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
-  private static final String FAILURE = "{\"status\":\"-99\"}";
+  protected static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
+  protected static final String FAILURE = "{\"status\":\"-99\"}";
   protected SpaDatabase spaDatabase;
   protected SpaDatabaseReactive spaDatabaseReactive;
   protected SpaNeo4j spaNeo4j;
@@ -55,11 +56,11 @@ public class SpaRoutes {
     setSpaRoutes(router, routesPromise);
   }
 
-  private void setSpaRoutes(Router router, Promise<Router> routesPromise) {
+  protected void setSpaRoutes(Router router, Promise<Router> routesPromise) {
     this.router = router;
     sessionStore = LocalSessionStore.create(vertx);
 
-    if (SpaDbConfiguration.isUsingCassandra() || SpaDbConfiguration.isUsingFirebase()
+    if (SpaDbConfiguration.isUsingCassandra() || DbConfiguration.isUsingFirebase()
         || SpaDbConfiguration.isUsingNeo4j()) {
       if (SpaDbConfiguration.isUsingNeo4j()) {
         spaNeo4j = SpaDbConfiguration.getSpaDb();
@@ -77,7 +78,7 @@ public class SpaRoutes {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-      if ("h2".equals(defaultDb)) {
+      if ("h2".equals(defaultDb) || "sqlite3".equals(defaultDb)) {
         try {
           spaDatabaseReactive = SpaDbConfiguration.getSpaDb();
           if (spaDatabaseReactive != null) {
@@ -101,6 +102,8 @@ public class SpaRoutes {
             setLogoutRoute();
             setUnregisterLoginRoute();
             routesPromise.complete(router);
+          }).onFailure(err -> {
+            logger.info("Database setup Failed: {}", err.getMessage());
           });
         }
       }
@@ -112,9 +115,15 @@ public class SpaRoutes {
 
     Route route = router.route(HttpMethod.POST, "/userlogin"); // .handler(sessionHandler);
     if ("dev".equals(DodexUtil.getEnv())) {
-      route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.POST));
+      route.handler(CorsHandler.create().allowedMethod(HttpMethod.POST));
     }
 
+    route.failureHandler(routingContext -> {
+      HttpServerResponse response = routingContext.response();
+      if(response.getStatusCode() != 200) {
+        logger.info("Login Post Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+      }
+    });
 
     route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
       SpaApplication spaApplication = null;
@@ -181,8 +190,15 @@ public class SpaRoutes {
     Route route = router.route(HttpMethod.PUT, "/userlogin"); // .handler(sessionHandler);
 
     if ("dev".equals(DodexUtil.getEnv())) {
-      route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.PUT));
+      route.handler(CorsHandler.create().allowedMethod(HttpMethod.PUT));
     }
+
+    route.failureHandler(routingContext -> {
+      HttpServerResponse response = routingContext.response();
+      if(response.getStatusCode() != 200) {
+        logger.info("Login PUT Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+      }
+    });
 
     route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
       SpaApplication spaApplication = null;
@@ -208,7 +224,9 @@ public class SpaRoutes {
 
         final Optional<String> queryData = Optional.ofNullable(bodyDecoded);
         if (queryData.isPresent()) {
-          response.putHeader("content-type", "application/json");
+          if(!response.headWritten()) {
+            response.putHeader("content-type", "application/json");
+          }
           SpaLogin spaLogin = SpaUtil.createSpaLogin();
 
           SpaUtil.parseBody(bodyDecoded, spaLogin);
@@ -272,8 +290,15 @@ public class SpaRoutes {
     SessionHandler sessionHandler = SessionHandler.create(sessionStore);
     Route route = router.route(HttpMethod.DELETE, "/userlogin"); // .handler(sessionHandler);
     if ("dev".equals(DodexUtil.getEnv())) {
-      route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.DELETE));
+      route.handler(CorsHandler.create().allowedMethod(HttpMethod.DELETE));
     }
+
+    route.failureHandler(routingContext -> {
+      HttpServerResponse response = routingContext.response();
+      if(response.getStatusCode() != 200) {
+        logger.info("Login DELETE Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+      }
+    });
 
     route.handler(routingContext -> {
       // Session is now always null - Security?
@@ -313,8 +338,15 @@ public class SpaRoutes {
     Route route = router.route(HttpMethod.DELETE, "/userlogin/unregister").handler(sessionHandler);
 
     if ("dev".equals(DodexUtil.getEnv())) {
-      route.handler(CorsHandler.create("*").allowedMethod(HttpMethod.DELETE));
+      route.handler(CorsHandler.create().allowedMethod(HttpMethod.DELETE));
     }
+
+    route.failureHandler(routingContext -> {
+      HttpServerResponse response = routingContext.response();
+      if(response.getStatusCode() != 200) {
+        logger.info("Login Unregister Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
+      }
+    });
 
     route.handler(routingContext -> {
       SpaApplication spaApplication = null;

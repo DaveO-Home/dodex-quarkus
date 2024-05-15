@@ -27,7 +27,7 @@ var statusReporter = {
 };
 window.__karma__.loaded = function () {
     window._browser = get_browser_info();
-    window._local = false;
+    window._local = true;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 4000;
     jasmine.getEnv().addReporter(statusReporter);
     const config = jasmine.getEnv().configuration();

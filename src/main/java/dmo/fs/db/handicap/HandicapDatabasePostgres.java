@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HandicapDatabasePostgres extends DbPostgres {
-  private final static Logger logger =
+  protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabasePostgres.class.getName());
   protected PgPool pool4;
   protected Properties dbProperties;
@@ -87,7 +87,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
     return returnPromise.future();
   }
 
-  private void databaseSetup() {
+  protected void databaseSetup() {
     Promise<String> finalPromise = Promise.promise();
     if ("dev".equals(webEnv)) {
       DbConfiguration.configureTestDefaults(dbMap, dbProperties);

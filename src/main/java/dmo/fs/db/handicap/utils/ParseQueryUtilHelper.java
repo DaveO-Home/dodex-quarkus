@@ -22,7 +22,7 @@ public final class ParseQueryUtilHelper {
         return map;
     }
 
-    private ParseQueryUtilHelper() {
+    protected ParseQueryUtilHelper() {
     }
 
 }

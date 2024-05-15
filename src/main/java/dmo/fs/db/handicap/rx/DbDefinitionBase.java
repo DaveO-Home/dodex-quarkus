@@ -21,14 +21,14 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 public abstract class DbDefinitionBase {
-  private final static Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
+  protected final static Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getName());
 
   protected static DSLContext create;
 
-  private Boolean isTimestamp;
+  protected Boolean isTimestamp;
   protected Vertx vertx;
   protected static Pool pool;
-  private static boolean qmark = true;
+  protected static boolean qmark = true;
 
   public static <T> void setupSql(T pool4) throws IOException, SQLException {
     // Non-Blocking Drivers

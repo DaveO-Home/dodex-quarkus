@@ -13,7 +13,7 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
@@ -30,7 +30,7 @@ import io.vertx.reactivex.sqlclient.RowSet;
 import io.vertx.sqlclient.PoolOptions;
 
 public class SpaDatabaseH2 extends DbH2 {
-	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseH2.class.getName());
+	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseH2.class.getName());
 	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
@@ -127,7 +127,7 @@ public class SpaDatabaseH2 extends DbH2 {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 

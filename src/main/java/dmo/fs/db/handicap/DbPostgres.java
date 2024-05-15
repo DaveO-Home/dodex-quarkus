@@ -9,7 +9,7 @@ public abstract class DbPostgres extends dmo.fs.db.handicap.DbDefinitionBase imp
 	protected final static String CHECKUNDELIVEREDSQL = "SELECT to_regclass('public.undelivered')";
   	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('golfer', 'course', 'scores', 'ratings', 'groups', 'member');";
 	protected final static String SELECTONE = "SELECT 1;";
-	private enum CreateTable {
+	protected enum CreateTable {
 		CREATEUSERS(
 				"CREATE SEQUENCE public.users_id_seq INCREMENT 1 START 19 MINVALUE 1 MAXVALUE 2147483647 CACHE 1; " +
 						"ALTER SEQUENCE public.users_id_seq OWNER TO dummy;" +

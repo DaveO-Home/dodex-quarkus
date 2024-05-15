@@ -1,4 +1,5 @@
 #Dodex
+spa_test
 copyjs.sh
 *.log*
 dist*
@@ -7,7 +8,9 @@ deploy
 node_modules
 src/spa-react/devl/allure-report/*
 src/spa-react/devl/allure-results/*
-src/main/resources/static/dist*
+src/main/resources/META-INF/resources/dist*
+src/main/resources/META-INF/resources/spa/
+src/main/resources/META-INF/resources/spa/
 src/main/resources/META-INF/resources/handicap.html
 src/main/resources/META-INF/resources/handicap/*
 src/main/resources/META-INF/resources/jsoneditor-icons-STGDAB4I.svg
@@ -46,3 +49,5 @@ nb-configuration.xml
 # Gradle
 .gradle/
 build/
+kube/*.jar
+**/spa/

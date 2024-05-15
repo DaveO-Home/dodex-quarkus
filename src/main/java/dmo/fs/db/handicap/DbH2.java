@@ -16,7 +16,7 @@ public abstract class DbH2 extends DbDefinitionBase implements HandicapDatabase 
 	protected static final String CHECKMEMBERSQL = "SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_type='BASE TABLE' AND table_name = 'MEMBER'";
 	protected final static String SELECTONE = "SELECT 1;";
 
-	private enum CreateTable {
+	protected enum CreateTable {
 		CREATEUSERS("create table USERS (id int auto_increment NOT NULL PRIMARY KEY, name varchar(255) not null unique, password varchar(255) not null unique, ip varchar(255) not null, last_login TIMESTAMP not null)"),
 		CREATEMESSAGES("create table MESSAGES (id int auto_increment NOT NULL PRIMARY KEY, message clob not null, from_handle varchar(255) not null, post_date TIMESTAMP not null)"),
 		CREATEUNDELIVERED("create table UNDELIVERED (user_id int, message_id int, CONSTRAINT undelivered_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id), CONSTRAINT undelivered_message_id_foreign FOREIGN KEY (message_id) REFERENCES messages (id))"),

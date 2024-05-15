@@ -4,9 +4,8 @@
 package dmo.fs.db.handicap.rx;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.handicap.utils.DodexUtil;
-import dmo.fs.quarkus.Server;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.jdbcclient.JDBCConnectOptions;
@@ -24,7 +23,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HandicapDatabaseSqlite3 extends DbSqlite3 {
-    private final static Logger logger =
+    protected final static Logger logger =
             LoggerFactory.getLogger(HandicapDatabaseSqlite3.class.getName());
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
@@ -88,7 +87,7 @@ public class HandicapDatabaseSqlite3 extends DbSqlite3 {
         return returnPromise.future();
     }
 
-    private void databaseSetup() {
+    protected void databaseSetup() {
         if ("dev".equals(webEnv)) {
             DbConfiguration.configureTestDefaults(dbMap, dbProperties);
         } else {

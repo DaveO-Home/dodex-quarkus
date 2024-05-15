@@ -14,16 +14,16 @@ import dmo.fs.db.handicap.HandicapDatabase;
 
 public abstract class DbConfiguration {
     static Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
-    private static final Map<String, String> map = new ConcurrentHashMap<>();
+    protected static final Map<String, String> map = new ConcurrentHashMap<>();
     protected static Properties properties = new Properties();
 
-    private static Boolean isUsingSqlite3 = false;
-    private static Boolean isUsingH2 = false;
-    private static String defaultDb = "sqlite3";
-    private static final DodexUtil dodexUtil = new DodexUtil();
-    private static HandicapDatabase handicapDatabase;
+    protected static Boolean isUsingSqlite3 = false;
+    protected static Boolean isUsingH2 = false;
+    protected static String defaultDb = "sqlite3";
+    protected static final DodexUtil dodexUtil = new DodexUtil();
+    protected static HandicapDatabase handicapDatabase;
 
-    private enum DbTypes {
+    protected enum DbTypes {
         SQLITE3("sqlite3"),
         H2("h2");
 

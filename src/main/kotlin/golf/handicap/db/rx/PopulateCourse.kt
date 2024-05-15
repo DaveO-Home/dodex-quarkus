@@ -1,6 +1,6 @@
 package golf.handicap.db.rx
 
-import dmo.fs.db.DbConfiguration
+import dmo.fs.db.wsnext.DbConfiguration
 import dmo.fs.utils.ColorUtilConstants
 import golf.handicap.Course
 import golf.handicap.generated.tables.references.COURSE

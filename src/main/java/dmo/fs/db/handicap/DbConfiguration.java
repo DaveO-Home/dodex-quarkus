@@ -1,5 +1,6 @@
 package dmo.fs.db.handicap;
 
+//import dmo.fs.db.handicap.rx.HandicapDatabaseSqlite3;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,21 +13,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class DbConfiguration {
     static Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
-    private static final Map<String, String> map = new ConcurrentHashMap<>();
+    protected static final Map<String, String> map = new ConcurrentHashMap<>();
     protected static Properties properties = new Properties();
 
-    private static Boolean isUsingPostgres = false;
-    private static Boolean isUsingMariadb = false;
-    private static Boolean isUsingIbmDB2 = false;
-    private static Boolean isUsingH2 = false;
-    private static String defaultDb = "sqlite3";
-    private static final DodexUtil dodexUtil = new DodexUtil();
-    private static HandicapDatabase handicapDatabase;
+    protected static Boolean isUsingPostgres = false;
+    protected static Boolean isUsingMariadb = false;
+    protected static Boolean isUsingH2 = false;
+    protected static Boolean isUsingSqlite3 = false;
+    protected static String defaultDb = "sqlite3";
+    protected static final DodexUtil dodexUtil = new DodexUtil();
+    protected static HandicapDatabase handicapDatabase;
 
-    private enum DbTypes {
+    protected enum DbTypes {
         POSTGRES("postgres"),
         MARIADB("mariadb"),
         IBMDB2("ibmdb2"),
+        SQLITE3("sqlite3"),
         H2("h2");
 
         final String db;
@@ -42,10 +44,6 @@ public abstract class DbConfiguration {
 
     public static boolean isUsingMariadb() {
         return isUsingMariadb;
-    }
-
-    public static boolean isUsingIbmDB2() {
-        return isUsingIbmDB2;
     }
 
     public static boolean isUsingH2() {
@@ -72,9 +70,13 @@ public abstract class DbConfiguration {
             handicapDatabase = new HandicapDatabaseH2();
             isUsingH2 = true;
         }
+
         return (T) handicapDatabase;
     }
 
+    /*
+        Used for JOOQ Generate - set to false so DSL is not executed
+     */
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(Boolean isCreateTables) throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase();
@@ -87,10 +89,11 @@ public abstract class DbConfiguration {
             handicapDatabase = new HandicapDatabaseMariadb(isCreateTables);
             isUsingMariadb = true;
         }
-        else if(defaultDb.equals(DbTypes.H2.db)  && isCreateTables) {
+        else if(defaultDb.equals(DbTypes.H2.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabaseH2(isCreateTables);
             isUsingH2 = true;
         }
+
         return (T) handicapDatabase;
     }
 
@@ -115,14 +118,14 @@ public abstract class DbConfiguration {
     }
 
     public static void configureDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && overrideProps.size() > 0) {
+        if(overrideProps != null && !overrideProps.isEmpty()) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);
     }
 
     public static void configureTestDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && overrideProps.size() > 0) {
+        if(overrideProps != null && !overrideProps.isEmpty()) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);

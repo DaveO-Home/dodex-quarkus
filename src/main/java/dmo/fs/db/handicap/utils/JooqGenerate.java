@@ -25,7 +25,7 @@ public class JooqGenerate {
         final String defaultDb = dodexUtil.getDefaultDb();
 
         try {
-            HandicapDatabase handicapDatabase = dmo.fs.db.handicap.rx.DbConfiguration.getDefaultDb(true);
+            HandicapDatabase handicapDatabase = dmo.fs.db.handicap.DbConfiguration.getDefaultDb(true);
             handicapDatabase.checkOnTables().onItem().invoke(c -> {
                 String dbUrl = null;
                 String jooqMetaName = "org.jooq.meta.sqlite.SQLiteDatabase";

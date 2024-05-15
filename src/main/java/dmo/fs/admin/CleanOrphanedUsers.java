@@ -12,8 +12,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.DbDefinitionBase;
-import dmo.fs.db.DodexDatabase;
+import dmo.fs.db.reactive.DbDefinitionBase;
+import dmo.fs.db.reactive.DodexDatabase;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import io.smallrye.mutiny.Multi;
@@ -37,12 +37,12 @@ import io.vertx.mutiny.sqlclient.Tuple;
  * thereafter. 2. remove users who have not logged in for 90 days.
  */
 public class CleanOrphanedUsers extends DbDefinitionBase {
-    private static Logger logger = LoggerFactory.getLogger(CleanOrphanedUsers.class.getName());
+    protected static Logger logger = LoggerFactory.getLogger(CleanOrphanedUsers.class.getName());
 
-    private static Integer age;
-    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private Promise<Pool> promise;
-    private SqlClient client;
+    protected static Integer age;
+    protected static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    protected Promise<Pool> promise;
+    protected SqlClient client;
     
     public void startClean(JsonObject config) {
 
@@ -57,13 +57,13 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
                 .onFailure().invoke(err -> err.printStackTrace()).subscribe().with(l -> logger.getName());
     }
 
-    private final Runnable clean = new Runnable() {
+    protected final Runnable clean = new Runnable() {
         @Override
         public void run() {
             runClean();
         }
 
-        private void runClean() {
+        protected void runClean() {
             promise.future().onItem().call(pool -> {
                 Promise<List<Tuple5<Integer, String, String, String, Object>>> users = null;
                 try {
@@ -82,7 +82,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             }).subscribeAsCompletionStage();
         }
 
-        private Promise<List<Tuple5<Integer, String, String, String, Object>>> getUsers(Pool pool) throws SQLException {
+        protected Promise<List<Tuple5<Integer, String, String, String, Object>>> getUsers(Pool pool) throws SQLException {
             List<Tuple5<Integer, String, String, String, Object>> listOfUsers = new ArrayList<>();
             Promise<List<Tuple5<Integer, String, String, String, Object>>> usersPromise = Promise.promise();
             GotUsers gotUsers = new GotUsers();
@@ -113,7 +113,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             return gotUsers.getPromise();
         }
 
-        private List<Integer> getPossibleOrphanedUsers(List<Tuple5<Integer, String, String, String, Object>> users) {
+        protected List<Integer> getPossibleOrphanedUsers(List<Tuple5<Integer, String, String, String, Object>> users) {
             List<Integer> orphaned = new ArrayList<>();
 
             users.iterator().forEachRemaining(user -> {
@@ -126,7 +126,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             return orphaned;
         }
 
-        private Long getLastLogin(Object lastLogin) {
+        protected Long getLastLogin(Object lastLogin) {
             Long diffInDays = 0l;
             try {
                 Long currentDate = new Date().getTime();
@@ -152,7 +152,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
 
         Object value;
 
-        private void cleanUsers(SqlClient client, List<Integer> users) {
+        protected void cleanUsers(SqlClient client, List<Integer> users) {
             List<Integer> messageIds = new ArrayList<>();
 
             users.iterator().forEachRemaining(userId -> {
@@ -189,7 +189,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             }
         }
 
-        private int cleanUndelivered(SqlClient client, Integer userId, List<Integer> messageIds, List<Integer> users) {
+        protected int cleanUndelivered(SqlClient client, Integer userId, List<Integer> messageIds, List<Integer> users) {
             int count[] = { 0 };
             messageIds.iterator().forEachRemaining(messageId -> {
                 CleanObjects cleanObjects = new CleanObjects();
@@ -220,7 +220,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             return count[0];
         }
 
-        private int cleanMessage(SqlClient client, List<Integer> messageIds, List<Integer> users) {
+        protected int cleanMessage(SqlClient client, List<Integer> messageIds, List<Integer> users) {
             int count[] = { 0 };
             int numOfIds = messageIds.size();
             messageIds.iterator().forEachRemaining(messageId -> {
@@ -245,7 +245,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             return count[0];
         }
 
-        private Future<Object> cleanUser(SqlClient client, Integer userId) {
+        protected Future<Object> cleanUser(SqlClient client, Integer userId) {
             CleanObjects cleanObjects = new CleanObjects();
 
             return Future.future(prom -> {
@@ -260,7 +260,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
             });
         }
 
-        private int cleanRemainingUsers(SqlClient client, List<Integer> users) {
+        protected int cleanRemainingUsers(SqlClient client, List<Integer> users) {
             int count[] = { 0 };
             users.iterator().forEachRemaining(userId -> {
                 cleanUser(client, userId).onSuccess(result -> {

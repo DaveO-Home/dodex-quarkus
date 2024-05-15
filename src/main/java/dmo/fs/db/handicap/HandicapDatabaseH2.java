@@ -1,7 +1,7 @@
 package dmo.fs.db.handicap;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dmo.fs.db.DbConfiguration;
+import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.vertx.mutiny.jdbcclient.JDBCPool.pool;
 
 public class HandicapDatabaseH2 extends DbH2 {
-  private final static Logger logger =
+  protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabaseH2.class.getName());
   protected Properties dbProperties;
   protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
@@ -49,7 +49,7 @@ public class HandicapDatabaseH2 extends DbH2 {
     dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
     dbProperties = dodexUtil.mapToProperties(dbMap);
 
-    if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
+    if (dbOverrideProps != null && !dbOverrideProps.isEmpty()) {
       this.dbProperties = dbOverrideProps;
     }
     if (dbOverrideMap != null) {
@@ -92,7 +92,7 @@ public class HandicapDatabaseH2 extends DbH2 {
     return returnPromise.future();
   }
 
-  private void databaseSetup() {
+  protected void databaseSetup() {
     if ("dev".equals(webEnv)) {
       DbConfiguration.configureTestDefaults(dbMap, dbProperties);
     } else {
@@ -277,7 +277,7 @@ public class HandicapDatabaseH2 extends DbH2 {
     }).subscribeAsCompletionStage().isDone();
   }
 
-  private JDBCPool getJavaPool() {
+  protected JDBCPool getJavaPool() {
     return pool(DodexUtil.getVertx(), connectOptions, poolOptions);
   }
 

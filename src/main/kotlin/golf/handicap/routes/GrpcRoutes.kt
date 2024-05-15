@@ -49,8 +49,8 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         private var isUsingHandicap: Boolean? = false
         var enableHandicapAdmin: Boolean? = null
         var handicapAdminPin: String? = null
-        private var isUsingSqlite3: Boolean? = null // = dmo.fs.db.handicap.rx.DbConfiguration.isUsingSqlite3()
-        private var isUsingH2: Boolean? = null // = dmo.fs.db.handicap.rx.DbConfiguration.isUsingH2()
+        private var isUsingSqlite3: Boolean? = null
+        private var isUsingH2: Boolean? = null
         private var isReactive: Boolean? = null
 
         init {
@@ -63,7 +63,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
 
     init {
         getConfig(vertx)
-        isUsingSqlite3 = dmo.fs.db.handicap.rx.DbConfiguration.isUsingSqlite3()
+        isUsingSqlite3 = DbConfiguration.isUsingSqlite3()
         isReactive = isUsingSqlite3!!
     }
 
@@ -145,6 +145,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         if(isUsingHandicap!! && handicapDatabase.toString().contains("H2")) {
             handicapPromise.tryComplete()
         }
+
         return router
     }
 
