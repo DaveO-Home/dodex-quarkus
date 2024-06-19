@@ -25,7 +25,6 @@ import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
 
-//@SessionScoped
 @Dependent
 public class GroupOpenApiSqlRx extends GroupOpenApiSql {
   protected final static Logger logger = LoggerFactory.getLogger(GroupOpenApiSqlRx.class.getName());

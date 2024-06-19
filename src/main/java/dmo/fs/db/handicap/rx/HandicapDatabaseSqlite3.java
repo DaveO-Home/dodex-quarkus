@@ -6,7 +6,7 @@ package dmo.fs.db.handicap.rx;
 import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.handicap.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
+import dmo.fs.quarkus.Server;
 import io.smallrye.mutiny.Uni;
 import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.mutiny.core.Promise;
@@ -24,26 +24,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HandicapDatabaseSqlite3 extends DbSqlite3 {
     protected final static Logger logger =
-            LoggerFactory.getLogger(HandicapDatabaseSqlite3.class.getName());
+      LoggerFactory.getLogger(HandicapDatabaseSqlite3.class.getName());
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
     protected JsonNode defaultNode;
-    protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+    protected String webEnv = Server.isProduction() ? "prod" : "dev";
     protected DodexUtil dodexUtil = new DodexUtil();
     protected JDBCPool pool4;
     protected Boolean isCreateTables = false;
     protected Promise<String> returnPromise = Promise.promise();
 
     public HandicapDatabaseSqlite3(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
-            throws IOException {
+      throws IOException {
         super();
 
         defaultNode = dodexUtil.getDefaultNode();
         dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
         dbProperties = dodexUtil.mapToProperties(dbMap);
 
-        if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
+        if (dbOverrideProps != null && !dbOverrideProps.isEmpty()) {
             this.dbProperties = dbOverrideProps;
         }
         if (dbOverrideMap != null) {
@@ -68,7 +68,7 @@ public class HandicapDatabaseSqlite3 extends DbSqlite3 {
     }
 
     public HandicapDatabaseSqlite3(Boolean isCreateTables)
-            throws IOException {
+      throws IOException {
         super();
         defaultNode = dodexUtil.getDefaultNode();
 
@@ -95,13 +95,13 @@ public class HandicapDatabaseSqlite3 extends DbSqlite3 {
         }
 
         PoolOptions poolOptions =
-                new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+          new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
         JDBCConnectOptions connectOptions;
 
         connectOptions = new JDBCConnectOptions()
-                .setJdbcUrl(dbMap.get("url") + dbMap.get("filename") + "?foreign_keys=on;")
-                .setIdleTimeout(1)
+          .setJdbcUrl(dbMap.get("url") + dbMap.get("filename") + "?foreign_keys=on;")
+          .setIdleTimeout(1)
         // .setCachePreparedStatements(true)
         ;
         if (DodexUtil.getVertxR() == null) {
@@ -109,58 +109,58 @@ public class HandicapDatabaseSqlite3 extends DbSqlite3 {
         }
         pool4 = JDBCPool.pool(DodexUtil.getVertxR(), connectOptions, poolOptions);
         pool4.getDelegate().getConnection().flatMap(conn -> conn.begin().flatMap(tx ->
-            conn.query(CHECKUSERSQL).execute().onSuccess(row -> {
+          conn.query(CHECKUSERSQL).execute().onSuccess(row -> {
+              io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
+              String val = null;
+              while (ri.hasNext()) {
+                  val = ri.next().getString(0);
+              }
+              if (val == null) {
+                  final String usersSql = getCreateTable("USERS");
+
+                  conn.query(usersSql).execute()
+                    .onFailure(err -> {
+                        conn.close();
+                        logger.info(String.format("Users Table Error: %s", err.getMessage()));
+                    }).onSuccess(result -> logger.info("Users Table Added."));
+              }
+          }).flatMap(m ->
+            conn.query(CHECKMESSAGESSQL).execute().onSuccess(row -> {
                 io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
                 String val = null;
                 while (ri.hasNext()) {
                     val = ri.next().getString(0);
                 }
                 if (val == null) {
-                    final String usersSql = getCreateTable("USERS");
+                    final String messagesSql = getCreateTable("MESSAGES");
 
-                    conn.query(usersSql).execute()
-                        .onFailure(err -> {
-                            conn.close();
-                            logger.info(String.format("Users Table Error: %s", err.getMessage()));
-                        }).onSuccess(result -> logger.info("Users Table Added."));
+                    conn.query(messagesSql).execute()
+                      .onFailure(err -> {
+                          conn.close();
+                          logger.info(String.format("Message Table Error: %s", err.getMessage()));
+                      }).onSuccess(result -> logger.info("Message Table Added."));
+
                 }
-            }).flatMap(m ->
-                conn.query(CHECKMESSAGESSQL).execute().onSuccess(row -> {
+            }).flatMap(u ->
+              conn.query(CHECKUNDELIVEREDSQL).execute().onSuccess(row -> {
                     io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
                     String val = null;
                     while (ri.hasNext()) {
                         val = ri.next().getString(0);
                     }
+
                     if (val == null) {
-                        final String messagesSql = getCreateTable("MESSAGES");
+                        final String undeliveredSql = getCreateTable("UNDELIVERED");
 
-                        conn.query(messagesSql).execute()
-                            .onFailure(err -> {
-                                conn.close();
-                                logger.info(String.format("Message Table Error: %s", err.getMessage()));
-                            }).onSuccess(result -> logger.info("Message Table Added."));
-
+                        conn.query(undeliveredSql).execute()
+                          .onFailure(err -> {
+                              conn.close();
+                              logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
+                          }).onSuccess(result -> logger.info("Undelivered Table Added."));
                     }
-                }).flatMap(u ->
-                    conn.query(CHECKUNDELIVEREDSQL).execute().onSuccess(row -> {
-                        io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
-                        String val = null;
-                        while (ri.hasNext()) {
-                            val = ri.next().getString(0);
-                        }
-
-                        if (val == null) {
-                            final String undeliveredSql = getCreateTable("UNDELIVERED");
-
-                            conn.query(undeliveredSql).execute()
-                                .onFailure(err -> {
-                                    conn.close();
-                                    logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
-                                }).onSuccess(result -> logger.info("Undelivered Table Added."));
-                        }
-                    })
+                })
                 .flatMap(g ->
-                    conn.query(CHECKGOLFERSQL).execute().onSuccess(row -> {
+                  conn.query(CHECKGOLFERSQL).execute().onSuccess(row -> {
                         io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
                         String val = null;
                         while (ri.hasNext()) {
@@ -170,80 +170,80 @@ public class HandicapDatabaseSqlite3 extends DbSqlite3 {
                             final String golferSql = getCreateTable("GOLFER");
 
                             conn.query(golferSql).execute()
-                                .onFailure(err -> {
-                                    conn.close();
-                                    logger.info(String.format("Golfer Table Error: %s", err.getMessage()));
-                                }).onSuccess(result -> logger.info("Golfer Table Added."));
+                              .onFailure(err -> {
+                                  conn.close();
+                                  logger.info(String.format("Golfer Table Error: %s", err.getMessage()));
+                              }).onSuccess(result -> logger.info("Golfer Table Added."));
                         }
                     }).onFailure(Throwable::printStackTrace)
-                .flatMap(c ->
-                    conn.query(CHECKCOURSESQL).execute().onSuccess(row -> {
-                        io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
-                        String val = null;
-                        while (ri.hasNext()) {
-                            val = ri.next().getString(0);
-                        }
-                        if (val == null) {
-                            final String courseSql = getCreateTable("COURSE");
-
-                            conn.query(courseSql).execute()
-                                .onFailure(err -> {
-                                    conn.close();
-                                    logger.info(String.format("Course Table Error: %s", err.getMessage()));
-                                }).onSuccess(result -> logger.info("Course Table Added."));
-                        }
-                    }).onFailure(Throwable::printStackTrace)
-                .flatMap(r ->
-                    conn.query(CHECKRATINGSSQL).execute().onSuccess(row -> {
-                        io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
-                        String val = null;
-                        while (ri.hasNext()) {
-                            val = ri.next().getString(0);
-                        }
-                        if (val == null) {
-                            final String ratingsSql = getCreateTable("RATINGS");
-
-                            conn.query(ratingsSql).execute()
-                                .onFailure(err -> {
-                                    conn.close();
-                                    logger.info(String.format("Ratings Table Error: %s", err.getMessage()));
-                                }).onSuccess(result -> logger.info("Ratings Table Added."));
-                        }
-                    }).onFailure(Throwable::printStackTrace)
-                .flatMap(s ->
-                    conn.query(CHECKSCORESSQL).execute().onSuccess(row -> {
-                        io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
-                        String val = null;
-                        while (ri.hasNext()) {
-                            val = ri.next().getString(0);
-                        }
-                        if (val == null) {
-                            final String scoresSql = getCreateTable("SCORES");
-
-                            conn.query(scoresSql).execute()
-                                .onFailure(err -> {
-                                    conn.close();
-                                    logger.info(String.format("Scores Table Error: %s", err.getMessage()));
-                                }).onSuccess(result -> {
-                                    logger.info("Scores Table Added.");
-                                    tx.commit();
-                                    conn.close();
-                                    returnPromise.complete("");
-                                });
-                        } else {
-                            returnPromise.complete("");
-                        }
-                    }).onFailure(Throwable::printStackTrace)
-                    .onComplete(rows -> {
-                        if (!isCreateTables) {
-                            try {
-                                setupSql(pool4);
-                            } catch (SQLException | IOException e) {
-                                e.printStackTrace();
+                    .flatMap(c ->
+                      conn.query(CHECKCOURSESQL).execute().onSuccess(row -> {
+                            io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
+                            String val = null;
+                            while (ri.hasNext()) {
+                                val = ri.next().getString(0);
                             }
-                        }
-                    })
-                ))))))));
+                            if (val == null) {
+                                final String courseSql = getCreateTable("COURSE");
+
+                                conn.query(courseSql).execute()
+                                  .onFailure(err -> {
+                                      conn.close();
+                                      logger.info(String.format("Course Table Error: %s", err.getMessage()));
+                                  }).onSuccess(result -> logger.info("Course Table Added."));
+                            }
+                        }).onFailure(Throwable::printStackTrace)
+                        .flatMap(r ->
+                          conn.query(CHECKRATINGSSQL).execute().onSuccess(row -> {
+                                io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
+                                String val = null;
+                                while (ri.hasNext()) {
+                                    val = ri.next().getString(0);
+                                }
+                                if (val == null) {
+                                    final String ratingsSql = getCreateTable("RATINGS");
+
+                                    conn.query(ratingsSql).execute()
+                                      .onFailure(err -> {
+                                          conn.close();
+                                          logger.info(String.format("Ratings Table Error: %s", err.getMessage()));
+                                      }).onSuccess(result -> logger.info("Ratings Table Added."));
+                                }
+                            }).onFailure(Throwable::printStackTrace)
+                            .flatMap(s ->
+                              conn.query(CHECKSCORESSQL).execute().onSuccess(row -> {
+                                    io.vertx.sqlclient.RowIterator<io.vertx.sqlclient.Row> ri = row.iterator();
+                                    String val = null;
+                                    while (ri.hasNext()) {
+                                        val = ri.next().getString(0);
+                                    }
+                                    if (val == null) {
+                                        final String scoresSql = getCreateTable("SCORES");
+
+                                        conn.query(scoresSql).execute()
+                                          .onFailure(err -> {
+                                              conn.close();
+                                              logger.info(String.format("Scores Table Error: %s", err.getMessage()));
+                                          }).onSuccess(result -> {
+                                              logger.info("Scores Table Added.");
+                                              tx.commit();
+                                              conn.close();
+                                              returnPromise.complete("");
+                                          });
+                                    } else {
+                                        returnPromise.complete("");
+                                    }
+                                }).onFailure(Throwable::printStackTrace)
+                                .onComplete(rows -> {
+                                    if (!isCreateTables) {
+                                        try {
+                                            setupSql(pool4);
+                                        } catch (SQLException | IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                })
+                            ))))))));
     }
 
     @Override

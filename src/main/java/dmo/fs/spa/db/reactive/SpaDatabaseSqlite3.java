@@ -6,7 +6,6 @@ import dmo.fs.quarkus.Server;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -32,7 +31,7 @@ public class SpaDatabaseSqlite3 extends DbSqlite3 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 	protected JDBCPool pool;
 

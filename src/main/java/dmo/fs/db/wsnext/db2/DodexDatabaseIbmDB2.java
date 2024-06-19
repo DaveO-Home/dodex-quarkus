@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.db2client.DB2ConnectOptions;
 import io.vertx.mutiny.core.Promise;
@@ -30,7 +30,7 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseIbmDB2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {

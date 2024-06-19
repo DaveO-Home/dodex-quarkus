@@ -1,9 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.9.23"
-    id "org.jetbrains.kotlin.plugin.allopen" version "1.9.23"
-    id "io.quarkus" version "3.10.0"
+    id "org.jetbrains.kotlin.jvm" version "2.0.0"
+    id "org.jetbrains.kotlin.plugin.allopen" version "2.0.0"
+    id "io.quarkus" version "${quarkusPluginVersion}" 
     id "pmd"
 }
 
@@ -23,22 +25,20 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.5.7"
+    vertxVersion = "4.5.8"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
 }
 
 dependencies {
     implementation 'io.quarkus:quarkus-smallrye-openapi'
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    // runtimeOnly("org.openrewrite:rewrite-java:7.38.0")
-    implementation "io.quarkus:quarkus-resteasy-jackson"
+    implementation "io.quarkus:quarkus-rest-jackson"
     implementation "io.vertx:vertx-rx-java3:$vertxVersion"
-    implementation "io.quarkus:quarkus-resteasy"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "io.quarkus:quarkus-rest"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0"
     implementation "io.quarkus:quarkus-grpc"
     implementation "io.quarkus:quarkus-kotlin"
 
-    implementation "io.quarkus:quarkus-websockets"
     implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client"
     implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
 
@@ -47,7 +47,6 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
     implementation "io.quarkiverse.neo4j:quarkus-neo4j:4.0.0"
-//    implementation "io.quarkiverse.jdbc:quarkus-jdbc-sqlite:3.0.7"
 
     implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
@@ -68,12 +67,8 @@ dependencies {
     implementation "io.vertx:vertx-rx-java2:$vertxVersion"
     implementation "io.quarkus:quarkus-smallrye-health"
     implementation "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
-    implementation "com.google.firebase:firebase-admin:9.2.0"
+    implementation "com.google.firebase:firebase-admin:9.3.0"
     implementation group: 'com.google.guava', name: 'guava', version: '33.1.0-jre'
-
-//    implementation group: 'net.java.dev.jna', name: 'platform', version: '3.5.2'  // for graalvm
-//    implementation group: "jakarta.xml.bind", name: "jakarta.xml.bind-api", version: "4.0.0"
-//    runtimeOnly group: "com.sun.xml.bind", name: "jaxb-impl", version: "4.0.0"
 
     implementation("dmo.fs.utils:generate:0.0.1")
 
@@ -84,7 +79,7 @@ dependencies {
 }
 
 group 'dmo.fs'
-version '3.3.0'
+version '3.11.2'
 
 sourceCompatibility = "17"
 java {
@@ -100,16 +95,11 @@ compileJava {
     options.encoding = "UTF-8"
     options.compilerArgs << "-Xlint:unchecked"
 }
-
-compileKotlin {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
-    kotlinOptions.javaParameters = true
-    dependsOn compileQuarkusGeneratedSourcesJava
-}
-
-compileTestKotlin {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
-    dependsOn compileKotlin
+tasks.withType(KotlinJvmCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+    }
 }
 
 /*

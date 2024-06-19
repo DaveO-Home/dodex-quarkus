@@ -54,8 +54,11 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         private var isReactive: Boolean? = null
 
         init {
-            val usingHandicap = System.getenv()["USE_HANDICAP"]
+            var usingHandicap = System.getenv()["USE_HANDICAP"]
             if (usingHandicap != null) {
+                isUsingHandicap = "true" == usingHandicap
+            } else {
+                usingHandicap = System.getProperty("USE_HANDICAP")
                 isUsingHandicap = "true" == usingHandicap
             }
         }
@@ -82,7 +85,8 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 }
                 if (isUsingHandicap == null) {
                     val config = ConfigProvider.getConfig()
-                    val enableHandicap = Optional.ofNullable(config.getValue("handicap.enableHandicap", Boolean::class.java))
+                    val enableHandicap =
+                        Optional.ofNullable(config.getValue("handicap.enableHandicap", Boolean::class.java))
                     if (enableHandicap.isPresent) isUsingHandicap = enableHandicap.get()
                 }
                 val enableAdmin = Optional.ofNullable(appConfig.getBoolean("handicap.enableAdmin"))
@@ -100,10 +104,12 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                             ColorUtilConstants.GREEN,
                             ColorUtilConstants.RESET,
                         )
-                        throw Exception("""
+                        throw Exception(
+                            """
                             When using Handicap, DEFAULT_DB must be 'h2', 'mariadb' or 'postgres'.
                             $warning
-                            """)
+                            """
+                        )
                     }
                 }
             } catch (exception: java.lang.Exception) {
@@ -122,7 +128,8 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 val corsHandler = CorsHandler.create()
                 corsHandler.addOrigin("Access-Control-Allow-Origin: *")
                 corsHandler.addOrigin("Access-Control-Allow-Headers: *")
-                val methods = setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.OPTIONS, HttpMethod.HEAD)
+                val methods =
+                    setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.OPTIONS, HttpMethod.HEAD)
                 corsHandler.allowedMethods(methods)
                 staticRoute.handler(corsHandler)
                 staticRoute.handler(staticHandler)
@@ -131,18 +138,17 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                     ->
                     LOGGER.severe(String.format("FAILURE in static route: %s", err.statusCode()))
                 }
-
                 router.route().handler(staticHandler)
                 router.route().handler(faviconHandler)
                 handicapPromise.complete()
             }.onFailure().invoke { err ->
                 err.stackTrace
             }
-            .subscribeAsCompletionStage()
+                .subscribeAsCompletionStage()
         } else {
             handicapPromise.complete()
         }
-        if(isUsingHandicap!! && handicapDatabase.toString().contains("H2")) {
+        if (isUsingHandicap!! && handicapDatabase.toString().contains("H2")) {
             handicapPromise.tryComplete()
         }
 
@@ -165,23 +171,30 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         To start up Handicap without environment variable, comment line below
      */
     @IfBuildProperty(name = "USE_HANDICAP", stringValue = "true")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "sqlite3")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "ibmdb2")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "firebase")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "neo4j")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cassandra")
-    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cubrid")
+    /*
+        To run without setting - DEFAULT_DB=h2 or postgres or mariadb
+        1. set "dodex.default.db" entry in .../src/main/resources/application.properties file
+        2. uncomment line below
+   */
+//    @IfBuildProperty(name = "dodex.default.db", stringValue = "h2", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "sqlite3", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "ibmdb2", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "firebase", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "neo4j", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cassandra", enableIfMissing = true)
+    @UnlessBuildProperty(name = "DEFAULT_DB", stringValue = "cubrid", enableIfMissing = true)
     @IfBuildProperty(name = "handicap.enableHandicap", stringValue = "true")
     @GrpcService
     class HandicapIndexService : HandicapIndexGrpc.HandicapIndexImplBase() {
         init {
             Server.setIsUsingHandicap(true)
         }
+
         override fun listCourses(
             request: Command,
             responseObserver: StreamObserver<ListCoursesResponse?>
         ) {
-            val populateCourse: IPopulateCourse = if(isReactive!!) {
+            val populateCourse: IPopulateCourse = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateCourse()
             } else {
                 PopulateCourse()
@@ -193,10 +206,10 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 responseObserver.onNext(coursesBuilder.build())
                 responseObserver.onCompleted()
             }.subscribeAsCompletionStage()
-    }
+        }
 
         override fun addRating(request: Command, responseObserver: StreamObserver<HandicapData?>) {
-            val populateCourse: IPopulateCourse = if(isReactive!!) {
+            val populateCourse: IPopulateCourse = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateCourse()
             } else {
                 PopulateCourse()
@@ -236,7 +249,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
             val mapper = ObjectMapper()
             val score = mapper.readValue(request.json, object : TypeReference<golf.handicap.Score>() {})
 
-            val populateScore: IPopulateScore = if(isReactive!!) {
+            val populateScore: IPopulateScore = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateScore()
             } else {
                 PopulateScore()
@@ -301,7 +314,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                 val status: Status = Status.FAILED_PRECONDITION.withDescription("Cmd - Not between 0 and 8")
                 responseObserver.onError(status.asRuntimeException())
             } else {
-                val populateGolfer: IPopulateGolfer = if(isReactive!!) {
+                val populateGolfer: IPopulateGolfer = if (isReactive!!) {
                     golf.handicap.db.rx.PopulateGolfer()
                 } else {
                     PopulateGolfer()
@@ -331,7 +344,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         }
 
         override fun golferScores(request: Command, responseObserver: StreamObserver<HandicapData?>) {
-            val populateScores: IPopulateGolferScores = if(isReactive!!) {
+            val populateScores: IPopulateGolferScores = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateGolferScores()
             } else {
                 PopulateGolferScores()
@@ -361,7 +374,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
             request: Command,
             responseObserver: StreamObserver<ListPublicGolfers?>
         ) {
-            val populateGolfer: IPopulateGolfer = if(isReactive!!) {
+            val populateGolfer: IPopulateGolfer = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateGolfer()
             } else {
                 PopulateGolfer()
@@ -374,14 +387,14 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
         }
 
         override fun removeScore(request: Command, responseObserver: StreamObserver<HandicapData?>) {
-            val populateScores: IPopulateGolferScores = if(isReactive!!) {
+            val populateScores: IPopulateGolferScores = if (isReactive!!) {
                 golf.handicap.db.rx.PopulateGolferScores()
             } else {
                 PopulateGolferScores()
             }
             val requestJson = JsonObject(request.json)
             val golfer = requestJson.mapTo(Golfer::class.java)
-            if(golfer.pin != null) {
+            if (golfer.pin != null) {
                 populateScores.removeLastScore(request.key).onItem().invoke { used ->
                     val handicap = Handicap()
                     handicap.getHandicap(golfer).onItem().invoke { latestTee ->
@@ -399,8 +412,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
                         responseObserver.onCompleted()
                     }.subscribeAsCompletionStage()
                 }.subscribeAsCompletionStage()
-            }
-            else {
+            } else {
                 responseObserver.onCompleted()
             }
         }

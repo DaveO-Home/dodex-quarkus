@@ -1,12 +1,9 @@
 package dmo.fs.db.router;
 
 import com.google.cloud.firestore.Firestore;
+import dmo.fs.db.router.wsnext.*;
 import dmo.fs.db.wsnext.cassandra.DodexCassandra;
 import dmo.fs.quarkus.Server;
-import dmo.fs.db.router.wsnext.DodexRouter;
-import dmo.fs.db.router.wsnext.DodexRouterReactive;
-import dmo.fs.db.router.wsnext.FirebaseRouter;
-import dmo.fs.db.router.wsnext.CassandraRouter;
 import dmo.fs.spa.db.SpaDbConfiguration;
 import dmo.fs.spa.db.reactive.SpaRoutes;
 import dmo.fs.utils.ColorUtilConstants;
@@ -18,7 +15,6 @@ import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.annotations.CommandLineArguments;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.Route.HttpMethod;
 import io.quarkus.vertx.web.RoutingExchange;
@@ -46,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 @Unremovable
 @ApplicationScoped
@@ -57,7 +54,7 @@ public class DodexRoutes {
     protected static final Logger logger = LoggerFactory.getLogger(DodexRoutes.class.getName());
     protected static HandicapRoutes routesHandicap;
     protected final StaticHandler staticHandler = StaticHandler.create();
-    protected final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+    protected boolean isProduction = Server.isProduction();
     protected io.vertx.reactivex.core.Vertx reactiveVertx = null;
     protected TcpEventBusBridge bridge;
     Firestore firestore;
@@ -70,19 +67,30 @@ public class DodexRoutes {
         System.setProperty("org.jooq.no-logo", "true");
         System.setProperty("org.jooq.no-tips", "true");
         String startupMessage = "In Production";
+
+        List<String> profiles = Server.getProfiles();
+        for (String p : profiles) {
+            if ("dev".equals(p) || "test".equals(p)) {
+                isProduction = false;
+                DodexUtil.setEnv("dev");
+            } else {
+                DodexUtil.setEnv(p);
+            }
+        }
+
         startupMessage = "dev".equals(DodexUtil.getEnv()) ? "In Development" : startupMessage;
 
         logger.info("{}{}{}", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage, ColorUtilConstants.RESET);
         logger.info(String.format("%sDodex Server on Quarkus started%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                ColorUtilConstants.RESET));
+          ColorUtilConstants.RESET));
     }
 
     void onStop(@Observes ShutdownEvent event) {
         if (logger.isInfoEnabled()) {
             logger.info(String.format("%sStopping Quarkus%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                    ColorUtilConstants.RESET));
+              ColorUtilConstants.RESET));
         }
-        if(bridge != null) {
+        if (bridge != null) {
             bridge.close();
         }
     }
@@ -158,18 +166,6 @@ public class DodexRoutes {
             DodexUtil.setEnv(value);
             staticHandler.setCachingEnabled(false);
         }
-        /*
-            This will trap routing errors - but not the cause?
-         */
-//        router.route().failureHandler(ctx -> {
-//            if (logger.isInfoEnabled()) {
-//                logger.error(String.format("%sFAILURE in static route: %d%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-//                        ctx.statusCode(), ColorUtilConstants.RESET));
-//                ctx.request().body().onItem().invoke(result ->
-//                        logger.info("Result: "+result)).subscribeAsCompletionStage();
-//            }
-//            ctx.next();
-//        });
 
         String readme = "/spa_test/react-fusebox";
         if (isProduction) {
@@ -182,28 +178,28 @@ public class DodexRoutes {
             response.sendFile("spa_test/README.md").subscribeAsCompletionStage().isDone();
         });
 
-        router.route("/*").handler(StaticHandler.create())
-                .produces("text/plain")
-                .produces("text/html")
-                .produces("text/markdown")
-                .produces("image/*")
-                .handler(staticHandler)
-                ;
+        router.route("/*").handler(StaticHandler.create())   //StaticHandler.create())
+          .produces("text/plain")
+          .produces("text/html")
+          .produces("text/markdown")
+          .produces("image/*")
+          .handler(staticHandler)
+        ;
         router.route().handler(TimeoutHandler.create(2000));
 
         if ("dev".equals(DodexUtil.getEnv())) {
             router.route().handler(CorsHandler.create(/* Need ports 8089 & 9876 */)
-                    .allowedMethod(io.vertx.core.http.HttpMethod.GET));
+              .allowedMethod(io.vertx.core.http.HttpMethod.GET));
         }
 
-        if(routesHandicap == null) {
+        if (routesHandicap == null) {
             routesHandicap = new GrpcRoutes(DodexUtil.getVertx(), router);
             routesHandicap.getVertxRouter(handicapPromise);
         }
 
-        Server.getServerPromise().future().onItem().invoke(httpServer -> {
+        Server.getServerPromise().future().onItem().invoke(isProduction -> {
             try {
-                setDodexRoute(/*httpServer,*/ router);
+                setDodexRoute(router);
             } catch (InterruptedException | IOException | SQLException e) {
                 e.printStackTrace();
             }
@@ -212,27 +208,40 @@ public class DodexRoutes {
         router.route().handler(faviconHandler);
     }
 
-    public void setDodexRoute(/*HttpServer server,*/ Router router) throws InterruptedException, IOException, SQLException {
+    public void setDodexRoute(Router router) throws InterruptedException, IOException, SQLException {
         DodexUtil du = new DodexUtil();
         String defaultDbName = du.getDefaultDb();
         Promise<Router> routerPromise = Promise.promise();
 
         logger.info("{}{}{}{}{}", ColorUtilConstants.PURPLE_BOLD_BRIGHT, "Using ", defaultDbName, " database",
-                ColorUtilConstants.RESET);
+          ColorUtilConstants.RESET);
         Server.setDefaultDbName(defaultDbName);
 
-        DodexRouter dodexRouter = null;
-        DodexRouterReactive dodexRouterReactive = null;
+//        DodexRouter dodexRouter = null;
+//        DodexRouterReactive dodexRouterReactive = null;
         switch (defaultDbName) {
             case "cubrid":
-                dodexRouterReactive = CDI.current().select(DodexRouterReactive.class).get();
-                dodexRouterReactive.setUsingCubrid(true);
+                DodexRouterReactive dodexRouterReactiveCubrid = CDI.current().select(DodexRouterReactive.class).get();
+                dodexRouterReactiveCubrid.setUsingCubrid(true);
             case "sqlite3": // non mutiny supported db's - uses Vertx reactivex instead
-//                    dodexRouterReactive = CDI.current().select(DodexRouterReactive.class).get();
+                DodexRouterReactive dodexRouterReactive = CDI.current().select(DodexRouterReactive.class).get();
+                router.route().handler(routingContext -> {
+                    dodexRouterReactive.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                    routingContext.next();
+                });
 //                    dodexRouterReactive.setReactive(true);
-                    new dmo.fs.spa.db.reactive.SpaRoutes(vertx.getDelegate(), router, routerPromise);
-                    break;
+                try {
+                    new SpaRoutes(vertx.getDelegate(), router, routerPromise);
+                } catch (InterruptedException | SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
             case "h2":
+                DodexRouter dodexRouterH2 = CDI.current().select(DodexRouter.class).get();
+                router.route().handler(routingContext -> {
+                    dodexRouterH2.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                    routingContext.next();
+                });
                 handicapPromise.future().onSuccess(r -> {
                     try {
                         new SpaRoutes(vertx.getDelegate(), router, routerPromise);
@@ -245,10 +254,13 @@ public class DodexRoutes {
                 try {
                     reactiveVertx = Server.vertx;
                     CassandraRouter cassandraRouter = CDI.current().select(CassandraRouter.class).get();
+                    router.route().handler(routingContext -> {
+                        cassandraRouter.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                        routingContext.next();
+                    });
                     cassandraRouter.getDatabasePromise().future().onSuccess(none -> setupEventBridge(cassandraRouter));
                     cassandraRouter.setEb(reactiveVertx.eventBus());
-//                    dodexRouter = CDI.current().select(DodexRouter.class).get();
-//                    dodexRouter.setUsingCassandra(true);
+
                     SpaDbConfiguration.getSpaDb();
                     new dmo.fs.spa.router.SpaRoutes(router, routerPromise);
                 } catch (Exception ex) {
@@ -257,9 +269,11 @@ public class DodexRoutes {
                 break;
             case "firebase":
                 try {
-//                    dodexRouter = CDI.current().select(DodexRouter.class).get();
-//                    dodexRouter.setUsingFirebase(true);
                     FirebaseRouter firebaseRouter = CDI.current().select(FirebaseRouter.class).get();
+                    router.route().handler(routingContext -> {
+                        firebaseRouter.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                        routingContext.next();
+                    });
                     firestore = firebaseRouter.getDbf();
                     new dmo.fs.spa.router.SpaRoutes(router, routerPromise, firestore);
                 } catch (Exception ex) {
@@ -267,8 +281,20 @@ public class DodexRoutes {
                 }
                 break;
             case "neo4j":
+                Neo4jRouter neo4jRouter = CDI.current().select(Neo4jRouter.class).get();
+                router.route().handler(routingContext -> {
+                    neo4jRouter.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                    routingContext.next();
+                });
                 SpaDbConfiguration.getSpaDb();
             default:
+                if(!"neo4j".equals(defaultDbName)) {
+                    DodexRouter dodexRouter = CDI.current().select(DodexRouter.class).get();
+                    router.route().handler(routingContext -> {
+                        dodexRouter.setRemoteAddress(routingContext.request().remoteAddress().toString());
+                        routingContext.next();
+                    });
+                }
                 new dmo.fs.spa.router.SpaRoutes(router, routerPromise); // Supported SqlClients for async db's - mutiny
                 break;
         }
@@ -280,22 +306,22 @@ public class DodexRoutes {
         Config config = ConfigProvider.getConfig();
 
         int eventBridgePort = isProduction ? Integer.parseInt(config.getConfigValue("prod.bridge.port").getValue())
-                : Integer.parseInt(config.getConfigValue("dev.bridge.port").getValue());
+          : Integer.parseInt(config.getConfigValue("dev.bridge.port").getValue());
 
         bridge = TcpEventBusBridge.create(reactiveVertx,
-                new BridgeOptions().addInboundPermitted(new PermittedOptions().setAddress("vertx"))
-                        .addOutboundPermitted(new PermittedOptions().setAddress("akka"))
-                        .addInboundPermitted(new PermittedOptions().setAddress("akka"))
-                        .addOutboundPermitted(new PermittedOptions().setAddress("vertx")),
-                new NetServerOptions(), event -> dodexCassandra.getEbConsumer().handle(event));
+          new BridgeOptions().addInboundPermitted(new PermittedOptions().setAddress("vertx"))
+            .addOutboundPermitted(new PermittedOptions().setAddress("akka"))
+            .addInboundPermitted(new PermittedOptions().setAddress("akka"))
+            .addOutboundPermitted(new PermittedOptions().setAddress("vertx")),
+          new NetServerOptions(), event -> dodexCassandra.getEbConsumer().handle(event));
 
         bridge.listen(eventBridgePort, res -> {
             if (res.succeeded()) {
                 logger.info(String.format("%s%s%d%s", ColorUtilConstants.GREEN_BOLD_BRIGHT,
-                        "TCP Event Bus Bridge Started: ", eventBridgePort, ColorUtilConstants.RESET));
+                  "TCP Event Bus Bridge Started: ", eventBridgePort, ColorUtilConstants.RESET));
             } else {
                 logger.error(String.format("%s%s%s", ColorUtilConstants.RED_BOLD_BRIGHT, res.cause().getMessage(),
-                        ColorUtilConstants.RESET));
+                  ColorUtilConstants.RESET));
             }
         });
     }

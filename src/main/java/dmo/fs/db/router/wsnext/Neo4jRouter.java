@@ -32,16 +32,13 @@ import java.util.stream.Collectors;
 public class Neo4jRouter {
     protected static final Logger logger = LoggerFactory.getLogger(Neo4jRouter.class.getName());
     protected static Vertx vertx = DodexUtil.getVertx();
-//    protected final Map<String, WebSocketConnection> clients = new ConcurrentHashMap<>();
     protected DodexNeo4j dodexNeo4j;
     protected Promise<Driver> dbPromise;
     protected static final String LOGFORMAT = "{}{}{}";
-//    protected static final SharedData sd = vertx.sharedData();
-//    protected static final LocalMap<Object, Object> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     protected String remoteAddress;
     protected Driver driver;
     protected static final KafkaEmitterDodex ke = CDI.current().select(KafkaEmitterDodex.class).isUnsatisfied() ? null :
-        CDI.current().select(KafkaEmitterDodex.class).get();
+      CDI.current().select(KafkaEmitterDodex.class).get();
     protected static final ConcurrentHashMap<String, HashMap<String, String>> queryParams = new ConcurrentHashMap<>();
 
     public Neo4jRouter(final Vertx vertx) {
@@ -62,7 +59,7 @@ public class Neo4jRouter {
         dbPromise = dodexNeo4j.databaseSetup();
 
         CompletableFuture<Driver> completableDriver = dbPromise.future().onItem().call(driver -> Uni.createFrom()
-            .item(driver)).subscribeAsCompletionStage();
+          .item(driver)).subscribeAsCompletionStage();
         try {
             setDriver(completableDriver.get());
             dodexNeo4j.setDriver(getDriver());
@@ -77,7 +74,7 @@ public class Neo4jRouter {
     }
 
     @OnOpen()
-    public void onOpen() throws SQLException, IOException, InterruptedException {
+    public void onOpen() {
         connection.handshakeRequest().query().transform(q -> {
             String query = URLDecoder.decode(q, StandardCharsets.UTF_8);
 
@@ -93,7 +90,7 @@ public class Neo4jRouter {
         });
 
         logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-            queryParams.get(connection.id()).get("handle"), ColorUtilConstants.RESET));
+          queryParams.get(connection.id()).get("handle"), ColorUtilConstants.RESET));
 
         broadcast(connection, "User " + queryParams.get(connection.id()).get("handle") + " joined", queryParams);
 
@@ -125,8 +122,8 @@ public class Neo4jRouter {
                                 final int messageCount = counts.get("messages");
                                 if (messageCount > 0) {
                                     logger.info(String.format("%sMessages Delivered: %d to %s%s",
-                                        ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount,
-                                        messageUser.getName(), ColorUtilConstants.RESET));
+                                      ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount,
+                                      messageUser.getName(), ColorUtilConstants.RESET));
                                     if (ke != null) {
                                         ke.setValue("delivered", messageCount);
                                     }
@@ -177,7 +174,7 @@ public class Neo4jRouter {
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 connection.sendText("Your Previous handle did not delete: " + e.getMessage())
-                    .subscribe().asCompletionStage();
+                  .subscribe().asCompletionStage();
             }
         } else {
             continued = promise;
@@ -195,14 +192,14 @@ public class Neo4jRouter {
                         handles = count == 1 ? handles : handles + "s";
 
                         connection.sendText(String.format("%d %s received your broadcast", count, handles))
-                            .subscribe().asCompletionStage();
+                          .subscribe().asCompletionStage();
 
                         if (ke != null) {
                             ke.setValue(1);
                         }
                     } else {
                         Map<String, WebSocketConnection> sessions = connection.getOpenConnections().stream()
-                            .collect(Collectors.toMap(WebSocketConnection::id, v -> v));
+                          .collect(Collectors.toMap(WebSocketConnection::id, v -> v));
                         for (Map.Entry<String, WebSocketConnection> entry : sessions.entrySet()) {
                             WebSocketConnection privateWebSocket = entry.getValue();
 
@@ -215,15 +212,15 @@ public class Neo4jRouter {
                                         return isMatched;
                                     })) {
                                         entry.getValue().sendText(queryParams.get(connection.id())
-                                                .get("handle") + ": " + computedMessage[0])
-                                            .subscribe().asCompletionStage();
+                                            .get("handle") + ": " + computedMessage[0])
+                                          .subscribe().asCompletionStage();
                                         // keep track of delivered messages
                                         onlineUsers.add(queryParams.get(entry.getKey()).get("handle"));
                                     }
                                 } else {
                                     if (selectedUsers.isEmpty() && !command[0].isEmpty()) {
                                         connection.sendText("Private user not selected")
-                                            .subscribe().asCompletionStage();
+                                          .subscribe().asCompletionStage();
                                     } else {
                                         connection.sendText("ok").subscribe().asCompletionStage();
                                     }
@@ -236,7 +233,7 @@ public class Neo4jRouter {
                 if (!selectedUsers.isEmpty()) {
                     final List<String> selected = Arrays.asList(selectedUsers.split(","));
                     final List<String> disconnectedUsers = selected.stream()
-                        .filter(user -> !onlineUsers.contains(user)).collect(Collectors.toList());
+                      .filter(user -> !onlineUsers.contains(user)).collect(Collectors.toList());
                     // Save protected message to send when to-user logs in
                     if (!disconnectedUsers.isEmpty()) {
                         try {
@@ -248,7 +245,7 @@ public class Neo4jRouter {
                         } catch (ExecutionException | InterruptedException e) {
                             e.printStackTrace();
                             connection.sendText("Message delivery failure: " + e.getMessage())
-                                .subscribe().asCompletionStage();
+                              .subscribe().asCompletionStage();
                         }
                     }
                     if (!onlineUsers.isEmpty()) {
@@ -268,7 +265,7 @@ public class Neo4jRouter {
             String handle = queryParams.get(connection.id()).get("handle");
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("%sClosing ws-connection to client: %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                    handle, ColorUtilConstants.RESET));
+                  handle, ColorUtilConstants.RESET));
             }
 
             broadcast(connection, "User " + handle + " left", queryParams);
@@ -290,8 +287,8 @@ public class Neo4jRouter {
             CompletableFuture<Void> complete = session.sendText(message).subscribe().asCompletionStage();
             if (complete.isCompletedExceptionally()) {
                 logger.info(String.format("%sUnable to send message: %s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                    queryParams.get(connection.id()).get("handle"), ": Exception in broadcast",
-                    ColorUtilConstants.RESET));
+                  queryParams.get(connection.id()).get("handle"), ": Exception in broadcast",
+                  ColorUtilConstants.RESET));
             }
             return true;
         }).count();

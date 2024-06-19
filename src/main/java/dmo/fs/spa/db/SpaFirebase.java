@@ -10,7 +10,6 @@ import io.vertx.mutiny.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 
 public interface SpaFirebase {
-
 	SpaLogin createSpaLogin();
 
 	Promise<SpaLogin> getLogin(SpaLogin spaLogin) throws ExecutionException, InterruptedException, SQLException;

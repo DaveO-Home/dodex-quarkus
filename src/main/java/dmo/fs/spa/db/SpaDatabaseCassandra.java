@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dmo.fs.quarkus.Server;
-import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +17,12 @@ import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
 
 public class SpaDatabaseCassandra extends DbCassandraBase implements SpaCassandra {
-	private final static Logger logger = LoggerFactory.getLogger(SpaDatabaseCassandra.class.getName());
+	protected final static Logger logger = LoggerFactory.getLogger(SpaDatabaseCassandra.class.getName());
 	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseCassandra(Map<String, String> dbOverrideMap, Properties dbOverrideProps)

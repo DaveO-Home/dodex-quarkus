@@ -24,7 +24,6 @@ import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.shareddata.LocalMap;
 import io.vertx.reactivex.core.shareddata.SharedData;
 import jakarta.inject.Inject;
-import jakarta.websocket.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -339,7 +338,4 @@ public class CassandraRouter {
     return databasePromise;
   }
 
-  public static void removeWsChatSession(Session session) {
-    wsChatSessions.remove(session.getId());
-  }
 }

@@ -34,12 +34,12 @@ public class JooqGenerate {
                     dbUrl = dbMap.get("url") + dbMap.get("filename");
                 } else if ("mariadb".equals(defaultDb)) {
                     dbUrl = dbMap.get("url") + dbMap.get("host") + dbMap.get("dbname") + "?user=" + dbMap.get("CRED:user")
-                        + "&password=" + dbMap.get("CRED:password");
+                      + "&password=" + dbMap.get("CRED:password");
                     jooqMetaName = "org.jooq.meta.mariadb.MariaDBDatabase";
                     databaseDbname = dbMap.get("database");
                 } else if ("postgres".equals(defaultDb)) {
                     dbUrl = dbMap.get("url") + "//" + dbMap.get("host") + ":" + dbMap.get("port") + "/" + dbMap.get("dbname") + "?user=" + dbMap.get("CRED:user")
-                        + "&password=" + dbMap.get("CRED:password");
+                      + "&password=" + dbMap.get("CRED:password");
                     jooqMetaName = "org.jooq.meta.postgres.PostgresDatabase";
                     databaseDbname = dbMap.get("dbname");
                 }
@@ -59,32 +59,32 @@ public class JooqGenerate {
             // ft.withIncludeExpression("SEQ|NAME");
             boolean generateSequences = "org.jooq.meta.postgres.PostgresDatabase".equals(jooqMetaName);
             Configuration configuration = new Configuration()
-                .withJdbc(new Jdbc()
-                    // .withDriver("org.sqlite.JDBC")
-                    .withUrl(jdbcUrl))
-                .withGenerator(new Generator()
-                    .withName("org.jooq.codegen.KotlinGenerator")
-                    .withDatabase(new Database()
-                        // .withForcedTypes(ft)
-                        .withName(jooqMetaName)
-                        .withOutputSchemaToDefault(true)
-                        .withIncludeTables(true)
-                        .withIncludePrimaryKeys(true)
-                        .withInputSchema(databaseDbname)
-                        .withExcludes(
-                            "users|undelivered|messages|login|SQLITE_SEQUENCE|INFORMATION_SCHEMA|Users")
-                    )
-                    .withGenerate(new Generate()
-                            .withDeprecated(false)
-                            .withSequences(generateSequences)
-                            .withDaos(false)
+              .withJdbc(new Jdbc()
+                // .withDriver("org.sqlite.JDBC")
+                .withUrl(jdbcUrl))
+              .withGenerator(new Generator()
+                .withName("org.jooq.codegen.KotlinGenerator")
+                .withDatabase(new Database()
+                  // .withForcedTypes(ft)
+                  .withName(jooqMetaName)
+                  .withOutputSchemaToDefault(true)
+                  .withIncludeTables(true)
+                  .withIncludePrimaryKeys(true)
+                  .withInputSchema(databaseDbname)
+                  .withExcludes(
+                    "users|undelivered|messages|login|SQLITE_SEQUENCE|INFORMATION_SCHEMA|Users")
+                )
+                .withGenerate(new Generate()
+                    .withDeprecated(false)
+                    .withSequences(generateSequences)
+                    .withDaos(false)
 //               .withEmptyCatalogs(true)
-                    )
-                    .withTarget(new Target()
-                        .withPackageName("golf.handicap.generated")
-                        .withClean(true)
-                        .withDirectory("./src/main/kotlin")))
-                .withLogging(Logging.WARN);
+                )
+                .withTarget(new Target()
+                  .withPackageName("golf.handicap.generated")
+                  .withClean(true)
+                  .withDirectory("./src/main/kotlin")))
+              .withLogging(Logging.WARN);
             GenerationTool.generate(configuration);
         } catch (Exception ex) {
             System.out.println(ex.getCause());

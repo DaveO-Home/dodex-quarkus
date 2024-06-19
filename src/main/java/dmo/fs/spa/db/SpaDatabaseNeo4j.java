@@ -12,7 +12,6 @@ import jakarta.ws.rs.core.Response.Status;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dmo.fs.quarkus.Server;
-import io.quarkus.runtime.configuration.ProfileManager;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -33,12 +32,12 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 
 public class SpaDatabaseNeo4j extends DbNeo4j {
-	private final static Logger logger = LoggerFactory.getLogger(SpaDatabaseNeo4j.class.getName());
+	protected final static Logger logger = LoggerFactory.getLogger(SpaDatabaseNeo4j.class.getName());
 	protected Properties dbProperties = new Properties();
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseNeo4j(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -145,7 +144,7 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 		return promise;
 	}
 	// If apoc plugin installed
-	private void apocConstraints(Driver driver, Promise<Void> promise) {
+	protected void apocConstraints(Driver driver, Promise<Void> promise) {
 		Multi.createFrom().resource(driver::session,
 			session -> session.executeWrite(tx -> {
 				Result resultConstraints = tx.run(getCreateConstraints());
@@ -161,7 +160,7 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 			.subscribe().asStream();
 	}
 	// If minimum install
-	private void createConstraints(Driver driver, Promise<Void> promise) {
+	protected void createConstraints(Driver driver, Promise<Void> promise) {
 		Session session = driver.session();
 		if (session != null) {
 			try (Transaction tx = session.beginTransaction()) {
@@ -175,7 +174,7 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 		}
 	}
 
-	private Driver getDriver(Map<String, String> dbMap, Properties dbProperties) {
+	protected Driver getDriver(Map<String, String> dbMap, Properties dbProperties) {
 		String uri = String.join(":", dbMap.get("protocol"),
 				String.format("//%s", dbMap.get("host")),
 				dbMap.get("port"));

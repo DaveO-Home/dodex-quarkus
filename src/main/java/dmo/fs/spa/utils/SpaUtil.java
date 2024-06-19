@@ -3,16 +3,14 @@ package dmo.fs.spa.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jooq.SQLDialect;
 
 import io.reactivex.disposables.Disposable;
@@ -20,8 +18,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class SpaUtil {
-    private static String env = "dev";
-    private static String defaultDb = "sqlite3";
+    protected static String env = "dev";
+    protected static String defaultDb = "sqlite3";
 
     public void await(final Disposable disposable) {
         while (!disposable.isDisposed()) {
@@ -49,17 +47,21 @@ public class SpaUtil {
             node = jsonMapper.readTree(in);
         }
 
-        final String defaultdbProp = System.getProperty("DEFAULT_DB");
-        final String defaultdbEnv = System.getenv("DEFAULT_DB");
+        Config config = ConfigProvider.getConfig();
+        String configDefaultDb = null;
+        try {
+            configDefaultDb = config.getValue("dodex.default.db", String.class);
+        } catch(NoSuchElementException nse) {}
+        final String propDefaultdb = System.getProperty("DEFAULT_DB");
+        final String envDefaultdb = System.getenv("DEFAULT_DB");
         defaultDb = node.get("defaultdb").textValue();
         /*
          * use environment variable first, if set, than properties and then from config
          * json
          */
-        defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp : defaultDb;
-//        if("sqlite3".equals(defaultDb) && "true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
-//            defaultDb = "h2";
-//        }
+        defaultDb = envDefaultdb != null ? envDefaultdb : propDefaultdb != null ? propDefaultdb :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
+
         return node.get(defaultDb);
     }
 

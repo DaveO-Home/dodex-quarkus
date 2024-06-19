@@ -6,9 +6,9 @@ import dmo.fs.db.wsnext.admin.CleanOrphanedUsers;
 import dmo.fs.db.wsnext.DodexDatabase;
 import dmo.fs.db.MessageUser;
 import dmo.fs.kafka.KafkaEmitterDodex;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.websockets.next.WebSocketConnection;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Context;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public abstract class DodexRouterBase {
     protected static final Logger logger = LoggerFactory.getLogger(DodexRouterBase.class.getSimpleName());
-    protected final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+    protected final boolean isProduction = Server.isProduction();
     protected boolean isSetupDone;
     protected boolean isInitialized;
     protected DodexDatabase dodexDatabase;
@@ -39,9 +39,9 @@ public abstract class DodexRouterBase {
     protected final Promise<Pool> cleanupPromise = Promise.promise();
     protected Map<String, WebSocketConnection> sessions = new ConcurrentHashMap<>();
     protected Map<String, Map<String, String>> sessionsNext = new ConcurrentHashMap<>();
-    protected String remoteAddress;
     protected final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
     protected Map<String, String> queryParams;
+    protected String remoteAddress = null;
 
     @Inject
     Vertx vertx;
@@ -53,15 +53,15 @@ public abstract class DodexRouterBase {
 
     protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
         long c = connection.getOpenConnections().stream().filter(session -> {
-            if(connection.id().equals(session.id())) {
+            if (connection.id().equals(session.id())) {
                 return false;
             }
             CompletableFuture<Void> complete = session.sendText(message).subscribe().asCompletionStage();
-            if(complete.isCompletedExceptionally()) {
+            if (complete.isCompletedExceptionally()) {
                 logger.info(String.format("%sUnable to send message: %s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                            queryParams.get("handle"), ": Exception in broadcast",
-                            ColorUtilConstants.RESET));
-                }
+                  queryParams.get("handle"), ": Exception in broadcast",
+                  ColorUtilConstants.RESET));
+            }
             return true;
         }).count();
         return c;
@@ -101,9 +101,9 @@ public abstract class DodexRouterBase {
                             int messageCount = map.get("messages");
                             if (messageCount > 0) {
                                 logger.info(String.format("%sMessages Delivered: %d to %s%s",
-                                        ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount, resultUser.getName(),
-                                        ColorUtilConstants.RESET));
-                                if(ke != null) {
+                                  ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount, resultUser.getName(),
+                                  ColorUtilConstants.RESET));
+                                if (ke != null) {
                                     ke.setValue("delivered", messageCount);
                                 }
                             }
@@ -144,7 +144,7 @@ public abstract class DodexRouterBase {
         if (!computedMessage.isEmpty()) {
             // broadcast
             if ("".equals(selectedUsers) && "".equals(command)) {
-                long count = broadcast(session,messageUser.getName() + ": " + computedMessage, queryParams);
+                long count = broadcast(session, messageUser.getName() + ": " + computedMessage, queryParams);
                 String handles = "handle";
                 handles = count == 1 ? handles : handles + "s";
 
@@ -156,34 +156,34 @@ public abstract class DodexRouterBase {
             }
 
             sessions.values().stream().filter(s -> !s.id().equals(getThisWebSocket(session).id()) /*&& getThisWebSocket(session).isOpen()*/)
-                .forEach(s -> {
-                    final String handle = sessionsNext.get(s.id()).get("handle");
-                    // private message
-                    if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> h.contains(handle))) {
-                        CompletableFuture<Void> complete = s.sendText(messageUser.getName() + ": " + computedMessage)
-                            .subscribe().asCompletionStage();
-                            if(complete.isCompletedExceptionally()) {
-                                if (logger.isInfoEnabled()) {
-                                    logger.info(
-                                        String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
-                                            ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                                                sessionsNext.get(s.id()).get("handle"), ": ",
-                                                "", ColorUtilConstants.RESET));
-                                }
-                            }
-                        // keep track of delivered messages
-                        onlineUsers.add(handle);
-                    }
-                });
+              .forEach(s -> {
+                  final String handle = sessionsNext.get(s.id()).get("handle");
+                  // private message
+                  if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> h.contains(handle))) {
+                      CompletableFuture<Void> complete = s.sendText(messageUser.getName() + ": " + computedMessage)
+                        .subscribe().asCompletionStage();
+                      if (complete.isCompletedExceptionally()) {
+                          if (logger.isInfoEnabled()) {
+                              logger.info(
+                                String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
+                                  ColorUtilConstants.BLUE_BOLD_BRIGHT,
+                                  sessionsNext.get(s.id()).get("handle"), ": ",
+                                  "", ColorUtilConstants.RESET));
+                          }
+                      }
+                      // keep track of delivered messages
+                      onlineUsers.add(handle);
+                  }
+              });
 
             if ("".equals(selectedUsers) && !"".equals(command)) {
                 session.sendText("Private user not selected").subscribe().asCompletionStage();
             } else {
-                if(!"".equals(command)) {
+                if (!"".equals(command)) {
                     session.sendText("ok").subscribe().asCompletionStage();
                 }
-                if(!onlineUsers.isEmpty()) {
-                    if(ke != null) {
+                if (!onlineUsers.isEmpty()) {
+                    if (ke != null) {
                         ke.setValue("private", onlineUsers.size());
                     }
                 }
@@ -194,25 +194,25 @@ public abstract class DodexRouterBase {
         if (!"".equals(selectedUsers)) {
             final List<String> selected = Arrays.asList(selectedUsers.split(","));
             final List<String> disconnectedUsers = selected.stream().filter(user -> !onlineUsers.contains(user))
-                    .toList();
-            // Save protected message to send when to-user logs in
+              .toList();
+            // Save private message to send when to-user logs in
             if (!disconnectedUsers.isEmpty()) {
                 Promise<Long> futureId;
                 try {
                     futureId = dodexDatabase.addMessage(messageUser, computedMessage);
                     futureId.future().onFailure().invoke(Throwable::printStackTrace)
-                            .subscribeAsCompletionStage().thenComposeAsync(id -> {
-                        try {
-                            dodexDatabase.addUndelivered(disconnectedUsers, id);
-                            if(ke != null) {
-                                ke.setValue("undelivered", disconnectedUsers.size());
-                            }
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
+                      .subscribeAsCompletionStage().thenComposeAsync(id -> {
+                          try {
+                              dodexDatabase.addUndelivered(disconnectedUsers, id);
+                              if (ke != null) {
+                                  ke.setValue("undelivered", disconnectedUsers.size());
+                              }
+                          } catch (SQLException e) {
+                              e.printStackTrace();
+                          }
 
-                        return null;
-                    });
+                          return null;
+                      });
                 } catch (InterruptedException | SQLException e) {
                     e.printStackTrace();
                 }
@@ -222,7 +222,7 @@ public abstract class DodexRouterBase {
 
     protected MessageUser setMessageUser(WebSocketConnection session) {
         final MessageUser messageUser = dodexDatabase.createMessageUser();
-        if(session == null) {
+        if (session == null) {
             return messageUser;
         }
         final Map<String, String> queryParams = sessionsNext.get(session.id());
@@ -234,7 +234,9 @@ public abstract class DodexRouterBase {
 
         messageUser.setName(handle);
         messageUser.setPassword(id);
-        messageUser.setIp(remoteAddress == null ? "Unknown" : remoteAddress);
+        String thisRemoteAddress = sessionsNext.get(session.id()).get("remoteAddress");
+
+        messageUser.setIp(thisRemoteAddress == null ? "Unknown" : thisRemoteAddress);
 
         return messageUser;
     }
@@ -247,7 +249,7 @@ public abstract class DodexRouterBase {
          * Optional auto user cleanup - config in "application-conf.json". When client
          * changes handle when server is down, old users and undelivered messages will
          * be orphaned.
-         * 
+         *
          * Defaults: off - when turned on 1. execute on start up and every 7 days
          * thereafter. 2. remove users who have not logged in for 90 days.
          */
@@ -275,7 +277,7 @@ public abstract class DodexRouterBase {
                 }
             } catch (final Exception exception) {
                 logger.info(String.format("%sContext Configuration failed...%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                        exception.getMessage(), ColorUtilConstants.RESET));
+                  exception.getMessage(), ColorUtilConstants.RESET));
                 exception.printStackTrace();
             }
         }
@@ -284,13 +286,16 @@ public abstract class DodexRouterBase {
         String startupMessage = "In Production with database: " + defaultDb;
 
         startupMessage = "dev".equals(DodexUtil.getEnv()) ? "In Development with database: " + defaultDb
-                : startupMessage;
+          : startupMessage;
         logger.info(String.format("%sStarting Web Socket...%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT, startupMessage,
-                ColorUtilConstants.RESET));
+          ColorUtilConstants.RESET));
     }
 
     public DodexDatabase getDodexDatabase() {
         return dodexDatabase;
     }
 
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
+    }
 }

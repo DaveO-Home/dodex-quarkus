@@ -1,7 +1,9 @@
+import nu.studer.gradle.jooq.JooqEdition
+
 /* Composite build for jooq object generator (JooqGenerater.java) */
 
 plugins {
-    id "nu.studer.jooq" version "7.1.1"
+    id "nu.studer.jooq" version "8.2"
 
     id "java"
 }
@@ -18,15 +20,15 @@ group = "dmo.fs.utils"
 version = "0.0.1"
 
 ext {
-  vertxVersion = "4.3.5"
+  vertxVersion = "4.5.8"
 }
 
 def jooqClasspath
-def javaTargetVersion = 11
+def javaTargetVersion = 17
 
 jooq {
-  version = "3.17.5"
-  edition = nu.studer.gradle.jooq.JooqEdition.OSS
+  version = "3.19.9"
+  edition = JooqEdition.OSS
 }
 
 task copyDatabaseConfig(type: Copy) {
@@ -40,36 +42,39 @@ task copyDatabaseConfig(type: Copy) {
   Using a java class to generate jooq objects - allows for multiple db's -
   see ./src/main/kotlin/golf/handicap/generated/ directory
 */
-task jooqGenerate(type: JavaExec) {
-  doFirst {
-    defaultTasks 'clean'
-    classpath = sourceSets.main.runtimeClasspath
-  }
-  environment.remove("DEFAULT_DB")
-  environment "VERTXWEB_ENVIRONMENT", "dev"
-  mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
-  args = ["dev"]
-  ignoreExitValue true
-  dependsOn copyDatabaseConfig
+tasks.register('jooqGenerate', JavaExec) {
+    doFirst {
+        defaultTasks 'clean'
+        classpath = sourceSets.main.runtimeClasspath
+    }
+    environment.remove("DEFAULT_DB")
+    environment "VERTXWEB_ENVIRONMENT", "dev"
+    mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
+    args = ["dev"]
+    ignoreExitValue true
+    dependsOn copyDatabaseConfig
 }
 
 sourceCompatibility = "$javaTargetVersion"
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 dependencies {
     implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
     implementation("io.vertx:vertx-core:$vertxVersion")
     implementation("io.vertx:vertx-rx-java3:$vertxVersion")
-    implementation("io.vertx:vertx-config:$vertxVersion")
+//    implementation("io.vertx:vertx-config:$vertxVersion")
     implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
     implementation("io.vertx:vertx-jdbc-client:$vertxVersion")
-//    implementation("org.slf4j:slf4j-jcl:1.7.36")
     implementation("io.agroal:agroal-pool:2.0")
-    implementation('org.xerial:sqlite-jdbc:3.40.0.0')
+    implementation('org.xerial:sqlite-jdbc:3.46.0.0')
     implementation("io.vertx:vertx-mysql-client:$vertxVersion")
     implementation("io.vertx:vertx-pg-client:$vertxVersion")
-    implementation("org.jooq:jooq:3.17.6")
-    implementation("org.jooq:jooq-codegen-maven:3.17.6")
-    implementation("org.jooq:jooq-meta:3.17.6")
-    implementation("javax.annotation:javax.annotation-api:1.3.2")
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("org.jooq:jooq:$version")
+    implementation("org.jooq:jooq-codegen-maven:$version")
+    implementation("org.jooq:jooq-meta:$version")
+//    implementation("javax.annotation:javax.annotation-api:1.3.2")
+//    implementation('com.google.guava:guava:32.0.0-android')
 }

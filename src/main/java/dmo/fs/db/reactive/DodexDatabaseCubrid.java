@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dmo.fs.quarkus.Server;
-import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,185 +26,185 @@ import io.vertx.reactivex.sqlclient.RowSet;
 import io.vertx.sqlclient.PoolOptions;
 
 public class DodexDatabaseCubrid extends DbCubrid {
-  protected static final Logger logger = LoggerFactory.getLogger(DodexDatabaseCubrid.class.getName());
-  protected Properties dbProperties;
-  protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-  protected Map<String, String> dbMap;
-  protected JsonNode defaultNode;
-  protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
-  protected DodexUtil dodexUtil = new DodexUtil();
-  protected JDBCPool pool;
+    protected static final Logger logger = LoggerFactory.getLogger(DodexDatabaseCubrid.class.getName());
+    protected Properties dbProperties;
+    protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
+    protected Map<String, String> dbMap;
+    protected JsonNode defaultNode;
+    protected String webEnv = Server.isProduction() ? "prod" : "dev";
+    protected DodexUtil dodexUtil = new DodexUtil();
+    protected JDBCPool pool;
 
-  public DodexDatabaseCubrid(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
-    super();
+    public DodexDatabaseCubrid(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
+        super();
 
-    defaultNode = dodexUtil.getDefaultNode();
+        defaultNode = dodexUtil.getDefaultNode();
 
-    dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-    dbProperties = dodexUtil.mapToProperties(dbMap);
+        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+        dbProperties = dodexUtil.mapToProperties(dbMap);
 
-    if (dbOverrideProps != null) {
-      this.dbProperties = dbOverrideProps;
-    }
-    if (dbOverrideMap != null) {
-      this.dbOverrideMap = dbOverrideMap;
-    }
+        if (dbOverrideProps != null) {
+            this.dbProperties = dbOverrideProps;
+        }
+        if (dbOverrideMap != null) {
+            this.dbOverrideMap = dbOverrideMap;
+        }
 
-    DbConfiguration.mapMerge(dbMap, dbOverrideMap);
-  }
-
-  public DodexDatabaseCubrid() throws IOException {
-    super();
-    defaultNode = dodexUtil.getDefaultNode();
-
-    dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-    dbProperties = dodexUtil.mapToProperties(dbMap);
-  }
-
-  @Override
-  public Promise<JDBCPool> databaseSetup() {
-    if ("dev".equals(webEnv)) {
-      DbConfiguration.configureTestDefaults(dbMap, dbProperties);
-    } else {
-      DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
+        DbConfiguration.mapMerge(dbMap, dbOverrideMap);
     }
 
-    Promise<JDBCPool> promise = Promise.promise();
-    pool = getPool(dbMap, dbProperties);
+    public DodexDatabaseCubrid() throws IOException {
+        super();
+        defaultNode = dodexUtil.getDefaultNode();
 
-    Completable completable = pool.rxGetConnection().flatMapCompletable(conn -> conn.rxBegin()
-      .flatMapCompletable(tx -> conn.query(CHECKUSERSQL).rxExecute().doOnSuccess(row -> {
-            RowIterator<Row> ri = row.iterator();
-            String val = null;
-            while (ri.hasNext()) {
-              val = ri.next().getString(0);
-            }
-            if (val == null) {
-              final String usersSql = getCreateTable("USERS");
+        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+        dbProperties = dodexUtil.mapToProperties(dbMap);
+    }
 
-              Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute()
-                .doOnError(err -> {
-                  logger.info(String.format("Users Table Error: %s", err.getCause().getMessage()));
-                }).doOnSuccess(result -> {
-                  logger.info("Users Table Added.");
-                });
+    @Override
+    public Promise<JDBCPool> databaseSetup() {
+        if ("dev".equals(webEnv)) {
+            DbConfiguration.configureTestDefaults(dbMap, dbProperties);
+        } else {
+            DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
+        }
 
-              crow.subscribe(result -> {
-                //
-              }, err -> {
-                logger.info(String.format("Users Table Error: %s", err.getMessage()));
-              });
-            }
-          }).doOnError(err -> {
-            logger.info(String.format("Users Table Error: %s", err.getMessage()));
+        Promise<JDBCPool> promise = Promise.promise();
+        pool = getPool(dbMap, dbProperties);
 
-          }).flatMap(
-            result -> conn.query(CHECKMESSAGESQL).rxExecute().doOnSuccess(row -> {
-              RowIterator<Row> ri = row.iterator();
-              String val = null;
-              while (ri.hasNext()) {
-                val = ri.next().getString(0);
-              }
+        Completable completable = pool.rxGetConnection().flatMapCompletable(conn -> conn.rxBegin()
+          .flatMapCompletable(tx -> conn.query(CHECKUSERSQL).rxExecute().doOnSuccess(row -> {
+                  RowIterator<Row> ri = row.iterator();
+                  String val = null;
+                  while (ri.hasNext()) {
+                      val = ri.next().getString(0);
+                  }
+                  if (val == null) {
+                      final String usersSql = getCreateTable("USERS");
 
-              if (val == null) {
-                final String sql = getCreateTable("MESSAGES");
+                      Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute()
+                        .doOnError(err -> {
+                            logger.info(String.format("Users Table Error: %s", err.getCause().getMessage()));
+                        }).doOnSuccess(result -> {
+                            logger.info("Users Table Added.");
+                        });
 
-                Single<RowSet<Row>> crow = conn.query(sql).rxExecute()
-                  .doOnError(err -> {
+                      crow.subscribe(result -> {
+                          //
+                      }, err -> {
+                          logger.info(String.format("Users Table Error: %s", err.getMessage()));
+                      });
+                  }
+              }).doOnError(err -> {
+                  logger.info(String.format("Users Table Error: %s", err.getMessage()));
+
+              }).flatMap(
+                result -> conn.query(CHECKMESSAGESQL).rxExecute().doOnSuccess(row -> {
+                    RowIterator<Row> ri = row.iterator();
+                    String val = null;
+                    while (ri.hasNext()) {
+                        val = ri.next().getString(0);
+                    }
+
+                    if (val == null) {
+                        final String sql = getCreateTable("MESSAGES");
+
+                        Single<RowSet<Row>> crow = conn.query(sql).rxExecute()
+                          .doOnError(err -> {
+                              logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                          }).doOnSuccess(row2 -> {
+                              logger.info("Messages Table Added.");
+                          });
+
+                        crow.subscribe(res -> {
+                            //
+                        }, err -> {
+                            logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                        });
+                    }
+                }).doOnError(err -> {
                     logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-                  }).doOnSuccess(row2 -> {
-                    logger.info("Messages Table Added.");
-                  });
 
-                crow.subscribe(res -> {
-                  //
-                }, err -> {
-                  logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-                });
-              }
-            }).doOnError(err -> {
-              logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                })).flatMap(result -> conn.query(CHECKUNDELIVEREDSQL).rxExecute()
+                .doOnSuccess(row -> {
+                    RowIterator<Row> ri = row.iterator();
+                    String val = null;
+                    while (ri.hasNext()) {
+                        val = ri.next().getString(0);
+                    }
 
-            })).flatMap(result -> conn.query(CHECKUNDELIVEREDSQL).rxExecute()
-            .doOnSuccess(row -> {
-              RowIterator<Row> ri = row.iterator();
-              String val = null;
-              while (ri.hasNext()) {
-                val = ri.next().getString(0);
-              }
+                    if (val == null) {
+                        final String sql = getCreateTable("UNDELIVERED");
 
-              if (val == null) {
-                final String sql = getCreateTable("UNDELIVERED");
+                        Single<RowSet<Row>> crow = conn.query(sql).rxExecute()
+                          .doOnError(err -> {
+                              logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
+                          }).doOnSuccess(row2 -> {
+                              logger.info("Undelivered Table Added.");
+                          });
 
-                Single<RowSet<Row>> crow = conn.query(sql).rxExecute()
-                  .doOnError(err -> {
-                    logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
-                  }).doOnSuccess(row2 -> {
-                    logger.info("Undelivered Table Added.");
-                  });
+                        crow.subscribe(result2 -> {
+                            conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
+                        }, err -> {
+                            logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                        });
+                    } else {
+                        conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
+                    }
+                }).doOnError(err -> {
+                    logger.info(String.format("Messages Table Error: %s", err.getMessage()));
+                }))
+              .flatMapCompletable(res -> Completable.complete())
+          ));
 
-                crow.subscribe(result2 -> {
-                  conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
-                }, err -> {
-                  logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-                });
-              } else {
-                conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
-              }
-            }).doOnError(err -> {
-              logger.info(String.format("Messages Table Error: %s", err.getMessage()));
-            }))
-          .flatMapCompletable(res -> Completable.complete())
-      ));
+        completable.subscribe(() -> {
+            try {
+                setupSql(pool);
+                promise.complete(pool);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, err -> {
+            logger.info(String.format("Tables Create Error: %s", err.getMessage()));
+            err.printStackTrace();
+        });
 
-    completable.subscribe(() -> {
-      try {
-        setupSql(pool);
-        promise.complete(pool);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }, err -> {
-      logger.info(String.format("Tables Create Error: %s", err.getMessage()));
-      err.printStackTrace();
-    });
+        return promise;
+    }
 
-    return promise;
-  }
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getPool() {
+        return (T) pool;
+    }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T getPool() {
-    return (T) pool;
-  }
+    @Override
+    public MessageUser createMessageUser() {
+        return new MessageUserImpl();
+    }
 
-  @Override
-  public MessageUser createMessageUser() {
-    return new MessageUserImpl();
-  }
+    @SuppressWarnings("unchecked")
+    protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
 
-  @SuppressWarnings("unchecked")
-  protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
+        PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
-    PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+        JDBCConnectOptions connectOptions;
+        connectOptions = new JDBCConnectOptions()
+          .setJdbcUrl(dbMap.get("url") + dbMap.get("host") + dbMap.get("dbname") + "?charSet=UTF-8")
+          .setUser(dbProperties.getProperty("user").toString())
+          .setPassword(dbProperties.getProperty("password").toString())
+          // .setDatabase(dbMap.get("dbname")+"?charSet=utf8")
+          // .setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
+          .setIdleTimeout(1)
+        // .setCachePreparedStatements(true)
+        ;
 
-    JDBCConnectOptions connectOptions;
-    connectOptions = new JDBCConnectOptions()
-      .setJdbcUrl(dbMap.get("url") + dbMap.get("host") + dbMap.get("dbname") + "?charSet=UTF-8")
-      .setUser(dbProperties.getProperty("user").toString())
-      .setPassword(dbProperties.getProperty("password").toString())
-      // .setDatabase(dbMap.get("dbname")+"?charSet=utf8")
-      // .setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
-      .setIdleTimeout(1)
-    // .setCachePreparedStatements(true)
-    ;
+        Vertx vertx = Server.vertx;
 
-    Vertx vertx = Server.vertx;
+        setJDBCConnectOptions(connectOptions);
+        setPoolOptions(poolOptions);
 
-    setJDBCConnectOptions(connectOptions);
-    setPoolOptions(poolOptions);
-
-    return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
-  }
+        return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
+    }
 
 }

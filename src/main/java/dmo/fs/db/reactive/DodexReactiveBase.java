@@ -9,7 +9,6 @@ import dmo.fs.db.router.wsnext.DodexRouter;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.websockets.next.WebSocketConnection;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -20,7 +19,6 @@ import io.vertx.reactivex.core.shareddata.SharedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.websocket.Session;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -37,13 +35,13 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
     protected static final SharedData sd = vertxReactive.sharedData();
     protected static final LocalMap<String, String> wsChatSessions = sd.getLocalMap("ws.dodex.sessions");
     protected String remoteAddress;
-    protected final boolean isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+    protected final boolean isProduction = Server.isProduction();
     protected Map<String, WebSocketConnection> sessions = new ConcurrentHashMap<>();
     protected Map<String, Map<String, String>> sessionsNext = new ConcurrentHashMap<>();
     protected Map<String, String> queryParams;
     protected final KafkaEmitterDodex ke = DodexRouter.getKafkaEmitterDodex();
 
-    public void doConnection(WebSocketConnection session, String remoteAddress, Map<String, Map<String,String>> sessions) throws UnsupportedEncodingException {
+    public void doConnection(WebSocketConnection session, String remoteAddress, Map<String, Map<String, String>> sessions) throws UnsupportedEncodingException {
         this.remoteAddress = remoteAddress;
         queryParams = session.handshakeRequest().query().transform(q -> {
             String queryString = URLDecoder.decode(q, StandardCharsets.UTF_8);
@@ -62,7 +60,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
             final Future<StringBuilder> userJson = buildUsersJson(mUser);
             userJson.onSuccess(json -> {
                 connection
-                    .sendText("connected:" + json).subscribeAsCompletionStage().isDone(); // Users for protected messages
+                  .sendText("connected:" + json).subscribeAsCompletionStage().isDone(); // Users for protected messages
                 /*
                  * Send undelivered messages and remove user related messages.
                  */
@@ -70,12 +68,12 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
                     final int messageCount = fut.result().get("messages");
                     if (messageCount > 0) {
                         logger.info(
-                            String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                                    messageCount, mUser.getName(), ColorUtilConstants.RESET));
-                        if(ke != null) {
+                          String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+                            messageCount, mUser.getName(), ColorUtilConstants.RESET));
+                        if (ke != null) {
                             ke.setValue("delivered", messageCount);
                         }
-                    } 
+                    }
                 });
             });
         });
@@ -99,7 +97,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
         if (!computedMessage.isEmpty()) {
             // broadcast
             if ("".equals(selectedUsers) && "".equals(command)) {
-                long count = broadcast(session,messageUser.getName() + ": " + computedMessage, queryParams);
+                long count = broadcast(session, messageUser.getName() + ": " + computedMessage, queryParams);
                 String handles = "handle";
                 handles = count == 1 ? handles : handles + "s";
 
@@ -117,7 +115,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
                   if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> h.contains(handle))) {
                       CompletableFuture<Void> complete = s.sendText(messageUser.getName() + ": " + computedMessage)
                         .subscribe().asCompletionStage();
-                      if(complete.isCompletedExceptionally()) {
+                      if (complete.isCompletedExceptionally()) {
                           if (logger.isInfoEnabled()) {
                               logger.info(
                                 String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
@@ -130,14 +128,14 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
                       onlineUsers.add(handle);
                   }
               });
-                
+
             if ("".equals(selectedUsers) && !"".equals(command)) {
                 session.sendText("Private user not selected").subscribeAsCompletionStage().isDone();
             } else {
                 session.sendText("ok").subscribeAsCompletionStage().isDone();
                 if (ke != null && "".equals(selectedUsers)) {
                     ke.setValue(1);
-                }    
+                }
             }
         }
 
@@ -145,20 +143,20 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
         if (!selectedUsers.isEmpty()) {
             final List<String> selected = Arrays.asList(selectedUsers.split(","));
             final List<String> disconnectedUsers = selected.stream().filter(user -> !onlineUsers.contains(user))
-                    .collect(Collectors.toList());
+              .collect(Collectors.toList());
             // Save protected message to send when to-user logs in
             if (!disconnectedUsers.isEmpty()) {
                 Future<Long> future = null;
                 future = addMessage(session, messageUser, computedMessage);
                 future.onSuccess(key -> {
                     addUndelivered(session, disconnectedUsers, key);
-                    if(ke != null) {
+                    if (ke != null) {
                         ke.setValue("undelivered", disconnectedUsers.size());
                     }
                 });
             }
-            if(!onlineUsers.isEmpty()) {
-                if(ke != null) {
+            if (!onlineUsers.isEmpty()) {
+                if (ke != null) {
                     ke.setValue("protected", onlineUsers.size());
                 }
             }
@@ -170,7 +168,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
          * Optional auto user cleanup - config in "application-conf.json". When client
          * changes handle when server is down, old users and undelivered messages will
          * be orphaned.
-         * 
+         *
          * Defaults: off - when turned on 1. execute on start up and every 7 days
          * thereafter. 2. remove users who have not logged in for 90 days.
          */
@@ -186,18 +184,18 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
                 }
             } catch (final Exception exception) {
                 logger.error(LOGFORMAT, ColorUtilConstants.RED_BOLD_BRIGHT, "Context Configuration failed...",
-                        ColorUtilConstants.RESET);
+                  ColorUtilConstants.RESET);
             }
         }
     }
 
     protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
         long c = connection.getOpenConnections().stream().filter(session -> {
-            if(connection.id().equals(session.id())) {
+            if (connection.id().equals(session.id())) {
                 return false;
             }
             CompletableFuture<Void> complete = session.sendText(message).subscribe().asCompletionStage();
-            if(complete.isCompletedExceptionally()) {
+            if (complete.isCompletedExceptionally()) {
                 logger.info(String.format("%sUnable to send message: %s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
                   queryParams.get("handle"), ": Exception in broadcast",
                   ColorUtilConstants.RESET));
@@ -235,7 +233,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
         return new MessageUserImpl();
     }
 
-    public static void removeWsChatSession(Session session) {
-        wsChatSessions.remove(session.getId());
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
     }
 }

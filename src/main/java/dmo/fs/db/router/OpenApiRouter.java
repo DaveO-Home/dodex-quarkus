@@ -88,9 +88,7 @@ public class OpenApiRouter {
     isDebug = false;
     if (DbConfiguration.isUsingSqlite3()) {
       groupOpenApi = new GroupOpenApiSqlRx();
-      if (!"true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
-        DbConfiguration.getDefaultDb(); // setup database for groups if not using handicap
-      }
+
       return groupOpenApi.getMembersList(getGroupJson).onComplete(getGroupObject -> {
         if (isDebug) {
           logger.info("OpenApi By Group Id: {}", getGroupObject.result().getMap());
@@ -98,9 +96,7 @@ public class OpenApiRouter {
       }).toCompletionStage().toCompletableFuture().get().mapTo(Group.class);
     } else {
       groupOpenApi = new GroupOpenApiSql();
-      if (!"true".equalsIgnoreCase(System.getenv("USE_HANDICAP"))) {
-        DbConfiguration.getDefaultDb(); // setup database for groups if not using handicap
-      }
+
       return groupOpenApi.getMembersList(getGroupJson).onComplete(getGroupObject -> {
         if (isDebug) {
           logger.info("OpenApi By Group Id: {} -- {}", getGroupObject.result().getMap(), getGroupObject);

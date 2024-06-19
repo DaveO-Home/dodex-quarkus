@@ -2,6 +2,7 @@
 package dmo.fs.db.wsnext;
 
 import dmo.fs.db.MessageUser;
+import dmo.fs.db.openapi.GroupOpenApiSql;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.websockets.next.WebSocketConnection;
@@ -9,6 +10,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.groups.UniSubscribe;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.db2client.DB2Pool;
@@ -16,6 +18,9 @@ import io.vertx.mutiny.mysqlclient.MySQLClient;
 import io.vertx.mutiny.mysqlclient.MySQLPool;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.*;
+import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.sqlclient.PoolOptions;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
@@ -72,6 +77,10 @@ public abstract class DbDefinitionBase {
     protected Boolean isTimestamp;
     protected Pool pool;
     protected boolean qmark = true;
+    protected static PgConnectOptions pgConnectOptions;
+    protected static MySQLConnectOptions mySQLConnectOptions;
+    protected static JDBCConnectOptions jdbcConnectOptions;
+    protected static PoolOptions poolOptions;
 
     public <T> void setupSql(T pool) {
         // Non-Blocking Drivers
@@ -89,6 +98,26 @@ public abstract class DbDefinitionBase {
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
 
         create = DSL.using(DodexUtil.getSqlDialect(), settings);
+
+        /* @TODO: convert GroupOpenApiSql to mutiny */
+        if (pool instanceof PgPool) {
+            io.vertx.rxjava3.pgclient.PgPool poolRx =
+              io.vertx.rxjava3.pgclient.PgPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), pgConnectOptions, poolOptions);
+            GroupOpenApiSql.setPool(poolRx);
+        } else if (pool instanceof MySQLPool) {
+            io.vertx.rxjava3.mysqlclient.MySQLPool poolRx =
+              io.vertx.rxjava3.mysqlclient.MySQLPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), mySQLConnectOptions, poolOptions);
+            GroupOpenApiSql.setPool(poolRx);
+        } else if (pool instanceof io.vertx.mutiny.jdbcclient.JDBCPool) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx =
+              io.vertx.rxjava3.jdbcclient.JDBCPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), jdbcConnectOptions, poolOptions);
+            GroupOpenApiSql.setPool(poolRx);
+        }
+
+        GroupOpenApiSql.setCreate(create);
+        GroupOpenApiSql.setQmark(qmark);
+        GroupOpenApiSql.buildSql();
+
         // Postges works with "$"(numbered) - Others work with "?"(un-numbered)
         GETALLUSERS = qmark ? setupAllUsers().replaceAll("\\$\\d", "?") : setupAllUsers();
         GETUSERBYNAME = qmark ? setupUserByName().replaceAll("\\$\\d", "?") : setupUserByName();
@@ -188,7 +217,7 @@ public abstract class DbDefinitionBase {
     }
 
     public static String setupSqliteUpdateUser() {
-        return "update users set last_login = ? where id = ?";
+        return "update users set last_login = ?, ip = ? where id = ?";
     }
 
     public static String getSqliteUpdateUser() {
@@ -418,6 +447,7 @@ public abstract class DbDefinitionBase {
             parameters = Tuple.of(
               DbConfiguration.isUsingIbmDB2() || DbConfiguration.isUsingMariadb() ||
                 DbConfiguration.isUsingH2() ? timeStamp : date,
+              messageUser.getIp(),
               messageUser.getId());
             return parameters;
         }
@@ -510,7 +540,6 @@ public abstract class DbDefinitionBase {
                     CompletableFuture<Void> committed = tx.commit().subscribeAsCompletionStage();
                     committed.thenRun(() -> {
                         conn.close().subscribeAsCompletionStage().isDone();
-                        logger.info("Conn closed: {}", committed.isDone());
                     });
                     promise.complete(id);
                 }).onFailure().invoke(err -> {
@@ -624,6 +653,9 @@ public abstract class DbDefinitionBase {
                             ts = Timestamp.valueOf(row.getLocalDateTime(4));
                         }
                         resultUser.setLastLogin(ts != null ? ts : row.getValue(4));
+                        if (messageUser.getIp() != null) {
+                            resultUser.setIp(messageUser.getIp());
+                        }
                         Promise<Integer> updatePromise = updateUser(resultUser);
                         updatePromise.futureAndAwait();
                         promise.complete(resultUser);
@@ -900,5 +932,21 @@ public abstract class DbDefinitionBase {
 
     public static DSLContext getCreate() {
         return create;
+    }
+
+    public void setPgConnectOptions(PgConnectOptions pgConnectOptions) {
+        DbDefinitionBase.pgConnectOptions = pgConnectOptions;
+    }
+
+    public void setMySQLConnectOptions(MySQLConnectOptions mySQLConnectOptions) {
+        DbDefinitionBase.mySQLConnectOptions = mySQLConnectOptions;
+    }
+
+    public void setJDBCConnectOptions(JDBCConnectOptions jdbcConnectOptions) {
+        DbDefinitionBase.jdbcConnectOptions = jdbcConnectOptions;
+    }
+
+    public void setPoolOptions(PoolOptions poolOptions) {
+        DbDefinitionBase.poolOptions = poolOptions;
     }
 }

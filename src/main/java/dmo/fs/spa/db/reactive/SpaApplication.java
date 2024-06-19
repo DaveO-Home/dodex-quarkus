@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.spa.db.SpaDbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
@@ -20,9 +19,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 
 public class SpaApplication {
-    private static final Logger logger = LoggerFactory.getLogger(SpaApplication.class.getName());
-    private SpaDatabaseReactive spaDatabase;
-    private Vertx vertx;
+    protected static final Logger logger = LoggerFactory.getLogger(SpaApplication.class.getName());
+    protected SpaDatabaseReactive spaDatabase;
+    protected Vertx vertx;
 
     protected SpaApplication() {
     }

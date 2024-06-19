@@ -4,6 +4,8 @@ package dmo.fs.db.handicap.utils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.mutiny.core.Vertx;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +15,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -25,21 +24,22 @@ public class DodexUtil {
     protected static final String REMOVEUSER = ";removeuser";
     protected static final String USERS = ";users";
     protected static String env = "dev";
-    protected static Vertx vertx = null;;
+    protected static Vertx vertx = null;
+    ;
 
     protected static io.vertx.rxjava3.core.Vertx vertxR = null;
 
     String defaultDb = "sqlite3";
 
-    // public void await(Disposable disposable) {
-    // while (!disposable.isDisposed()) {
-    // try {
-    // Thread.sleep(100);
-    // } catch (InterruptedException e) {
-    // logger.error(String.join("", "Await: ", e.getMessage()));
-    // }
-    // }
-    // }
+//    public void await(Disposable disposable) {
+//        while (!disposable.isDisposed()) {
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException e) {
+//                logger.error(String.join("", "Await: ", e.getMessage()));
+//            }
+//        }
+//    }
 
     public Map<String, String> commandMessage(String clientData) {
         Map<String, String> returnObject = new ConcurrentHashMap<>();
@@ -59,7 +59,7 @@ public class DodexUtil {
     }
 
     protected Map<String, String> processCommand(String command, String data)
-            throws InterruptedException {
+      throws InterruptedException {
         String selectedUsers = "";
         Map<String, String> returnObject = new ConcurrentHashMap<>();
         String switchValue = command == null ? "" : command;
@@ -97,7 +97,7 @@ public class DodexUtil {
      * Split out command and data from client message.
      */
     public static class ClientInfoUtilHelper {
-        protected static final String[] commands = { REMOVEUSER, USERS };
+        protected static final String[] commands = {REMOVEUSER, USERS};
 
         protected static final Function<String, String> command = clientData -> {
             for (String clientCommand : commands) {
@@ -138,15 +138,22 @@ public class DodexUtil {
             node = jsonMapper.readTree(in);
         }
 
+        Config config = ConfigProvider.getConfig();
+        String configDefaultDb = null;
+        try {
+            configDefaultDb = config.getValue("dodex.default.db", String.class);
+        } catch (NoSuchElementException nse) {
+        }
         String defaultdbProp = System.getProperty("DEFAULT_DB");
         String defaultdbEnv = System.getenv("DEFAULT_DB");
         defaultDb = node.get("defaultdb").textValue();
-
         /*
-         * use environment variable first, if set, than properties and then from config
-         * json
-         */
-        defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp : defaultDb;
+        use environment variable first, if set, then properties then quarkus-config and then from dodex-config json
+        */
+        defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
+        System.setProperty("DEFAULT_DB", defaultDb);
+
         return node.get(defaultDb);
     }
 
@@ -214,7 +221,7 @@ public class DodexUtil {
     }
 
     public static Vertx getVertx() {
-        if(vertx == null) {
+        if (vertx == null) {
             vertx = Vertx.vertx();
         }
         return vertx;
@@ -240,7 +247,7 @@ public class DodexUtil {
     public static String unescapeHtml3(String str) {
         try {
             HTMLDocument doc = new HTMLDocument();
-            new HTMLEditorKit().read(new StringReader( "<html><body>" +  str), doc, 0);
+            new HTMLEditorKit().read(new StringReader("<html><body>" + str), doc, 0);
             return doc.getText(1, doc.getLength());
         } catch (Exception ex) {
             return str;

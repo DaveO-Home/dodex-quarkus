@@ -1,6 +1,22 @@
 # Changelog
 
-## [v3.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.3.0) (2024-05-13)
+## [v3.4.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.4.0) (2024-06-19)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.3.0...v3.4.0)
+
+* Upgraded to Quarkus 3.11.2
+* Changed ProfileManager.getLaunchMode() to SmallRyeConfig Provider to determine production/dev config
+* Changed deprecated kotlin jvm options to compiler options.
+* Fixed OpenApi to handle groups without USE_HANDICAP set. Works with sqlite3, h2, mariadb, postgres
+* Upgraded to Kotlin 2.0.0
+* Now defaulting to Gradle 8.8
+* Set config to default to uber-jar, exec `./gradlew quarkusBuild` since a server app like dodex-quarkus cannot be compiled by graalvm.
+* Upgraded javascript dependencies, grpc/openapi clients, firebase, dodex and spa demo app.
+* Modified README.md
+* Can use command line args to swap among databases, e.g. `./gradlew quarkusDev -DDEFAULT_DB=postgres -DUSE_HANDICAP=true`.
+* Commented @RouteFilter(500) in DodexRouter.java to eliminate the gRPC warning.
+
+## [v3.3.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.3.0) (2024-05-14)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.2.3...v3.3.0)
 
@@ -8,6 +24,7 @@
 * Replaced Jakarta websocket with the new Quarkus-Next websocket. Allows for the removal of stringy code with it's conditional capability.
 * Organized db packages by database
 * Added db and router classes to their respective .../wsnext packages
+* Changed gRPC to run as single server with the web server, port 8089 for dev. This produces a warning message - considered an issue.
 
 ## [v3.2.3](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.2.3) (2024-02-05)
 

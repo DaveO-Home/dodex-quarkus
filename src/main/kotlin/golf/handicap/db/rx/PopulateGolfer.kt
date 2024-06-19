@@ -7,6 +7,7 @@ import dmo.fs.utils.ColorUtilConstants
 import golf.handicap.*
 import golf.handicap.Golfer
 import golf.handicap.generated.tables.references.GOLFER
+import handicap.grpc.Golfer.*
 import handicap.grpc.*
 import io.smallrye.mutiny.Uni
 import io.vertx.mutiny.core.Promise
@@ -309,9 +310,9 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
 
                         for (row in rows) {
                             val concatName = row!!.getString(0) + ", " + row.getString(1)
-                            golferBuilder = handicap.grpc.Golfer.newBuilder()
+                            golferBuilder = newBuilder() // handicap.grpc.Golfer.newBuilder()
 
-                            golferBuilder.name = concatName
+                            golferBuilder!!.name = concatName
                             golfersBuilder.addGolfer(golferBuilder)
                         }
                         conn.rxClose().subscribe()

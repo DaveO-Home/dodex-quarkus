@@ -1,4 +1,6 @@
 #Dodex
+.kotlin
+.env_list
 spa_test
 copyjs.sh
 *.log*

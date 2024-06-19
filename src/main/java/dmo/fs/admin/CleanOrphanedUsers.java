@@ -12,8 +12,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.db.reactive.DbDefinitionBase;
-import dmo.fs.db.reactive.DodexDatabase;
+import dmo.fs.db.wsnext.DbDefinitionBase;
+import dmo.fs.db.wsnext.DodexDatabase;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import io.smallrye.mutiny.Multi;

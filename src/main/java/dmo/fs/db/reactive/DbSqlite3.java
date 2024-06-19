@@ -10,7 +10,7 @@ public abstract class DbSqlite3 extends DbReactiveSqlBase implements DodexReacti
 
 	protected enum CreateTable {
 		CREATEUSERS("create table users (id integer primary key, name text not null unique, password text not null unique, ip text not null, last_login DATETIME not null)"),
-		CREATEMESSAGES("create table messages (id integer primary key, message text not null, from_handle text not null, post_date DATETIME not null)"),
+		CREATEMESSAGES("create table messages (id integer primary key, message text not null, from_handle text not null, post_date DEFAULT CURRENT_DATETIME not null)"),
 		CREATEUNDELIVERED("create table undelivered (user_id integer, message_id integer, CONSTRAINT undelivered_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id), CONSTRAINT undelivered_message_id_foreign FOREIGN KEY (message_id) REFERENCES messages (id))"),
 		CREATEGROUPS("CREATE TABLE IF NOT EXISTS groups (" +
 				"id integer primary key autoincrement NOT NULL," +

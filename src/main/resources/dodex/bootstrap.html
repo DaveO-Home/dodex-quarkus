@@ -47,6 +47,7 @@
         integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V"
         crossorigin="anonymous"></script -->
 <script src="../node_modules/jsoneditor/dist/jsoneditor.min.js"></script>
+<script src="../group/main.min.js"></script>
 
 <script>
     const dodex = window.doDex;
@@ -65,7 +66,8 @@
         for (var i = 0; i < 3; i++) {
           dodex.addCard(content);
         }
-
+        /* Api for user grouping */
+        window.groupListener();
         /* Auto display of widget */
         dodex.openDodex();
       });

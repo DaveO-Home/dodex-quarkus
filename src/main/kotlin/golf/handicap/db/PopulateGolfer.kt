@@ -8,6 +8,7 @@ import golf.handicap.*
 import golf.handicap.Golfer
 import golf.handicap.db.rx.IPopulateGolfer
 import golf.handicap.generated.tables.references.GOLFER
+import handicap.grpc.Golfer.*
 import handicap.grpc.*
 import io.smallrye.mutiny.Uni
 import io.vertx.mutiny.core.Promise
@@ -17,7 +18,8 @@ import java.sql.SQLException
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.logging.Logger
+// import java.util.logging.Logger
+import org.jboss.logging.Logger;
 
 
 class PopulateGolfer : SqlConstants(), IPopulateGolfer {
@@ -251,7 +253,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     .onFailure().invoke { err ->
                         golfer.status = -1
                         golfer.message = "Golfer query failed"
-                        LOGGER.severe(
+                        LOGGER.error(
                             String.format(
                                 "%sError querying Golfer - %s%s %s",
                                 ColorUtilConstants.RED,
@@ -295,14 +297,14 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
 
                         for (row in rows) {
                             val concatName = row!!.getString(0) + ", " + row.getString(1)
-                            golferBuilder = handicap.grpc.Golfer.newBuilder()
+                            golferBuilder = newBuilder() // handicap.grpc.Golfer.newBuilder()
 
-                            golferBuilder.name = concatName
+                            golferBuilder!!.name = concatName
                             golfersBuilder.addGolfer(golferBuilder)
                         }
                     }
                     .onFailure().invoke { err ->
-                        LOGGER.severe(
+                        LOGGER.error(
                             String.format(
                                 "%sError Querying Golfers Public - %s%s %s",
                                 ColorUtilConstants.RED,
@@ -366,7 +368,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     .onFailure().invoke { err ->
                         golfer.status = -1
                         golfer.message = "Golfer add failed"
-                        LOGGER.severe(
+                        LOGGER.error(
                             String.format(
                                 "%sError Adding Golfer - %s%s %s",
                                 ColorUtilConstants.RED,
@@ -430,7 +432,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     .onFailure().invoke { err ->
                         golfer.status = -1
                         golfer.message = "Golfer update failed"
-                        LOGGER.severe(
+                        LOGGER.error(
                             String.format(
                                 "%sError Updating Golfer - %s%s %s",
                                 ColorUtilConstants.RED,

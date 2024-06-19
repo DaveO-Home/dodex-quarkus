@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
@@ -14,14 +15,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public class DodexDatabaseFirebase extends DbFirebaseBase implements DodexFirebase {
+
 	protected final static Logger logger = LoggerFactory.getLogger(DodexDatabaseFirebase.class.getSimpleName());
 
 	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+        protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected JsonNode defaultNode;
 
 	protected DodexUtil dodexUtil = new DodexUtil();

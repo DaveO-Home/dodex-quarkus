@@ -1,6 +1,5 @@
 package dmo.fs.db.handicap;
 
-//import dmo.fs.db.handicap.rx.HandicapDatabaseSqlite3;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,9 @@ public abstract class DbConfiguration {
         DbTypes(String db) {
             this.db = db;
         }
-    };
+    }
+
+    ;
 
     public static boolean isUsingPostgres() {
         return isUsingPostgres;
@@ -58,15 +59,13 @@ public abstract class DbConfiguration {
     public static <T> T getDefaultDb() throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase();
 
-        if(defaultDb.equals(DbTypes.POSTGRES.db) && handicapDatabase == null) {
+        if (defaultDb.equals(DbTypes.POSTGRES.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabasePostgres();
             isUsingPostgres = true;
-        }
-        else if(defaultDb.equals(DbTypes.MARIADB.db) && handicapDatabase == null) {
+        } else if (defaultDb.equals(DbTypes.MARIADB.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseMariadb();
             isUsingMariadb = true;
-        }
-        else if(defaultDb.equals(DbTypes.H2.db) && handicapDatabase == null) {
+        } else if (defaultDb.equals(DbTypes.H2.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseH2();
             isUsingH2 = true;
         }
@@ -81,15 +80,13 @@ public abstract class DbConfiguration {
     public static <T> T getDefaultDb(Boolean isCreateTables) throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase();
 
-        if(defaultDb.equals(DbTypes.POSTGRES.db) && isCreateTables) {
+        if (defaultDb.equals(DbTypes.POSTGRES.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabasePostgres(isCreateTables);
             isUsingPostgres = true;
-        }
-        else if(defaultDb.equals(DbTypes.MARIADB.db) && isCreateTables) {
+        } else if (defaultDb.equals(DbTypes.MARIADB.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabaseMariadb(isCreateTables);
             isUsingMariadb = true;
-        }
-        else if(defaultDb.equals(DbTypes.H2.db) && isCreateTables) {
+        } else if (defaultDb.equals(DbTypes.H2.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabaseH2(isCreateTables);
             isUsingH2 = true;
         }
@@ -99,42 +96,40 @@ public abstract class DbConfiguration {
 
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(Map<String, String> overrideMap, Properties overrideProps)
-            throws InterruptedException, IOException, SQLException {
+      throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb();
 
-        if(defaultDb.equals(DbTypes.POSTGRES.db) && handicapDatabase == null) {
+        if (defaultDb.equals(DbTypes.POSTGRES.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabasePostgres(overrideMap, overrideProps);
             isUsingPostgres = true;
-        }
-        else if(defaultDb.equals(DbTypes.MARIADB.db) && handicapDatabase == null) {
+        } else if (defaultDb.equals(DbTypes.MARIADB.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseMariadb(overrideMap, overrideProps);
             isUsingMariadb = true;
-        }
-        else if(defaultDb.equals(DbTypes.H2.db) && handicapDatabase == null) {
+        } else if (defaultDb.equals(DbTypes.H2.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseH2(overrideMap, overrideProps);
             isUsingH2 = true;
         }
         return (T) handicapDatabase;
     }
 
-    public static void configureDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && !overrideProps.isEmpty()) {
+    public static void configureDefaults(Map<String, String> overrideMap, Properties overrideProps) {
+        if (overrideProps != null && !overrideProps.isEmpty()) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);
     }
 
-    public static void configureTestDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && !overrideProps.isEmpty()) {
+    public static void configureTestDefaults(Map<String, String> overrideMap, Properties overrideProps) {
+        if (overrideProps != null && !overrideProps.isEmpty()) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);
 
     }
 
-    public static void mapMerge(Map<String,String> map1, Map<String, String> map2) {
+    public static void mapMerge(Map<String, String> map1, Map<String, String> map2) {
         map2.forEach((key, value) -> map1
-            .merge( key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
+          .merge(key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
     }
 
 }

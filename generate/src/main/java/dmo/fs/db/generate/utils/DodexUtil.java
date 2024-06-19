@@ -151,7 +151,7 @@ public class DodexUtil {
          * json
          */
         defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp : defaultDb;
-
+//        System.setProperty("DEFAULT_DB", defaultDb);
         return node.get(defaultDb);
     }
 

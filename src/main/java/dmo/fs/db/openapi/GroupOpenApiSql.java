@@ -30,7 +30,6 @@ import java.util.*;
 
 import static org.jooq.impl.DSL.*;
 
-//@SessionScoped
 @Dependent
 public class GroupOpenApiSql implements GroupOpenApi {
   protected final static Logger logger = LoggerFactory.getLogger(GroupOpenApiSql.class.getName());

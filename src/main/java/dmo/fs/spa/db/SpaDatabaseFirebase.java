@@ -5,7 +5,6 @@ import dmo.fs.quarkus.Server;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +15,12 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SpaDatabaseFirebase extends DbFirebaseBase implements SpaFirebase {
-	private static final Logger logger = LoggerFactory.getLogger(SpaDatabaseFirebase.class.getName());
+	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseFirebase.class.getName());
 	protected Properties dbProperties;
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public SpaDatabaseFirebase(Map<String, String> dbOverrideMap, Properties dbOverrideProps)

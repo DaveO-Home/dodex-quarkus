@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import dmo.fs.db.reactive.DbCubridSqlBase;
 import dmo.fs.db.reactive.DodexReactiveBase;
 import dmo.fs.db.reactive.DodexReactiveDatabase;
-import jakarta.websocket.Session;
 
 import dmo.fs.quarkus.Server;
 import org.slf4j.Logger;
@@ -73,9 +72,9 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                     final int messageCount = fut.result().get("messages");
                     if (messageCount > 0) {
                         logger.info(
-                            String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                                    messageCount, mUser.getName(), ColorUtilConstants.RESET));
-                        if(ke != null) {
+                          String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+                            messageCount, mUser.getName(), ColorUtilConstants.RESET));
+                        if (ke != null) {
                             ke.setValue("delivered", messageCount);
                         }
                     }
@@ -106,7 +105,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
         if (!computedMessage.isEmpty()) {
             // broadcast
             if ("".equals(selectedUsers) && "".equals(command)) {
-                long count = broadcast(session,messageUser.getName() + ": " + computedMessage, queryParams);
+                long count = broadcast(session, messageUser.getName() + ": " + computedMessage, queryParams);
                 String handles = "handle";
                 handles = count == 1 ? handles : handles + "s";
 
@@ -124,7 +123,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                   if (Arrays.stream(selectedUsers.split(",")).anyMatch(h -> h.contains(handle))) {
                       CompletableFuture<Void> complete = s.sendText(messageUser.getName() + ": " + computedMessage)
                         .subscribe().asCompletionStage();
-                      if(complete.isCompletedExceptionally()) {
+                      if (complete.isCompletedExceptionally()) {
                           if (logger.isInfoEnabled()) {
                               logger.info(
                                 String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
@@ -144,7 +143,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                 session.sendText("ok").subscribeAsCompletionStage().isDone();
                 if (ke != null && "".equals(selectedUsers)) {
                     ke.setValue(1);
-                } 
+                }
             }
         }
 
@@ -152,20 +151,20 @@ public class CubridRouterReactive extends DbCubridSqlBase {
         if (!selectedUsers.isEmpty()) {
             final List<String> selected = Arrays.asList(selectedUsers.split(","));
             final List<String> disconnectedUsers = selected.stream().filter(user -> !onlineUsers.contains(user))
-                    .collect(Collectors.toList());
+              .collect(Collectors.toList());
             // Save protected message to send when to-user logs in
             if (!disconnectedUsers.isEmpty()) {
                 Future<Long> future = null;
                 future = addMessage(session, messageUser, computedMessage);
                 future.onSuccess(key -> {
                     addUndelivered(session, disconnectedUsers, key);
-                    if(ke != null) {
+                    if (ke != null) {
                         ke.setValue("undelivered", disconnectedUsers.size());
                     }
                 });
             }
-            if(!onlineUsers.isEmpty()) {
-                if(ke != null) {
+            if (!onlineUsers.isEmpty()) {
+                if (ke != null) {
                     ke.setValue("protected", onlineUsers.size());
                 }
             }
@@ -177,7 +176,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
          * Optional auto user cleanup - config in "application-conf.json". When client
          * changes handle when server is down, old users and undelivered messages will
          * be orphaned.
-         * 
+         *
          * Defaults: off - when turned on 1. execute on start up and every 7 days
          * thereafter. 2. remove users who have not logged in for 90 days.
          */
@@ -193,7 +192,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                 }
             } catch (final Exception exception) {
                 logger.error(LOGFORMAT, ColorUtilConstants.RED_BOLD_BRIGHT, "Context Configuration failed...",
-                        ColorUtilConstants.RESET);
+                  ColorUtilConstants.RESET);
             }
         }
     }
@@ -221,7 +220,4 @@ public class CubridRouterReactive extends DbCubridSqlBase {
         return new MessageUserImpl();
     }
 
-    public static void removeWsChatSession(Session session) {
-        wsChatSessions.remove(session.getId());
-    }
 }

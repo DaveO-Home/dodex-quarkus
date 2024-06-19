@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -29,7 +29,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap;
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -91,7 +91,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
-				logger.error("{}Users Table Error: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
+				logger.error("{}Users Table Error2: {}{}", ColorUtilConstants.RED, error, ColorUtilConstants.RESET);
 			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
 		}).flatMap(conn -> {
@@ -135,7 +135,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 				}
 				return Uni.createFrom().item(conn);
 			}).onFailure().invoke(error -> {
-				logger.error("{}Undelivered Table Error: {}{}", ColorUtilConstants.RED, error,
+				logger.error("{}Undelivered Table Error2: {}{}", ColorUtilConstants.RED, error,
 						ColorUtilConstants.RESET);
 			}).subscribeAsCompletionStage().isDone();
 			return Uni.createFrom().item(conn);
@@ -159,7 +159,7 @@ public class DodexDatabasePostgres extends DbPostgres {
 		return new MessageUserImpl();
 	}
 
-	protected static PgPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected PgPool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -173,6 +173,10 @@ public class DodexDatabasePostgres extends DbPostgres {
 			.setDatabase(dbMap.get("dbname"))
 			.setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl")))
 			.setIdleTimeout(1);
+
+      /* For OpenApi if not using Handicap */
+      setPgConnectOptions(connectOptions);
+      setPoolOptions(poolOptions);
 
 		return PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 	}

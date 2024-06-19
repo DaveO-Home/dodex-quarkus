@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.reactive.DbConfiguration;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.mysqlclient.MySQLPool;
@@ -30,7 +30,7 @@ public class DodexDatabaseMariadb extends DbMariadb {
 	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
 	protected Map<String, String> dbMap = new ConcurrentHashMap<>();
 	protected JsonNode defaultNode;
-	protected String webEnv = !ProfileManager.getLaunchMode().isDevOrTest() ? "prod" : "dev";
+	protected String webEnv = Server.isProduction() ? "prod" : "dev";
 	protected DodexUtil dodexUtil = new DodexUtil();
 
 	public DodexDatabaseMariadb(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
@@ -41,7 +41,7 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
 		dbProperties = dodexUtil.mapToProperties(dbMap);
 
-		if (dbOverrideProps != null && dbOverrideProps.size() > 0) {
+		if (dbOverrideProps != null && !dbOverrideProps.isEmpty()) {
 			this.dbProperties = dbOverrideProps;
 		}
 		if (dbOverrideMap != null) {
@@ -167,7 +167,7 @@ public class DodexDatabaseMariadb extends DbMariadb {
 		return new MessageUserImpl();
 	}
 
-	protected static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -180,6 +180,10 @@ public class DodexDatabaseMariadb extends DbMariadb {
 			.setDatabase(dbMap.get("dbname"))
 			.setSsl(Boolean.valueOf(dbProperties.getProperty("ssl")))
 			.setCharset("utf8mb4").setIdleTimeout(1);
+
+		/* For OpenApi if not using Handicap */
+		setMySQLConnectOptions(connectOptions);
+		setPoolOptions(poolOptions);
 
 		return MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 	}

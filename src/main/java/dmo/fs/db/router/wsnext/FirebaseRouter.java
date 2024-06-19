@@ -105,9 +105,9 @@ public class FirebaseRouter {
 
                     userJson.onSuccess(json -> {
                         connection.sendText("connected:" + json).subscribe().asCompletionStage(); // Users for private messages
-                        /*
-                         * Send undelivered messages and remove user related messages.
-                         */
+                        //
+                         // Send undelivered messages and remove user related messages.
+                        // 
                         try {
                             dodexFirebase.processUserMessages(connection, firebaseUser).onComplete(counts -> {
                                 final int messageCount = counts.result().get("messages");
@@ -152,12 +152,12 @@ public class FirebaseRouter {
     }
 
     private void setWebSocket() throws InterruptedException, IOException, SQLException {
-        /*
-         * You can customize the db config here by: Map = db configuration, Properties =
-         * credentials e.g. Map overrideMap = new Map(); Properties overrideProperties =
-         * new Properties(); set override or additional values... dodexDatabase =
-         * DbConfiguration.getDefaultDb(overrideMap, overrideProperties);
-         */
+        //
+         // You can customize the db config here by: Map = db configuration, Properties =
+         // credentials e.g. Map overrideMap = new Map(); Properties overrideProperties =
+         // new Properties(); set override or additional values... dodexDatabase =
+         // DbConfiguration.getDefaultDb(overrideMap, overrideProperties);
+         //
 
         dodexFirebase = DbConfiguration.getDefaultDb();
         dodexFirebase.setFirestore(dbf);
@@ -315,4 +315,5 @@ public class FirebaseRouter {
     public void setRemoteAddress(String remoteAddress) {
         this.remoteAddress = remoteAddress;
     }
+
 }

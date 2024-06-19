@@ -32,7 +32,9 @@ public abstract class DbConfiguration {
         DbTypes(String db) {
             this.db = db;
         }
-    };
+    }
+
+    ;
 
     public static boolean isUsingSqlite3() {
         return isUsingSqlite3;
@@ -46,7 +48,7 @@ public abstract class DbConfiguration {
     public static <T> T getDefaultDb() throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase();
 
-        if(defaultDb.equals(DbTypes.SQLITE3.db) && handicapDatabase == null) {
+        if (defaultDb.equals(DbTypes.SQLITE3.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseSqlite3();
             isUsingSqlite3 = true;
         }
@@ -57,7 +59,7 @@ public abstract class DbConfiguration {
     public static <T> T getDefaultDb(Boolean isCreateTables) throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb().toLowerCase();
 
-        if(defaultDb.equals(DbTypes.SQLITE3.db) && isCreateTables) {
+        if (defaultDb.equals(DbTypes.SQLITE3.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabaseSqlite3(isCreateTables);
             isUsingSqlite3 = true;
         }
@@ -66,34 +68,34 @@ public abstract class DbConfiguration {
 
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(Map<String, String> overrideMap, Properties overrideProps)
-            throws InterruptedException, IOException, SQLException {
+      throws InterruptedException, IOException, SQLException {
         defaultDb = dodexUtil.getDefaultDb();
 
-        if(defaultDb.equals(DbTypes.SQLITE3.db) && handicapDatabase == null) {
+        if (defaultDb.equals(DbTypes.SQLITE3.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseSqlite3(overrideMap, overrideProps);
             isUsingSqlite3 = true;
         }
         return (T) handicapDatabase;
     }
 
-    public static void configureDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && overrideProps.size() > 0) {
+    public static void configureDefaults(Map<String, String> overrideMap, Properties overrideProps) {
+        if (overrideProps != null && overrideProps.size() > 0) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);
     }
 
-    public static void configureTestDefaults(Map<String, String>overrideMap, Properties overrideProps) {
-        if(overrideProps != null && overrideProps.size() > 0) {
+    public static void configureTestDefaults(Map<String, String> overrideMap, Properties overrideProps) {
+        if (overrideProps != null && overrideProps.size() > 0) {
             properties = overrideProps;
         }
         mapMerge(map, overrideMap);
 
     }
 
-    public static void mapMerge(Map<String,String> map1, Map<String, String> map2) {
+    public static void mapMerge(Map<String, String> map1, Map<String, String> map2) {
         map2.forEach((key, value) -> map1
-            .merge( key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
+          .merge(key, value, (v1, v2) -> v2));  // let duplicate key in map2 win
     }
 
 }

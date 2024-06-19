@@ -21,6 +21,7 @@ import jakarta.enterprise.context.SessionScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 
+import jakarta.ws.rs.PathParam;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
 import org.apache.kafka.clients.admin.RecordsToDelete;
@@ -33,7 +34,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
+//import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +44,13 @@ import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 
 @IfBuildProperty(name = "DODEX_KAFKA", stringValue = "true")
 @Path("/events/{command}/{init}")
-@SessionScoped
+//@SessionScoped
 public class KafkaConsumerDodex {
-    private static final Logger logger = LoggerFactory.getLogger(KafkaConsumerDodex.class.getName());
-    private static final Queue<DodexEventData> eventQueue = new LinkedList<>();
-    private static final String topic = "dodex-events";
-    private static final Set<DodexEventData> dodexEventData = Collections.newSetFromMap(Collections.synchronizedMap(new LinkedHashMap<>()));
-    private static final int dodexEventsLimit = KafkaEmitterDodex.getMessageLimit();
+    protected static final Logger logger = LoggerFactory.getLogger(KafkaConsumerDodex.class.getName());
+    protected static final Queue<DodexEventData> eventQueue = new LinkedList<>();
+    protected static final String topic = "dodex-events";
+    protected static final Set<DodexEventData> dodexEventData = Collections.newSetFromMap(Collections.synchronizedMap(new LinkedHashMap<>()));
+    protected static final int dodexEventsLimit = KafkaEmitterDodex.getMessageLimit();
 
     @Incoming(topic)
     @NonBlocking
@@ -94,7 +95,7 @@ public class KafkaConsumerDodex {
     }
 
     @GET
-    public Set<DodexEventData> list(@PathParam String command, @PathParam int init) {
+    public Set<DodexEventData> list(@PathParam("command") String command, @PathParam("init") int init) {
         // let a new monitor start with fresh cache
         if(init == 0 && dodexEventData.size() > dodexEventsLimit/2) {
             dodexEventData.clear();
@@ -109,7 +110,7 @@ public class KafkaConsumerDodex {
         in the server.properties. And, if needed, 'kafka-configs.sh --alter' at runtime.
 
     */
-    private void removeMessages(String topic, long offset, int partition) {
+    protected void removeMessages(String topic, long offset, int partition) {
         // per @amethystic Counting Number of messages stored in a kafka topic
         Properties props = new Properties();
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);

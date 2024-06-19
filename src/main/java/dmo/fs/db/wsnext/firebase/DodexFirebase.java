@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public interface DodexFirebase {
-
 	Future<MessageUser> deleteUser(WebSocketConnection ws, MessageUser messageUser) throws InterruptedException, ExecutionException;
 
     FirebaseUser updateUser(WebSocketConnection ws, FirebaseUser firebaseUser) throws InterruptedException, ExecutionException;

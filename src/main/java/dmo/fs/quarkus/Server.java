@@ -6,12 +6,12 @@ import dmo.fs.utils.ColorUtilConstants;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import io.quarkus.runtime.configuration.ProfileManager;
+import io.smallrye.config.SmallRyeConfig;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.file.FileSystem;
-import io.vertx.mutiny.core.http.HttpServer;
+//import io.vertx.mutiny.core.http.HttpServer;
 import io.vertx.mutiny.ext.web.Route;
 import io.vertx.mutiny.ext.web.Router;
 import org.eclipse.microprofile.config.Config;
@@ -27,13 +27,13 @@ import java.util.concurrent.ExecutionException;
 @QuarkusMain
 public class Server implements QuarkusApplication {
     protected static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
-    protected static final Promise<HttpServer> serverPromise = Promise.promise();
+    protected static final Promise<Boolean> serverPromise = Promise.promise();
     protected static Promise<Router> routesPromise = Promise.promise();
     protected static Integer port;
     protected static Boolean isUsingHandicap = false;
     protected static String defaultDbName = "sqlite3";
     protected static boolean color = true;
-    public static boolean isProduction;
+    public static boolean isProduction = true;
     protected static final Vertx vertxMutiny = Vertx.vertx();
     public static final io.vertx.reactivex.core.Vertx vertx = io.vertx.reactivex.core.Vertx.vertx();
     FileSystem fs = vertxMutiny.fileSystem();
@@ -48,11 +48,16 @@ public class Server implements QuarkusApplication {
         ObjectMapper jsonMapper = new ObjectMapper();
         JsonNode node;
 
-        HttpServer server = vertxMutiny.createHttpServer();
-        Config config = ConfigProvider.getConfig();
-        isProduction = !ProfileManager.getLaunchMode().isDevOrTest();
+        List<String> profiles = getProfiles();
+        for(String p : profiles) {
+            if("dev".equals(p) || "test".equals(p)) {
+                isProduction = false;
+            }
+        }
 
-        serverPromise.complete(server); // passing HttpServer instance to "DodexRoutes" for reactive setup
+        Config config = ConfigProvider.getConfig();
+
+        serverPromise.complete(isProduction); // passing ready to "DodexRoutes" for reactive setup
         String host = isProduction ? config.getValue("quarkus.http.host", String.class)
                 : config.getValue("%dev.quarkus.http.host", String.class); // see application.properties
         port = isProduction ? config.getValue("quarkus.http.port", Integer.class)
@@ -77,6 +82,9 @@ public class Server implements QuarkusApplication {
             supportedDBs.add("postgres");
             supportedDBs.add("mariadb");
             boolean isUseHandicapSet = "true".equals(System.getenv().get("USE_HANDICAP"));
+            if(!isUseHandicapSet) {
+                isUseHandicapSet = "true".equals(System.getProperty("USE_HANDICAP"));
+            }
 
             if (isUsingHandicap && supportedDBs.contains(defaultDbName) && isUseHandicapSet) {
                 logger.warn(
@@ -113,9 +121,12 @@ public class Server implements QuarkusApplication {
             .subscribeAsCompletionStage().toCompletableFuture().get();
 
         Quarkus.waitForExit();
-        server.close().subscribeAsCompletionStage().get();
 
         return 0;
+    }
+
+    public static List<String> getProfiles() {
+        return ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getProfiles();
     }
 
     protected void checkInstallation (FileSystem fs) {
@@ -167,7 +178,7 @@ public class Server implements QuarkusApplication {
         return info.substring(info.indexOf("pattern=") + 8, info.indexOf(',', info.indexOf("pattern=")));
     }
 
-    public static Promise<HttpServer> getServerPromise() {
+    public static Promise<Boolean> getServerPromise() {
         return serverPromise;
     }
 
@@ -177,6 +188,10 @@ public class Server implements QuarkusApplication {
 
     public static Integer getPort() {
         return port;
+    }
+
+    public static boolean isProduction() {
+        return isProduction;
     }
 
     public static void setIsUsingHandicap(Boolean isUsingHandicap) {
