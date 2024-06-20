@@ -17,9 +17,9 @@ RUN apt-get update && \
 
 RUN adduser dodex --disabled-password
 
-RUN mkdir /envoy && mkdir /data && chown 1000 /data && mkdir /data/db
+RUN mkdir /envoy && mkdir /data && chown 1000 /data && mkdir /data/db && mkdir /data/h2
 COPY envoy.yaml /etc/envoy/envoy.yaml
-RUN chmod go+r /etc/envoy/envoy.yaml && chmod o+w /data/db
+RUN chmod go+r /etc/envoy/envoy.yaml && chmod o+w /data/db && chmod o+w /data/h2
 
 EXPOSE 8088
 EXPOSE 8071
@@ -34,7 +34,7 @@ RUN mkdir /home/dodex/quarkus && mkdir /home/dodex/quarkus/logs
 
 VOLUME ~
 
-COPY dodex-quarkus-3.2.0-runner.jar /home/dodex/quarkus/dodex-quarkus-3.2.0-runner.jar
+COPY dodex-quarkus-3.11.2-runner.jar /home/dodex/quarkus/dodex-quarkus-3.11.2-runner.jar
 
 WORKDIR /home/dodex/quarkus
 
