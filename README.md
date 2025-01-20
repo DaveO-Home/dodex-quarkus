@@ -4,11 +4,88 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 
 ## Install Assumptions
 
-1. Java 17+ installed with JAVA_HOME set.
-2. Gradle 8+ installed. If you have sdkman installed, execute `sdk install gradle 8.8` otherwise executing gradlew should install gradle.
+1. Java 21+ installed with JAVA_HOME set.
+2. Gradle 8+ installed. If you have sdkman installed, execute `sdk install gradle 8.12` otherwise executing gradlew should install gradle.
 3. Javascript **node** with **npm** package manager installed.
 
-__Note:__ The Spa React Production demo url has changed to: **`localhost:8089/spa/react-fusebox/appl/testapp.html
+## Project Layout
+
+### Dodex-Quarkus is composed of 3 projects and a root Gradle project (dodex-quarkus)
+1.  __dodex-handicap__ is the main application, server
+2.  __dodex-db__ builds database tables based on the `DEFAULT_DB`environment variable
+3.  __generate__ creates the `jooq`code to generate`SQL`
+4. Structure:
+
+<div style="text-align: left; display: grid; grid-template-columns: 1fr 1fr;">
+  <div>root project
+
+```
+dodex-quarkus
+   ├── build.gradle
+   ├── CHANGELOG.md
+   ├── clean.sh
+   ├── deleteapp
+   ├── deploy
+   ├── dodexstart.xml
+   ├── ev
+   ├── execpod
+   ├── getpod
+   ├── gradle
+   ├── gradlew
+   ├── gradlew.bat
+   ├── handicap
+   │   ├── buildimage.bat
+   │   ├── Dockerfile
+   │   ├── envoy.yaml
+   │   ├── handicap.yaml
+   │   ├── README.md
+   │   └── runenvoy.bat
+   ├── kube
+   │   ├── db-volume.yaml
+   │   ├── docker-compose.yaml
+   │   ├── Dockerfile
+   │   ├── envoy.yaml
+   │   ├── logs
+   │   ├── quarkus
+   │   ├── quarkus.yml
+   │   └── run_dodex.sh
+   ├── LICENSE
+   ├── logs
+   ├── package.json
+   ├── package-lock.json
+   ├── README.md
+   ├── setfb
+   ├── settings.gradle
+   └── start.envoy
+```
+
+  </div>
+  <div>
+sub projects
+
+```
+   ├── dodex-db
+   │   ├── build.gradle
+   │   ├── gradle.properties
+   │   ├── settings.gradle
+   │   └── src
+   ├── dodex-handicap
+   │   ├── build.gradle
+   │   ├── gradle.properties
+   │   ├── logs
+   │   ├── settings.gradle
+   │   └── src
+   ├── generate
+   │   ├── build.gradle
+   │   ├── gradle
+   │   ├── gradlew
+   │   ├── gradlew.bat
+   │   ├── settings.gradle
+   │   └── src
+```
+
+  </div>
+</div>
 
 ## Getting Started
 
@@ -18,48 +95,50 @@ __Note:__ The Spa React Production demo url has changed to: **`localhost:8089/sp
 
 1. Execute __`docker build -t dufferdo2/dodex-quarkus:latest -f kube/quarkus/Dockerfile ./kube`__ -- see install steps in __`Building dodex-quarkus`__ below.
 2. Execute __`docker run -d -p 8088:8088 -p 8071:8071 -p 9901:9901 --name dodex_quarkus dufferdo2/dodex-quarkus`__
-3. View in browser; __localhost:8088/ddex__ or __localhost:8088/ddex/bootstrap.html__ or __localhost:8088/handicap.html__
+3. View in browser; __`localhost:8088/ddex`__ or __`localhost:8088/ddex/bootstrap.html`__ or __localhost:8088/handicap.html__
 4. To verify that the image is working, execute __`docker exec -ti  --tty  dodex_quarkus /bin/sh`__ and then __`cat logs/quarkus.log`__
 5. To keep and run later, execute `docker stop dodex_quarkus` and later `docker start dodex_quarkus`
-6. To cleanup execute `docker stop dodex_quarkus` and `docker rm dodex_quarkus` and `docker rmi dufferdo2/dodex-quarkus` and `docker rmi envoyproxy/envoy:v1.25.0`
+6. To clean up execute `docker stop dodex_quarkus` and `docker rm dodex_quarkus` and `docker rmi dufferdo2/dodex-quarkus` and `docker rmi envoyproxy/envoy:v1.25.0`
 
 ### Building `dodex-quarkus`
 
 1. `npm install dodex-quarkus` or download from <https://github.com/DaveO-Home/dodex-quarkus>. If you use npm install, move node_modules/dodex-quarkus to an appropriate directory.
-2. `cd <install directory>/dodex-quarkus/src/main/resources/META-INF/resources` and execute `npm install --save` to install the dodex modules.
-3. `cd <install directory>/dodex-quarkus` run **`export DEFAULT_DB=sqlite3`** and execute `gradlew quarkusDev`. This should install java dependencies and startup the server in development mode against the default sqlite3 database. In this mode, any modifications to java source will be recompiled(refresh browser page to recompile).
+2. `cd <install directory>/dodex-quarkus/dodex-handicap/src/main/resources/META-INF/resources` and execute `npm install --save` to install the dodex modules.
+3. `cd <install directory>/dodex-quarkus` run **`export DEFAULT_DB=h2`** and execute `gradlew quarkusDev`. This should install java dependencies and startup the server in development mode against the default h2 database. In this mode, any modifications to java source will be recompiled(refresh browser page to recompile).
 4. Execute url `http://localhost:8089/test` in a browser.
 5. You can also run `http://localhost:8089/test/bootstrap.html` for a bootstrap example.
 6. Follow instructions for dodex at <https://www.npmjs.com/package/dodex-mess> and <https://www.npmjs.com/package/dodex-input>.
-7. The Cassandra database has been added via an `Akka` micro-service. See; <https://www.npmjs.com/package/dodex-akka>.
+7. The Cassandra database has been added via an `Akka` microservice. See; <https://www.npmjs.com/package/dodex-akka>.
 8. Added Cassandra database to the **React** demo allowing the **login** component to use Cassandra.
-9. See the **Firebase section** for using Google's **Firestore** backend.
-10. To generate `jooq` code, set `DEFAUT_DB=sqlite3` and execute `./gradlew jooqGenerate`. The code is generated to `src/main/kotlin/golf/handicap/generated`.
+9. See the **Firebase section** for using Google's **`Firestore`** backend.
+10. Optionally(included by default), to generate `jooq` code, set `DEFAUT_DB=sqlite3` and execute `./gradlew jooqGenerate`. The code is generated to `src/main/kotlin/golf/handicap/generated`.
 
    ___Note:___ In dev mode(`gradlew quarkusDev`), when modifying Java code, all you have to do is refresh the browser window. You can also use `gradlew run`(in build.gradle) to set ENVIRONMENT variables first.
 
-   ___See:___ Single Page React Section below on using Dodex in an SPA.
+   ___See:___ Single Page React Section below on using Dodex in an SPA and the "Kotlin, gRPC Web Application" section for a more detailed application.  
+   __Note:__ The Spa React Production demo url has changed to: **`localhost:8089/spa/react-fusebox/appl/testapp.html`**
 
 ### Operation
 
 1. Execute `gradlew tasks` to view all tasks.
 2. Building the Production Uber jar
     1. Before running the Uber jar for production, do:
-        * Make sure that the spa react javascript is installed. Execute `npm install --legacy-peer-deps` in the `src/spa-react` directory.
-        * cd to src/spa-react/devl & execute `npx gulp prod` or `npx gulp prd` (bypasses tests)`
-        * `npm install` must also populate the `node_modules` directory in `src/main/resources/META-INF/resources`
+        * Make sure that the spa react javascript is installed. Execute `npm install --legacy-peer-deps` in the `dodex-handicap/src/spa-react` directory.
+        * cd to `dodex-handicap/src/spa-react/devl` & execute `npx gulp prod` or `npx gulp prd` (bypasses tests)`
+        * `npm install` must also populate the `node_modules` directory in `dodex-handicap/src/main/resources/META-INF/resources`
         * (optional) rm src/spa-react/node_modules (makes a smaller uber jar)
     2. Execute `gradlew quarkusBuild -Pquarkus.package.jar.enabled=true -Dquarkus.package.jar.type=uber-jar` to build the production fat jar.
-    3. Or just execute `gradlew quarkusBuild` since the config in `application.properties` is setup to default to a uber-jar.
+    3. Or just execute `gradlew quarkusBuild` since the config in `application.properties` is set up to default to an uber-jar.
         * **Important** When building the **Uber** jar, set **DEFAULT_DB**=h2 or mariadb or postgres and **USE_HANDICAP**=true
 
-3. Execute `java -jar build/dodex-quarkus-3.11.2-runner.jar` to startup the production server.
-4. Execute url `http://localhost:8088/ddex/index.html` or `.../ddex/bootstrap.html` in a browser. __Note:__ This is a different port and url than development. Also __Note:__ The default database must be set because of conditional `web-socket-next` configuration, e.g. DEFAULT_DB=h2. Dodex-quarkus also has Postgres/Cubrid/Mariadb/DB2/H2/Cassandra/Neo4j/firebase implementations. See `<install directory>/dodex-quarkus/src/main/resources/database_config.json` and `<install directory>/generate/src/main/resources` for configuration.
+3. Execute `java -jar ./dodex-handicap/build/dodex-handicap-3.17.0-runner.jar` to start up the production server.
+4. Execute url `http://localhost:8088/ddex/index.html` or `.../ddex/bootstrap.html` in a browser.  
+   __Note:__ This is a different port and url than development.  
+   Also __Note:__ The default database is `h2` for the conditional `web-socket-next` configuration, however, the DEFAULT_DB variable can also be set to: Postgres/Cubrid/Mariadb/DB2/sqlite3/Cassandra/Neo4j/firebase implementations.  
+   See `<install directory>/dodex-quarkus/dodex-handicap/src/main/resources/database_config.json` and `<install directory>/dodex-quarkus/generate/src/main/resources` for configuration.
 5. Swapping among databases; Use environment variable __`DEFAULT_DB`__ by setting it to either `sqlite3` ,`postgres`, `cubrid`, `mariadb`, `ibmdb2`, `h2`, `cassandra`, `firebase`, `neo4j`. You can also use command line args, e.g. __`./gradlew quarkusDev -DDEFAULT_DB=mariadb -DUSE_HANDICAP=true`__.
 6. When Dodex-quarkus is configured for the Cubrid database, the database must be created using UTF-8. For example `cubrid createdb dodex en_US.utf8`.
 7. The dodex server has an auto user clean up process. See `application-conf.json` and `DodexRouter.java` for configuration. It is turned off by default. Users and messages may be orphaned when clients change a handle when the server is offline.
-
-__Important Note:__ Since building __`jooq`__ source code, the database configurations from the .../dodex-quarkus/generate project may override the __database_configs__ in the the dodex/spa configurations. When making a change to __`src/main/resources/database_(spa)_config.json`__ also make the change in __`generate/src/main/resources`__
 
 ## Java Linting with PMD
 
@@ -69,9 +148,9 @@ __Important Note:__ Since building __`jooq`__ source code, the database configur
 ## Single Page React Application to demo Development and Integration Testing
 
 * Integrated in ***Dodex-Quarkus*** at `src/spa-react`
-* Documentation <https://github.com/DaveO-Home/dodex-quarkus/blob/master/src/spa-react/README.md>
+* Documentation <https://github.com/DaveO-Home/dodex-quarkus/blob/master/dodex-handicap/src/spa-react/README.md>
 * Set DEFAULT_DB=***h2*** as default backend database
-* Router added to `src/main/java/dmo/fs/router/DodexRoutes.java`, see the `init` method.
+* Router added to `dodex-handicap/src/main/java/dmo/fs/router/DodexRoutes.java`, see the `init` method.
 
 ## Debug
 
@@ -92,10 +171,10 @@ __Important Note:__ Since building __`jooq`__ source code, the database configur
 
 1. Make sure the demo **dodex-quarkus** server is running in development mode.
 2. Test Dodex-mess by entering the URL **localhost:8089/test/index.html** in a browser.
-3. Ctrl+Double-Click a dial or bottom card to popup the messaging client.
+3. Ctrl+Double-Click a dial or bottom card to pop up the messaging client.
 4. To test the messaging, open up the URL in a different browser and make a connection by Ctrl+Double-Clicking the bottom card. Make sure you create a handle.
 5. Enter a message and click **send** to test.
-6. For dodex-input Double-Click a dial or bottom card to popup the input dialog. Allows for uploading, editing and removal of private content. Content in JSON can be defined as arrays to make HTML more readable.
+6. For dodex-input Double-Click a dial or bottom card to pop up the input dialog. Allows for uploading, editing and removal of private content. Content in JSON can be defined as arrays to make HTML more readable.
 
 ## Native execution with Graalvm
 
@@ -103,7 +182,7 @@ The quarkus documentation can be found at: <https://quarkus.io/guides/building-n
 
 A quick start (Assuming graalvm 21+ is installed and configured with `native-image`): 
 
-__The Quarkus Method:__ Execute `gradlew build -Dquarkus.package.jar.type=native`. Additional arguments can be supplied in `application.properties` (quarkus.native.additional-build-args). Currently the build fails with numerous errors.
+__The Quarkus Method:__ Execute `gradlew build -Dquarkus.package.jar.type=native`. Additional arguments can be supplied in `application.properties` (quarkus.native.additional-build-args). Currently, the build fails with numerous errors.
 
 ___Note:___ The gRPC application uses the `JOOQ` object generator which causes issues with `GraalVM`.
 
@@ -117,24 +196,24 @@ ___Note:___ The gRPC application uses the `JOOQ` object generator which causes i
     * in `src/main/resources/META-INF/resources` execute __`npm install`__
     * in `src/spa-react` execute __`npm install --legacy-peer-deps`__
     * startup Quarkus in dev mode - __`gradlew quarkusDev`__
-    * in **src/spa-react/devl** execute __`npx gulp prod`__ or __`npx gulp prd`__(does not need dodex-quarkus started)
+    * in **`dodex-handicap/src/spa-react/devl`** execute __`npx gulp prod`__ or __`npx gulp prd`__(does not need dodex-quarkus started)
     * stop the quarkus server - ctrl-c or enter __`q`__
     * build the production uber jar - __`./gradlew quarkusBuild -Dquarkus.package.type=uber-jar`__
       * **Important** When building the **Uber** jar, set **DEFAULT_DB**=h2 or mariadb or postgres and **USE_HANDICAP**=true
-    * verify the jar's name - if different than `dodex-quarkus-2.1.0-runner.jar`, change in `./kube/Dockerfile`
+    * verify the jar's name - if different from `dodex-handicap-3.17.0-runner.jar`, change in `./kube/Dockerfile`
 
-3. execute __`cp build/dodex-quarkus-3.3.0-runner.jar`__ to **./kube**
+3. execute __`cp dodex-handicap/build/dodex-handicap-3.17.0-runner.jar`__ to **./kube**
 4. execute __`docker build -t dufferdo2/dodex-quarkus:latest -f kube/Dockerfile ./kube`__
 5. execute __`docker create -t -p 8088:8088 -p 8071:8071 -p 9901:9901 --name dodex_quarkus dufferdo2/dodex-quarkus`__
 6. execute __`docker start dodex_quarkus`__
-7. use browser to view - <http://localhost:8088/handicap.html> or <http://localhost:8088/ddex> or <http://localhost:8088/ddex/bootstrap.html>, if the spa-react was installed this link should work, <http://localhost:8088/spa/react-fusebox/appl/testapp.html>
+7. use browser to view - <http://localhost:8088/handicap.html>, <http://localhost:8088/ddex> or <http://localhost:8088/ddex/bootstrap.html>, if the spa-react was installed this link should work, <http://localhost:8088/spa/react-fusebox/appl/testapp.html>
 8. execute __`docker stop dodex_quarkus`__
-9. to clean-up execute __`docker rm dodex_quarkus`__ and __`docker rmi dodex-quarkus`__. However you should keep the **dufferdo2/dodex-quarkus** image if trying out **podman** or **minikube**.
+9. to clean-up execute __`docker rm dodex_quarkus`__ and __`docker rmi dodex-quarkus`__. However, you should keep the **`dufferdo2/dodex-quarkus`** image if trying out **podman** or **minikube**.
 10. to pull and generate a local image from the docker hub, execute __`docker build -t dodex-quarkus:latest -f kube/quarkus/Dockerfile .`__
 11. you can also build/run dodex-quarkus(image) and dodex_quarkus(container) with; __`docker compose -f kube/docker-compose.yaml up -d`__ 
 12. Use `run` to test different databases; __`docker run --rm -p 8088:8088 -p 8071:8071 -p 9901:9901 -e DEFAULT_DB=postgres -e USE_HANDICAP=true --name dodex_quarkus dufferdo2/dodex-quarkus`__. To stop, run `docker container stop dodex_quarkus`.
 
-   __Note:__ When running a dufferdo2/dodex-quarkus image, there is no need to have **envoy** running on the machine. Envoy is included in the image.
+   __Note:__ When running a `dufferdo2/dodex-quarkus` image, there is no need to have **envoy** running on the machine. Envoy is included in the image.
 
 ### Building an *image* and *container* with podman
 1. generate an empty pod execute __`podman pod create -n quarkus-pod -p 0.0.0.0:8088:8088 -p 0.0.0.0:8071:8071 -p 9901:9901`__
@@ -161,9 +240,9 @@ For postgres make sure postgres.conf has entry:
 and  pg_hba.conf has entry:
 
 ```
-             host    all    all    <ip from minikube vertx-service --url>/32   <whatever you use for security> (default for dodex-vertx "password")
+             host    all    all    <ip from minikube quarkus-service --url>/32   <whatever you use for security> (default for dodex-quarkus "password")
 ```                   
-and database_config.json(also in ../dodex-vertx/generate...resources/database(_spa)_confg.json) entry: postgres... (both dev/prod)
+and database_config.json(also in ../dodex-quarkus/generate...resources/database(`spa_confg.json`) entry: postgres... (both dev/prod)
 ```          
               "config": {
               "host": "<ip value from `hostname -i`>",
@@ -183,9 +262,9 @@ and database_config.json(also in ../dodex-vertx/generate...resources/database(_s
 3. build the **uber** jar and **image** as described in the **Operation** and **Building an *image* and *container* with docker** sections, e.g.
    * build the production uber jar - __`./gradlew quarkusBuild -Dquarkus.package.type=uber-jar`__
      * **Important** When building the **Uber** jar, set **DEFAULT_DB**=h2 or mariadb or postgres and **USE_HANDICAP**=true
-     * verify the jar's name - if different than **dodex-quarkus-3.3.0-runner.jar**, change in **./kube/Dockerfile**
-   * copy the build/**dodex-quarkus-3.3.0-runner.jar** to **./kube**
-   * if the **dodex_quarkus** and/or the **dufferdo2/dodex-quarkus** exist, remove them `docker rm dodex_quarkus` and `docker rmi dufferdo2/dodex-quarkus`
+     * verify the jar's name - if different from **dodex-handicap-3.17.0-runner.jar**, change in **./kube/Dockerfile**
+   * copy the build/**dodex-handicap-3.17.0-runner.jar** to **./kube**
+   * if the **dodex_quarkus** and/or the **`dufferdo2/dodex-quarkus`** exist, remove them `docker rm dodex_quarkus` and `docker rmi dufferdo2/dodex-quarkus`
    * build the image `docker build -t dufferdo2/dodex-quarkus:latest -f ./kube/Dockerfile ./kube`
 4. execute `./deleteapp`
 5. execute `minikube image rm dufferdo2/dodex-quarkus`
@@ -196,23 +275,23 @@ and database_config.json(also in ../dodex-vertx/generate...resources/database(_s
 10. execute __`minikube stop`__
 
 #### Exposing the minikube **dodex-quarkus** container to the internet
-1. cd .../dodex-quarkus and execute **`npm install`** - this will install **localtunnel**
+1. cd .../dodex-quarkus and execute **`npm install`** - this will install **`localtunnel`**
 2. execute `minikube service quarkus-service --url` to view the local host **ip** address - can be used for the **--local-host** value
 3. in separate terminals 
    * execute `npx localtunnel  --host https://localtunnel.me --subdomain my-app --port 30088 --local-host $(minikube service quarkus-service --url | cut -d":" -f2 | cut -d"/" -f3)` 
    * for the gRPC tunnel, execute `npx localtunnel  --host https://localtunnel.me --subdomain my-app2 --port 30071 --local-host $(minikube service quarkus-service --url | cut -d":" -f2 | cut -d"/" -f3)`
      * the **--subdomain** for **my-app** and **my-app2** should be changed to unique values
-     * the naming convention is required(otherwise edit src/grpc/client/js/client.js and tweak) e.g. **coolapp** for port 30088 and **coolapp2** for port 30071
+     * the naming convention is required(otherwise edit src/grpc/client/js/client.js and tweak) e.g. **`coolapp`** for port 30088 and **`coolapp2`** for port 30071
    * view <https://YOUR-UNIQUE-APP.loca.lt> or <https://YOUR-UNIQUE-APP.lt/handicap.html> in browser
    
-   __Note:__ Make sure your Ad-Blocker is turned off for the web site.
+   __Note:__ Make sure your Ad-Blocker is turned off for the website.
 
 ### Firebase
 
 * Create an account: <https://firebase.google.com>
 * Getting started: <https://firebase.google.com/docs/admin/setup#java>
-* Make sure you create a `Service-Account-Key.json` file as instructed. Dodex-Vertx uses the environment variable option to set the service-account - `GOOGLE_APPLICATION_CREDENTIALS`. See gradle.build as one way to set it.
-* You will need to login to the `Firebase` console and create the `dodex-firebase` project. See `src/main/java/dmo/fs/router/FirebaseRouter.java` for usage of the project-id and Google Credentials. __Note:__ The `Firebase` rules are not used, so they should be set to `allow read, write:  if false;` which may be the default.
+* Make sure you create a `Service-Account-Key.json` file as instructed. Dodex-Quarkus uses the environment variable option to set the service-account - `GOOGLE_APPLICATION_CREDENTIALS`. See `gradle.build` as one way to set it.
+* You will need to log in to the `Firebase` console and create the `dodex-firebase` project. See `src/main/java/dmo/fs/router/FirebaseRouter.java` for usage of the project-id and Google Credentials. __Note:__ The `Firebase` rules are not used, so they should be set to `allow read, write:  if false;` which may be the default.
 * You only need the `Authentication` and `Firestore` extensions.
 * If you want a different project name, change `.firebaserc`.
 * Gradle for development can set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable if you exec `gradlew run` instead of `gradlew quarkusDev`. Don't forget to modify the build.gradle file with the location of your  `Service-Account-Key.json` file.
@@ -221,7 +300,7 @@ and database_config.json(also in ../dodex-vertx/generate...resources/database(_s
 
   * To make sure your project is created and the setup works, you should run the tests. __Note:__ They are written in Typescript.
   * cd `../dodex-quarkus/src/firebase` and run `npm install`
-  * execute `npm run emulators` to startup the emulators for testing.
+  * execute `npm run emulators` to start up the emulators for testing.
   * To test the model and rules after starting the emulators, in a different terminal window, run `npm test`.
 
 ### Neo4j
@@ -267,7 +346,7 @@ Simply execute `export DEFAULT_DB=neo4j` to use, after database setup.
         *  __uncomment the `mp.messaging` entries__
         *  modify the server entries if necessary
     *  startup Quarkus - the monitor should work with any of the databases
-    *  the monitor configuation can be found in `application-conf.json`
+    *  the monitor configuration can be found in `application-conf.json`
 
 * Monitor Dodex
     * in a browser enter `localhost:8089/monitor` or `localhost:8088/monitor` in production.
@@ -326,7 +405,7 @@ __Note:__ By default the entry `"dodex.groups.checkForOwner"` in __application-c
 
 * This web application can be used to maintain golfer played courses and scores and to calculate a handicap index. The application has many moving parts from the ___envoy___ proxy server to ___kotlin___, ___protobuf___, ___gRPC___, ___jooq___ and __code generator__, ___bootstrap___, ___webpack___, ___esbuild___, ___gradle___, ___java___ and ___javascript___.
 
-  See documentation at: <https://github.com/DaveO-Home/dodex-quarkus/blob/master/handicap/README.md>
+  See documentation at: <https://github.com/DaveO-Home/dodex-quarkus/blob/master/handicap/README.md> or __`<install_directory>/dodex-quarkus/handicap/README.md`__
 
 ## ChangeLog
 

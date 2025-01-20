@@ -1,0 +1,36 @@
+{
+  "name": "dodex-firebase",
+  "version": "1.0.0",
+  "description": "Firebase - using Firestore",
+  "main": "index.js",
+  "types": "./types/dodex.tests.d.ts",
+  "scripts": {
+    "test": "tsc --build tsconfig.json && mocha tests/dodex.tests.js --exit",
+    "emulators": "firebase emulators:start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "dodex-vertx"
+  },
+  "keywords": [
+    "java",
+    "vertx",
+    "firebase",
+    "dodex"
+  ],
+  "author": "DaveO",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-tools": "^13.29.1"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/uuid": "^10.0.0",
+    "firebase": "^11.2.0",
+    "firebase-admin": "^13.0.2",
+    "mocha": "^11.0.1",
+    "typescript": "^5.7.3",
+    "uuid": "^11.0.5"
+  }
+}

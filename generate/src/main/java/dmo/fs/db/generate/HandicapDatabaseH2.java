@@ -24,13 +24,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HandicapDatabaseH2 extends DbH2 {
-  private final static Logger logger = LoggerFactory.getLogger(HandicapDatabaseMariadb.class.getName());
+  private final static Logger logger = LoggerFactory.getLogger(HandicapDatabaseH2.class.getName());
   protected JDBCPool pool4;
   protected Properties dbProperties;
   protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
   protected Map<String, String> dbMap;
   protected JsonNode defaultNode;
-  protected String webEnv = System.getenv("VERTXWEB_ENVIRONMENT");
+  protected String webEnv = "dev"; // System.getenv("VERTXWEB_ENVIRONMENT");
   protected DodexUtil dodexUtil = new DodexUtil();
   protected Boolean isCreateTables = false;
   protected Promise<String> returnPromise = Promise.promise();
@@ -86,12 +86,14 @@ public class HandicapDatabaseH2 extends DbH2 {
   }
 
   public Future<String> checkOnTables() throws InterruptedException, SQLException {
-    databaseSetup();
+//    databaseSetup();
+      returnPromise.complete(isCreateTables.toString());
     return returnPromise.future();
   }
 
   private void databaseSetup() {
     Promise<String> finalPromise = Promise.promise();
+logger.info("Doing Generate*****************: {}", this);
     if ("dev".equals(webEnv)) {
       DbConfiguration.configureTestDefaults(dbMap, dbProperties);
     } else {
@@ -126,7 +128,7 @@ public class HandicapDatabaseH2 extends DbH2 {
 
             Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err ->
                     logger.info(String.format("Users Table Error: %s",
-                err.getMessage()))).doOnSuccess(result -> logger.info("Users Table Added."));
+                err.getMessage()))).doOnSuccess(result -> logger.info("Users Table Added." + webEnv));
 
             crow.subscribe(result -> {
               //

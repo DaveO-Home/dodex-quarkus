@@ -1,12 +1,2 @@
-pluginManagement {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    plugins {
-      id "${quarkusPluginId}" version "${quarkusPluginVersion}"
-    }
-}
 rootProject.name='dodex-quarkus'
-includeBuild "generate"
+include "dodex-db", "generate", "dodex-handicap"

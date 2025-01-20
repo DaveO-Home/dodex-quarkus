@@ -1,0 +1,80 @@
+
+plugins {
+    id 'java'
+    id "pmd"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+    maven {
+        url "https://maven.cubrid.org/"
+    }
+}
+
+pmd {
+    ruleSetFiles = files("../dodexstart.xml")
+    ruleSets = []
+    ignoreFailures = false
+    toolVersion = "7.0.0"
+}
+
+def vertxVersion = "4.5.11"
+
+ext {
+}
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation "io.quarkus:quarkus-rest-jackson"
+    implementation "io.vertx:vertx-rx-java3:$vertxVersion"
+    implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client"
+    implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
+    implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
+    implementation "io.quarkus:quarkus-reactive-mysql-client"
+    implementation "io.quarkus:quarkus-reactive-pg-client"
+    implementation "io.quarkus:quarkus-reactive-db2-client"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.0.1"
+    implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api")
+    implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
+    implementation "io.quarkiverse.jdbc:quarkus-jdbc-sqlite:3.0.11"
+    implementation "cubrid:cubrid-jdbc:11.0.13.0378"
+    implementation "io.vertx:vertx-rx-java2:$vertxVersion"
+    implementation "com.google.firebase:firebase-admin:9.3.0"
+    implementation group: "com.google.guava", name: "guava", version: "33.1.0-jre"
+
+    testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
+    testImplementation "io.rest-assured:rest-assured"
+}
+
+group 'dmo.fs.db'
+version '3.17.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+compileJava {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:unchecked"
+}
+
+jar {
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+}
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+    }
+}

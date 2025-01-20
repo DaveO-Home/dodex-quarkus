@@ -10,12 +10,14 @@ deploy
 node_modules
 src/spa-react/devl/allure-report/*
 src/spa-react/devl/allure-results/*
-src/main/resources/META-INF/resources/dist*
-src/main/resources/META-INF/resources/spa/
-src/main/resources/META-INF/resources/spa/
-src/main/resources/META-INF/resources/handicap.html
-src/main/resources/META-INF/resources/handicap/*
-src/main/resources/META-INF/resources/jsoneditor-icons-STGDAB4I.svg
+dodex-handicap/src/main/resources/META-INF/resources/dist*
+dodex-handicap/src/main/resources/META-INF/resources/spa/
+dodex-handicap/src/main/resources/META-INF/resources/spa/
+dodex-handicap/src/main/resources/META-INF/resources/handicap.html
+dodex-handicap/src/main/resources/META-INF/resources/handicap/*
+dodex-handicap/src/main/resources/META-INF/resources/jsoneditor-icons-STGDAB4I.svg
+allure-report
+allure-results
 # Eclipse
 .quarkus
 .project

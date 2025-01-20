@@ -100,20 +100,20 @@ public class HandicapDatabaseMariadb extends DbMariadb {
 
         MySQLConnectOptions connectOptions = new MySQLConnectOptions().setPort(Integer.parseInt(dbMap.get("port")))
             .setHost(dbMap.get("host")).setDatabase(dbMap.get("dbname"))
-            .setUser(dbProperties.getProperty("user").toString())
-            .setPassword(dbProperties.getProperty("password").toString())
+            .setUser(dbProperties.getProperty("user"))
+            .setPassword(dbProperties.getProperty("password"))
             .setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl"))).setIdleTimeout(1)
             .setCharset("utf8mb4");
 
         // Pool options
         PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
-
+        String dbName = " and table_schema = '" + dbMap.get("dbname") + "';";
         // Create the client pool
         pool4 = MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
 
         Completable completable = pool4.rxGetConnection()
             .flatMapCompletable(conn -> conn.rxBegin().flatMapCompletable(
-                tx -> conn.query(CHECKUSERSQL).rxExecute().doOnSuccess(rows -> {
+                tx -> conn.query(CHECKUSERSQL+dbName).rxExecute().doOnSuccess(rows -> {
                     RowIterator<Row> ri = rows.iterator();
                     Long val = null;
                     while (ri.hasNext()) {
@@ -136,7 +136,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                                 err.getMessage())));
                     }
                     }).doOnError(err -> logger.info(String.format("Users Table Error: %s", err.getMessage())))
-                    .flatMap(result -> conn.query(CHECKMESSAGESSQL).rxExecute()
+                    .flatMap(result -> conn.query(CHECKMESSAGESSQL+dbName).rxExecute()
                         .doOnSuccess(rows -> {
                             RowIterator<Row> ri = rows.iterator();
                             Long val = null;
@@ -164,7 +164,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                             logger.info(String.format("Messages Table Error: %s",
                                     err.getMessage()));
 
-                        })).flatMap(result -> conn.query(CHECKUNDELIVEREDSQL).rxExecute()
+                        })).flatMap(result -> conn.query(CHECKUNDELIVEREDSQL+dbName).rxExecute()
                         .doOnSuccess(rows -> {
                             RowIterator<Row> ri = rows.iterator();
                             Long val = null;
@@ -194,7 +194,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                                 err.getMessage()));
                         }))
                     .flatMap(
-                        result -> conn.query(CHECKHANDICAPSQL).rxExecute()
+                        result -> conn.query(CHECKHANDICAPSQL+dbName).rxExecute()
                             .doOnError(err -> logger.error(String.format("Golfer Table Error: %s",
                                     err.getMessage())))
                             .doOnSuccess(rows -> {

@@ -2,10 +2,10 @@
 package dmo.fs.db.generate;
 
 public abstract class DbMariadb extends DbDefinitionBase implements HandicapDatabase {
-	protected final static String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='LOGIN';";
-	public final static String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='users';";
-	protected final static String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='messages';";
-	protected final static String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='undelivered';";
+	protected final static String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='login'";
+	public final static String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='users'";
+	protected final static String CHECKMESSAGESSQL = "select 1 from information_schema.tables where table_name='messages'";
+	protected final static String CHECKUNDELIVEREDSQL = "select 1 from information_schema.tables where table_name='undelivered'";
 	protected final static String CHECKHANDICAPSQL = "SELECT table_name FROM information_schema.tables WHERE table_name in ('golfer', 'course', 'scores', 'ratings')";
 
 	private enum CreateTable {
@@ -46,7 +46,7 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 						"PIN CHARACTER(8) primary key NOT NULL," +
 						"FIRST_NAME VARCHAR(32) NOT NULL," +
 						"LAST_NAME VARCHAR(32) NOT NULL," +
-						"HANDICAP FLOAT(4,1) DEFAULT 0.0," +
+						"HANDICAP DOUBLE(4,1) DEFAULT 0.0," +
 						"COUNTRY CHARACTER(2) DEFAULT 'US' NOT NULL," +
 						"STATE CHARACTER(2) DEFAULT 'NV' NOT NULL," +
 						"OVERLAP_YEARS BOOLEAN," +
@@ -63,7 +63,7 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 						"COURSE_SEQ INTEGER NOT NULL," +
 						"TEE INTEGER NOT NULL," +
 						"TEE_COLOR VARCHAR(16)," +
-						"TEE_RATING FLOAT(4,1) NOT NULL," +
+						"TEE_RATING DOUBLE(4,1) NOT NULL," +
 						"TEE_SLOPE INTEGER NOT NULL," +
 						"TEE_PAR INTEGER DEFAULT '72' NOT NULL, PRIMARY KEY (COURSE_SEQ, TEE)," +
 						"INDEX idx_rating_course (course_seq ASC)," +
@@ -76,10 +76,10 @@ public abstract class DbMariadb extends DbDefinitionBase implements HandicapData
 				"CREATE TABLE IF NOT EXISTS scores (" +
 						"PIN CHARACTER(8) NOT NULL," +
 						"GROSS_SCORE INTEGER NOT NULL," +
-						"NET_SCORE FLOAT(4,1)," +
+						"NET_SCORE DOUBLE(4,1)," +
 						"ADJUSTED_SCORE INTEGER NOT NULL," +
 						"TEE_TIME TEXT NOT NULL," +
-						"HANDICAP FLOAT(4,1)," +
+						"HANDICAP DOUBLE(4,1)," +
 						"COURSE_SEQ INTEGER," +
 						"COURSE_TEES INTEGER," +
 						"USED CHARACTER(1)," +

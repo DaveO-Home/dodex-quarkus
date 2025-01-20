@@ -80,7 +80,7 @@
                 "host": "localhost",
                 "port": "3306",
                 "url": "jdbc:mariadb:",
-                "dbname": "test"
+                "dbname": "test2"
             }
         },
         "prod": {
@@ -106,9 +106,9 @@
             },
             "config": {
                 "host": "localhost",
-                "port": "25010",
+                "port": "50000",
                 "url": "jdbc:db2:",
-                "dbname": "dodex",
+                "dbname": "testdb",
                 "tabschema": "DB2INST1"
             }
         },

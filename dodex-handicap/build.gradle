@@ -1,0 +1,172 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+plugins {
+    id 'java'
+    id "org.jetbrains.kotlin.jvm" version "2.0.21"
+    id "org.jetbrains.kotlin.plugin.allopen" version "2.0.21"
+    id "io.quarkus" version "${quarkusPluginVersion}" 
+    id "pmd"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "https://maven.cubrid.org/"
+    }
+}
+
+pmd {
+    ruleSetFiles = files("../dodexstart.xml")
+    ruleSets = []
+    ignoreFailures = false
+    toolVersion = "7.0.0"
+}
+
+ext {
+    vertxVersion = "4.5.11"
+    javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
+    kotlin_version = "2.0.21"
+}
+
+dependencies {
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation "io.quarkus:quarkus-rest-jackson"
+    implementation "io.vertx:vertx-rx-java3:$vertxVersion"
+    implementation "io.quarkus:quarkus-rest"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.20"
+    implementation "io.quarkus:quarkus-grpc:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-kotlin"
+
+    implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client"
+    implementation "io.quarkus:quarkus-mutiny:${quarkusPlatformVersion}"
+
+    implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
+    implementation "io.quarkus:quarkus-reactive-mysql-client"
+    implementation "io.quarkus:quarkus-reactive-pg-client"
+    implementation "io.quarkus:quarkus-reactive-db2-client"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.0.1"
+//    implementation "io.quarkiverse.jdbc:quarkus-jdbc-sqlite:3.0.11"
+
+    implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
+    implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
+    
+    implementation "io.quarkus:quarkus-vertx-http"
+    // implementation "io.quarkus:quarkus-smallrye-reactive-messaging-kafka"
+    implementation "io.quarkus:quarkus-messaging-kafka"
+    implementation "org.apache.kafka:kafka-clients"
+    implementation("org.jooq:jooq:3.19.6")
+    implementation("org.jooq:jooq-codegen-maven:3.19.6")
+    implementation("org.jooq:jooq-meta:3.19.6")
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api")
+    implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-mariadb:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-postgresql:${quarkusPlatformVersion}"
+    implementation "io.quarkus:quarkus-jdbc-db2:${quarkusPlatformVersion}"
+    implementation "cubrid:cubrid-jdbc:11.2.1.0038"
+    implementation "io.vertx:vertx-rx-java2:$vertxVersion"
+    implementation "io.quarkus:quarkus-smallrye-health"
+    implementation "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
+    implementation "com.google.firebase:firebase-admin:9.3.0"
+    implementation group: "com.google.guava", name: "guava", version: "33.1.0-jre"
+
+    /* You can test LGTM with these dependencies, also see application.properties */
+//    implementation("io.quarkus:quarkus-observability-devservices-lgtm")
+//    implementation("io.quarkiverse.micrometer.registry:quarkus-micrometer-registry-otlp:3.2.4")
+//    implementation("io.quarkus:quarkus-opentelemetry")
+//    implementation("io.opentelemetry:opentelemetry-exporter-logging:1.43.0")
+
+
+//    implementation 'io.grpc:protoc-gen-grpc-java:1.68.0'
+
+    // implementation("dmo.fs.utils:generate:0.0.1")
+    implementation project(':generate')
+    implementation project(':dodex-db')
+    testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
+    testImplementation "io.rest-assured:rest-assured"
+
+    implementation("io.quarkus:quarkus-websockets-next")
+}
+
+group 'dmo.fs'
+version '3.17.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+def usr = System.getProperty("user.home")
+def OS = System.getProperty("os.name").toLowerCase()
+def dir = System.getProperty("user.dir")
+
+compileJava {
+//    doFirst {
+//        gradle.includedBuild("dodex-db").task(":build")
+//    }
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:unchecked"
+}
+tasks.withType(KotlinJvmCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+    }
+}
+
+/*
+    The "run" task can be used to set Environment Variables before executing "quarkusDev"
+ */
+
+tasks.register('copyDatabaseConfig', Copy) {
+    dependsOn gradle.includedBuild("generate").task(":build")
+}
+/*
+  Using a java class to generate jooq objects - allows for multiple db's - see ./generate directory
+  Composite build - implementation("dmo.fs.utils:generate:0.0.1") - this avoids the circular dependancy error
+*/
+tasks.register('jooqGenerate', JavaExec) {
+    group "Execution"
+    doFirst {
+        classpath = sourceSets.main.runtimeClasspath
+    }
+
+    def defaultDb = System.getenv("DEFAULT_DB") ?: "sqlite3"
+    defaultDb = defaultDb == "sqlite3" || defaultDb == "postgres" ? defaultDb : "sqlite3"
+
+    environment "DEFAULT_DB", defaultDb
+    environment "VERTXWEB_ENVIRONMENT", "dev"
+    mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
+    args = ["dev"]
+    // dependsOn copyDatabaseConfig
+}
+
+tasks.register('run', Exec) {
+//   workingDir dir
+    if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {
+        environment "GOOGLE_APPLICATION_CREDENTIALS", "$usr/auth/service-account-key.json"
+    }
+    //on windows:
+    if (OS.indexOf("win") >= 0) {
+        commandLine "cmd", "/c", ".\\gradlew", "quarkusDev"
+    } else {
+        //on linux
+        commandLine "./gradlew", "quarkusDev"
+    }
+    // dependsOn gradle.includedBuild("generate").task(":build")
+}
+jar {
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+}
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+    }
+}
