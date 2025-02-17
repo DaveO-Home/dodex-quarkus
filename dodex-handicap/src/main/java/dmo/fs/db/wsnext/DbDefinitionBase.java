@@ -11,6 +11,7 @@ import io.smallrye.mutiny.groups.UniSubscribe;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.db2client.DB2ConnectOptions;
+import io.vertx.db2client.impl.DB2PoolImpl;
 import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.mutiny.core.Promise;
@@ -20,7 +21,12 @@ import io.vertx.mutiny.mysqlclient.MySQLPool;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.*;
 import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.mysqlclient.impl.MySQLPoolImpl;
 import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.impl.PgPoolImpl;
+import io.vertx.rxjava3.db2client.DB2Builder;
+import io.vertx.rxjava3.mysqlclient.MySQLBuilder;
+import io.vertx.rxjava3.pgclient.PgBuilder;
 import io.vertx.sqlclient.PoolOptions;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
@@ -86,13 +92,13 @@ public abstract class DbDefinitionBase {
 
     public <T> void setupSql(T pool) {
         // Non-Blocking Drivers
-        if (pool instanceof PgPool) {
-            this.pool = (PgPool) pool;
+        if (((Pool)pool).getDelegate() instanceof PgPoolImpl) {
+            this.pool = (Pool) pool;
             qmark = false;
-        } else if (pool instanceof MySQLPool) {
-            this.pool = (MySQLPool) pool;
-        } else if (pool instanceof DB2Pool) {
-            this.pool = (DB2Pool) pool;
+        } else if (((Pool)pool).getDelegate() instanceof MySQLPoolImpl) {
+            this.pool = (Pool) pool;
+        } else if (((Pool)pool).getDelegate() instanceof DB2PoolImpl) {
+            this.pool = (Pool) pool;
         } else {
             this.pool = (Pool) pool;
         }
@@ -100,23 +106,37 @@ public abstract class DbDefinitionBase {
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
 
         create = DSL.using(DodexUtil.getSqlDialect(), settings);
-
+        if(dmo.fs.db.handicap.utils.DodexUtil.getVertxR() == null) {
+            dmo.fs.db.handicap.utils.DodexUtil.setVertxR(io.vertx.rxjava3.core.Vertx.vertx());
+        }
         /* @TODO: convert GroupOpenApiSql to mutiny */
-        if (pool instanceof PgPool) {
-            io.vertx.rxjava3.pgclient.PgPool poolRx =
-              io.vertx.rxjava3.pgclient.PgPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), pgConnectOptions, poolOptions);
+        if (((Pool)pool).getDelegate() instanceof PgPoolImpl) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx = PgBuilder
+              .pool()
+              .with(poolOptions)
+              .connectingTo(pgConnectOptions)
+              .using(dmo.fs.db.handicap.utils.DodexUtil.getVertxR())
+              .build();
             GroupOpenApiSql.setPool(poolRx);
-        } else if (pool instanceof MySQLPool) {
-            io.vertx.rxjava3.mysqlclient.MySQLPool poolRx =
-              io.vertx.rxjava3.mysqlclient.MySQLPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), mySQLConnectOptions, poolOptions);
+        } else if (((Pool)pool).getDelegate() instanceof MySQLPoolImpl) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx = MySQLBuilder
+              .pool()
+              .with(poolOptions)
+              .connectingTo(mySQLConnectOptions)
+              .using(dmo.fs.db.handicap.utils.DodexUtil.getVertxR())
+              .build();
             GroupOpenApiSql.setPool(poolRx);
         } else if (pool instanceof io.vertx.mutiny.jdbcclient.JDBCPool) {
             io.vertx.rxjava3.sqlclient.Pool poolRx =
-              io.vertx.rxjava3.jdbcclient.JDBCPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), jdbcConnectOptions, poolOptions);
+              io.vertx.rxjava3.jdbcclient.JDBCPool.pool(dmo.fs.db.handicap.utils.DodexUtil.getVertxR(), jdbcConnectOptions, poolOptions);
             GroupOpenApiSql.setPool(poolRx);
-        }  else if (pool instanceof DB2Pool) {
-            io.vertx.rxjava3.db2client.DB2Pool poolRx =
-              io.vertx.rxjava3.db2client.DB2Pool.pool(io.vertx.rxjava3.core.Vertx.vertx(), db2ConnectOptions, poolOptions);
+        }  else if (((Pool)pool).getDelegate() instanceof DB2PoolImpl) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx = DB2Builder
+              .pool()
+              .with(poolOptions)
+              .connectingTo(db2ConnectOptions)
+              .using(dmo.fs.db.handicap.utils.DodexUtil.getVertxR())
+              .build();
             GroupOpenApiSql.setPool(poolRx);
         }
 

@@ -8,7 +8,7 @@ import dmo.fs.db.wsnext.DbDefinitionBase;
 import dmo.fs.db.wsnext.DodexDatabase;
 import dmo.fs.utils.DodexUtil;
 import io.vertx.mutiny.core.Promise;
-import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.pgclient.PgBuilder;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
@@ -66,7 +66,7 @@ public class DodexDatabasePostgres extends DbDefinitionBase implements DodexData
         }
 
         Promise<Pool> promise = Promise.promise();
-        PgPool pool = getPool(dbMap, dbProperties);
+        Pool pool = getPool(dbMap, dbProperties);
 
         promise.complete(pool);
         return promise;
@@ -83,7 +83,7 @@ public class DodexDatabasePostgres extends DbDefinitionBase implements DodexData
         return new MessageUserImpl();
     }
 
-    protected PgPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+    protected Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
         PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -101,7 +101,11 @@ public class DodexDatabasePostgres extends DbDefinitionBase implements DodexData
         /* For OpenApi if not using Handicap */
         setPgConnectOptions(connectOptions);
         setPoolOptions(poolOptions);
-
-        return PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+        return PgBuilder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(pgConnectOptions)
+          .using(DodexUtil.getVertx())
+          .build();
     }
 }

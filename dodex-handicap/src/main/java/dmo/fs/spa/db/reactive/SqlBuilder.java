@@ -15,6 +15,9 @@ import java.util.Date;
 
 import dmo.fs.db.reactive.DbConfiguration;
 import io.reactivex.Single;
+import io.vertx.db2client.impl.DB2PoolImpl;
+import io.vertx.mysqlclient.impl.MySQLPoolImpl;
+import io.vertx.pgclient.impl.PgPoolImpl;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
@@ -26,10 +29,6 @@ import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.reactivex.db2client.DB2Pool;
-import io.vertx.reactivex.jdbcclient.JDBCPool;
-import io.vertx.reactivex.mysqlclient.MySQLPool;
-import io.vertx.reactivex.pgclient.PgPool;
 import io.vertx.reactivex.sqlclient.Pool;
 import io.vertx.reactivex.sqlclient.Row;
 import io.vertx.reactivex.sqlclient.RowSet;
@@ -55,15 +54,15 @@ public abstract class SqlBuilder {
 
     public static <T> void setupSql(T pool4) throws SQLException {
         // Non-Blocking Drivers
-        if (pool4 instanceof PgPool) {
-            pool = (PgPool) pool4;
+        if (((Pool)pool4).getDelegate() instanceof PgPoolImpl) {
+            pool = (Pool) pool4;
             qmark = false;
-        } else if (pool4 instanceof MySQLPool) {
-            pool = (MySQLPool) pool4;
-        } else if (pool4 instanceof DB2Pool) {
-            pool = (DB2Pool) pool4;
-        } else if (pool4 instanceof JDBCPool) {
-            pool = (JDBCPool) pool4;
+        } else if (((Pool)pool4).getDelegate() instanceof MySQLPoolImpl) {
+            pool = (Pool) pool4;
+        } else if (((Pool)pool4).getDelegate() instanceof DB2PoolImpl) {
+            pool = (Pool) pool4;
+        } else {
+            pool = (Pool)pool4;
         }
 
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres

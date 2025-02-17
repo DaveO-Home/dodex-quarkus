@@ -9,7 +9,7 @@ plugins {
 
 repositories {
     maven {
-        url "https://plugins.gradle.org/m2/"
+        url = "https://plugins.gradle.org/m2/"
     }
     mavenCentral()
     mavenLocal()
@@ -19,14 +19,13 @@ group = "dmo.fs.utils"
 version = "0.0.1"
 
 ext {
-  vertxVersion = "4.5.11"
+  vertxVersion = "4.5.13"
 }
 
-def jooqClasspath
-def javaTargetVersion = 21
+def jooqVersion = "3.19.18"
 
 jooq {
-  version = "3.19.16"
+  version = "3.19.18"
   edition = JooqEdition.OSS
 }
 
@@ -46,11 +45,11 @@ tasks.register('jooqGenerate', JavaExec) {
         defaultTasks 'clean'
         classpath = sourceSets.main.runtimeClasspath
     }
-    environment.remove("DEFAULT_DB")
+//    environment.remove("DEFAULT_DB")
     environment "VERTXWEB_ENVIRONMENT", "prod"
     mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
     args = ["prod"]
-    ignoreExitValue true
+    setIgnoreExitValue(true)
     dependsOn copyDatabaseConfig
 }
 
@@ -69,8 +68,11 @@ dependencies {
     implementation('org.xerial:sqlite-jdbc:3.47.1.0')
     implementation("io.vertx:vertx-mysql-client:$vertxVersion")
     implementation("io.vertx:vertx-pg-client:$vertxVersion")
-    implementation("org.jooq:jooq:$version")
-    implementation("org.jooq:jooq-codegen-maven:$version")
-    implementation("org.jooq:jooq-meta:$version")
+    implementation("org.jooq:jooq-postgres-extensions:$jooqVersion")
+    implementation("org.jooq:jooq:$jooqVersion")
+    implementation("org.jooq:jooq-codegen-maven:$jooqVersion")
+    implementation("org.jooq:jooq-meta:$jooqVersion")
+    implementation("com.h2database:h2:2.3.232")
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.2'
 }
 

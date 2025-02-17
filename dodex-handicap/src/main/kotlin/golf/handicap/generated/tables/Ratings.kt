@@ -5,8 +5,8 @@ package golf.handicap.generated.tables
 
 
 import golf.handicap.generated.DefaultSchema
-import golf.handicap.generated.keys.RATINGS__FK_RATINGS_PK_COURSE
-import golf.handicap.generated.keys.RATINGS__PK_RATINGS
+import golf.handicap.generated.keys.RATINGS_PKEY
+import golf.handicap.generated.keys.RATINGS__FK_COURSE_RATINGS
 import golf.handicap.generated.tables.Course.CoursePath
 import golf.handicap.generated.tables.records.RatingsRecord
 
@@ -74,34 +74,34 @@ open class Ratings(
     override fun getRecordType(): Class<RatingsRecord> = RatingsRecord::class.java
 
     /**
-     * The column <code>ratings.COURSE_SEQ</code>.
+     * The column <code>ratings.course_seq</code>.
      */
-    val COURSE_SEQ: TableField<RatingsRecord, Int?> = createField(DSL.name("COURSE_SEQ"), SQLDataType.INTEGER.nullable(false), this, "")
+    val COURSE_SEQ: TableField<RatingsRecord, Int?> = createField(DSL.name("course_seq"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>ratings.TEE</code>.
+     * The column <code>ratings.tee</code>.
      */
-    val TEE: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE"), SQLDataType.INTEGER.nullable(false), this, "")
+    val TEE: TableField<RatingsRecord, Int?> = createField(DSL.name("tee"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>ratings.TEE_COLOR</code>.
+     * The column <code>ratings.tee_color</code>.
      */
-    val TEE_COLOR: TableField<RatingsRecord, String?> = createField(DSL.name("TEE_COLOR"), SQLDataType.VARCHAR(16), this, "")
+    val TEE_COLOR: TableField<RatingsRecord, String?> = createField(DSL.name("tee_color"), SQLDataType.VARCHAR(16), this, "")
 
     /**
-     * The column <code>ratings.TEE_RATING</code>.
+     * The column <code>ratings.tee_rating</code>.
      */
-    val TEE_RATING: TableField<RatingsRecord, Float?> = createField(DSL.name("TEE_RATING"), SQLDataType.REAL.nullable(false), this, "")
+    val TEE_RATING: TableField<RatingsRecord, Float?> = createField(DSL.name("tee_rating"), SQLDataType.REAL.nullable(false), this, "")
 
     /**
-     * The column <code>ratings.TEE_SLOPE</code>.
+     * The column <code>ratings.tee_slope</code>.
      */
-    val TEE_SLOPE: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE_SLOPE"), SQLDataType.INTEGER.nullable(false), this, "")
+    val TEE_SLOPE: TableField<RatingsRecord, Int?> = createField(DSL.name("tee_slope"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>ratings.TEE_PAR</code>.
+     * The column <code>ratings.tee_par</code>.
      */
-    val TEE_PAR: TableField<RatingsRecord, Int?> = createField(DSL.name("TEE_PAR"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("'72'"), SQLDataType.INTEGER)), this, "")
+    val TEE_PAR: TableField<RatingsRecord, Int?> = createField(DSL.name("tee_par"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("72"), SQLDataType.INTEGER)), this, "")
 
     private constructor(alias: Name, aliased: Table<RatingsRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<RatingsRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
@@ -135,17 +135,17 @@ open class Ratings(
         override fun `as`(alias: Table<*>): RatingsPath = RatingsPath(alias.qualifiedName, this)
     }
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
-    override fun getPrimaryKey(): UniqueKey<RatingsRecord> = RATINGS__PK_RATINGS
-    override fun getReferences(): List<ForeignKey<RatingsRecord, *>> = listOf(RATINGS__FK_RATINGS_PK_COURSE)
+    override fun getPrimaryKey(): UniqueKey<RatingsRecord> = RATINGS_PKEY
+    override fun getReferences(): List<ForeignKey<RatingsRecord, *>> = listOf(RATINGS__FK_COURSE_RATINGS)
 
     private lateinit var _course: CoursePath
 
     /**
-     * Get the implicit join path to the <code>course</code> table.
+     * Get the implicit join path to the <code>public.course</code> table.
      */
     fun course(): CoursePath {
         if (!this::_course.isInitialized)
-            _course = CoursePath(this, RATINGS__FK_RATINGS_PK_COURSE, null)
+            _course = CoursePath(this, RATINGS__FK_COURSE_RATINGS, null)
 
         return _course;
     }

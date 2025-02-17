@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.db.SpaDbConfiguration;
+import io.vertx.mutiny.db2client.DB2Builder;
+import io.vertx.mutiny.sqlclient.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +78,7 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		}
 
 		Promise<Void> setupPromise = Promise.promise();
-		DB2Pool pool = getPool(dbMap, dbProperties);
+		Pool pool = getPool(dbMap, dbProperties);
 
 		pool.getConnection().flatMap(conn -> {
 			conn.query(CHECKLOGINSQL).execute().flatMap(rows -> {
@@ -117,7 +119,7 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		return new SpaLoginImpl();
 	}
 
-	protected static DB2Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -129,6 +131,12 @@ public class SpaDatabaseIbmDB2 extends DbIbmDB2 {
 		;
 
 		Vertx vertx = Server.getVertxMutiny();
-		return DB2Pool.pool(vertx, connectOptions, poolOptions);
+
+		return DB2Builder
+		.pool()
+		.with(poolOptions)
+		.connectingTo(connectOptions)
+		.using(vertx)
+		.build();
 	}
 }

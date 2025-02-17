@@ -5,8 +5,8 @@ package golf.handicap.generated.tables
 
 
 import golf.handicap.generated.DefaultSchema
-import golf.handicap.generated.keys.SCORES__FK_SCORES_PK_COURSE
-import golf.handicap.generated.keys.SCORES__FK_SCORES_PK_GOLFER
+import golf.handicap.generated.keys.SCORES__FK_COURSE_SCORES
+import golf.handicap.generated.keys.SCORES__FK_GOLFER_SCORES
 import golf.handicap.generated.tables.Course.CoursePath
 import golf.handicap.generated.tables.Golfer.GolferPath
 import golf.handicap.generated.tables.records.ScoresRecord
@@ -74,49 +74,49 @@ open class Scores(
     override fun getRecordType(): Class<ScoresRecord> = ScoresRecord::class.java
 
     /**
-     * The column <code>scores.PIN</code>.
+     * The column <code>scores.pin</code>.
      */
-    val PIN: TableField<ScoresRecord, String?> = createField(DSL.name("PIN"), SQLDataType.CHAR(8).nullable(false), this, "")
+    val PIN: TableField<ScoresRecord, String?> = createField(DSL.name("pin"), SQLDataType.VARCHAR(8).nullable(false), this, "")
 
     /**
-     * The column <code>scores.GROSS_SCORE</code>.
+     * The column <code>scores.gross_score</code>.
      */
-    val GROSS_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("GROSS_SCORE"), SQLDataType.INTEGER.nullable(false), this, "")
+    val GROSS_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("gross_score"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>scores.NET_SCORE</code>.
+     * The column <code>scores.net_score</code>.
      */
-    val NET_SCORE: TableField<ScoresRecord, Float?> = createField(DSL.name("NET_SCORE"), SQLDataType.REAL, this, "")
+    val NET_SCORE: TableField<ScoresRecord, Float?> = createField(DSL.name("net_score"), SQLDataType.REAL, this, "")
 
     /**
-     * The column <code>scores.ADJUSTED_SCORE</code>.
+     * The column <code>scores.adjusted_score</code>.
      */
-    val ADJUSTED_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("ADJUSTED_SCORE"), SQLDataType.INTEGER.nullable(false), this, "")
+    val ADJUSTED_SCORE: TableField<ScoresRecord, Int?> = createField(DSL.name("adjusted_score"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>scores.TEE_TIME</code>.
+     * The column <code>scores.tee_time</code>.
      */
-    val TEE_TIME: TableField<ScoresRecord, String?> = createField(DSL.name("TEE_TIME"), SQLDataType.CLOB.nullable(false), this, "")
+    val TEE_TIME: TableField<ScoresRecord, String?> = createField(DSL.name("tee_time"), SQLDataType.CLOB.nullable(false), this, "")
 
     /**
-     * The column <code>scores.HANDICAP</code>.
+     * The column <code>scores.handicap</code>.
      */
-    val HANDICAP: TableField<ScoresRecord, Float?> = createField(DSL.name("HANDICAP"), SQLDataType.REAL, this, "")
+    val HANDICAP: TableField<ScoresRecord, Float?> = createField(DSL.name("handicap"), SQLDataType.REAL, this, "")
 
     /**
-     * The column <code>scores.COURSE_SEQ</code>.
+     * The column <code>scores.course_seq</code>.
      */
-    val COURSE_SEQ: TableField<ScoresRecord, Int?> = createField(DSL.name("COURSE_SEQ"), SQLDataType.INTEGER, this, "")
+    val COURSE_SEQ: TableField<ScoresRecord, Int?> = createField(DSL.name("course_seq"), SQLDataType.INTEGER, this, "")
 
     /**
-     * The column <code>scores.COURSE_TEES</code>.
+     * The column <code>scores.course_tees</code>.
      */
-    val COURSE_TEES: TableField<ScoresRecord, Int?> = createField(DSL.name("COURSE_TEES"), SQLDataType.INTEGER, this, "")
+    val COURSE_TEES: TableField<ScoresRecord, Int?> = createField(DSL.name("course_tees"), SQLDataType.INTEGER, this, "")
 
     /**
-     * The column <code>scores.USED</code>.
+     * The column <code>scores.used</code>.
      */
-    val USED: TableField<ScoresRecord, String?> = createField(DSL.name("USED"), SQLDataType.CHAR(1), this, "")
+    val USED: TableField<ScoresRecord, String?> = createField(DSL.name("used"), SQLDataType.CHAR(1), this, "")
 
     private constructor(alias: Name, aliased: Table<ScoresRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<ScoresRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
@@ -150,37 +150,37 @@ open class Scores(
         override fun `as`(alias: Table<*>): ScoresPath = ScoresPath(alias.qualifiedName, this)
     }
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
-    override fun getReferences(): List<ForeignKey<ScoresRecord, *>> = listOf(SCORES__FK_SCORES_PK_GOLFER, SCORES__FK_SCORES_PK_COURSE)
-
-    private lateinit var _golfer: GolferPath
-
-    /**
-     * Get the implicit join path to the <code>golfer</code> table.
-     */
-    fun golfer(): GolferPath {
-        if (!this::_golfer.isInitialized)
-            _golfer = GolferPath(this, SCORES__FK_SCORES_PK_GOLFER, null)
-
-        return _golfer;
-    }
-
-    val golfer: GolferPath
-        get(): GolferPath = golfer()
+    override fun getReferences(): List<ForeignKey<ScoresRecord, *>> = listOf(SCORES__FK_COURSE_SCORES, SCORES__FK_GOLFER_SCORES)
 
     private lateinit var _course: CoursePath
 
     /**
-     * Get the implicit join path to the <code>course</code> table.
+     * Get the implicit join path to the <code>public.course</code> table.
      */
     fun course(): CoursePath {
         if (!this::_course.isInitialized)
-            _course = CoursePath(this, SCORES__FK_SCORES_PK_COURSE, null)
+            _course = CoursePath(this, SCORES__FK_COURSE_SCORES, null)
 
         return _course;
     }
 
     val course: CoursePath
         get(): CoursePath = course()
+
+    private lateinit var _golfer: GolferPath
+
+    /**
+     * Get the implicit join path to the <code>public.golfer</code> table.
+     */
+    fun golfer(): GolferPath {
+        if (!this::_golfer.isInitialized)
+            _golfer = GolferPath(this, SCORES__FK_GOLFER_SCORES, null)
+
+        return _golfer;
+    }
+
+    val golfer: GolferPath
+        get(): GolferPath = golfer()
     override fun `as`(alias: String): Scores = Scores(DSL.name(alias), this)
     override fun `as`(alias: Name): Scores = Scores(alias, this)
     override fun `as`(alias: Table<*>): Scores = Scores(alias.qualifiedName, this)

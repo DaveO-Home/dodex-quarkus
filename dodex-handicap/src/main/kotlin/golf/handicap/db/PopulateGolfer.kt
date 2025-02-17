@@ -191,6 +191,7 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                     parameters.addString(golfer.lastName)
                     parameters.addString(golfer.firstName)
                 }
+
                 conn.preparedQuery(sql)
                     .execute(parameters)
                     .onItem().invoke { rows ->
@@ -217,7 +218,6 @@ class PopulateGolfer : SqlConstants(), IPopulateGolfer {
                             }
                             golfer.message = "Golfer not found"
                         }
-
                         if (rows.size() == 0) {
                             if (golfer.firstName!!.length < 3 || golfer.lastName!!.length < 5) {
                                 golfer.status = -1

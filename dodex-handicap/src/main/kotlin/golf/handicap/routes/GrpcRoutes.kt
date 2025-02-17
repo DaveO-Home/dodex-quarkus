@@ -7,6 +7,7 @@ import dmo.fs.db.handicap.DbConfiguration
 import dmo.fs.db.handicap.HandicapDatabase
 import dmo.fs.quarkus.Server
 import dmo.fs.utils.ColorUtilConstants
+import dmo.fs.utils.Constants
 import golf.handicap.Golfer
 import golf.handicap.Handicap
 import golf.handicap.db.PopulateCourse
@@ -308,7 +309,7 @@ class GrpcRoutes(vertx: Vertx, router: Router) : HandicapRoutes {
             if ("Test" == request.message) {
                 LOGGER.warning("Got json from Client: " + request.json)
             }
-
+            
             var requestJson = JsonObject(request.json)
             val golfer = requestJson.mapTo(Golfer::class.java)
             val cmd = request.cmd

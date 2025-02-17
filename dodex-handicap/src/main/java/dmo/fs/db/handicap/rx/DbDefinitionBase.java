@@ -6,10 +6,9 @@ import golf.handicap.db.rx.PopulateCourse;
 import golf.handicap.db.rx.PopulateGolfer;
 import golf.handicap.db.rx.PopulateGolferScores;
 import golf.handicap.db.rx.PopulateScore;
+import io.vertx.mysqlclient.impl.MySQLPoolImpl;
+import io.vertx.pgclient.impl.PgPoolImpl;
 import io.vertx.rxjava3.core.Vertx;
-import io.vertx.rxjava3.jdbcclient.JDBCPool;
-import io.vertx.rxjava3.mysqlclient.MySQLPool;
-import io.vertx.rxjava3.pgclient.PgPool;
 import io.vertx.rxjava3.sqlclient.Pool;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
@@ -32,13 +31,13 @@ public abstract class DbDefinitionBase {
 
     public static <T> void setupSql(T pool4) throws IOException, SQLException {
         // Non-Blocking Drivers
-        if (pool4 instanceof PgPool) {
-            pool = (PgPool) pool4;
+        if (((Pool)pool4).getDelegate() instanceof PgPoolImpl) {
+            pool = (Pool)pool4;
             qmark = false;
-        } else if (pool4 instanceof MySQLPool) {
-            pool = (MySQLPool) pool4;
-        } else if (pool4 instanceof JDBCPool) {
-            pool = (JDBCPool) pool4;
+        } else if (((Pool)pool4).getDelegate() instanceof MySQLPoolImpl) {
+            pool = (Pool)pool4;
+        } else {
+            pool = (Pool)pool4;
         }
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
 

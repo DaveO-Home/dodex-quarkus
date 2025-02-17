@@ -98,11 +98,11 @@ public abstract class DbNeo4jBase {
         spaLogin.setLastLogin(new Timestamp(System.currentTimeMillis()));
 
         Multi.createFrom().resource(driver::session,
-                session -> session.writeTransaction(tx -> {
+                session -> session.executeWrite(tx -> {
                     Result results = tx.run(
                             "MATCH (l:Login {name: $name, password: $password}) SET l.lastLogin = dateTime({timezone:$zone});",
                             params);
-                    tx.commit();
+//                    tx.commit();
                     return Multi.createFrom().item(results).onItem().transform(record -> "update");
                 }))
                 .withFinalizer(session -> {

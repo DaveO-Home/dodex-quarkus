@@ -10,6 +10,7 @@ import dmo.fs.quarkus.Server;
 import dmo.fs.utils.DodexUtil;
 import io.vertx.db2client.DB2ConnectOptions;
 import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.db2client.DB2Builder;
 import io.vertx.mutiny.db2client.DB2Pool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
@@ -90,7 +91,7 @@ public class DodexDatabaseIbmDB2 extends DbDefinitionBase implements DodexDataba
         return new MessageUserImpl();
     }
 
-    protected DB2Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
+    protected Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
         poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -101,7 +102,13 @@ public class DodexDatabaseIbmDB2 extends DbDefinitionBase implements DodexDataba
           .setPassword(dbProperties.getProperty("password"))
           .setDatabase(dbMap.get("dbname"))
           .setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl")));
-
-        return DB2Pool.pool(Server.getVertxMutiny(), connectOptions, poolOptions);
+        setDB2ConnectOptions(connectOptions);
+        setPoolOptions(poolOptions);
+        return DB2Builder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(db2ConnectOptions)
+          .using(Server.getVertxMutiny())
+          .build();
     }
 }

@@ -1,10 +1,12 @@
 package dmo.fs.db.handicap;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dmo.fs.utils.Constants;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
-import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.pgclient.PgBuilder;
+import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
 import org.slf4j.Logger;
@@ -20,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBase implements HandicapDatabase {
     protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabasePostgres.class.getName());
-    protected PgPool pool4;
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
@@ -105,8 +106,18 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
           new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
         setPoolOptions(poolOptions);
+        setConnectOptions(connectOptions);
 
-        pool4 = PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+        Pool pool = PgBuilder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(connectOptions)
+          .using(DodexUtil.getVertx())
+          .build();
+
+        if(logger.isDebugEnabled()) {
+            logger.debug("{}Pool Created: {} -- {}", Constants.dodexDebug, pool, isCreateTables);
+        }
 
         /*
             No need to set up DSL if only generating jooq records(generate project)
@@ -115,7 +126,7 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
         finalPromise.future().onItem().invoke(isTablesCreated -> {
             if (!isCreateTables) {
                 try {
-                    setupSql(pool4);
+                    setupSql(pool);
                     returnPromise.complete(isCreateTables.toString());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -130,7 +141,7 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getPool4() {
-        return (T) pool4;
+        return (T) pool;
     }
 
     @Override

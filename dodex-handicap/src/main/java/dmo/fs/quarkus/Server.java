@@ -42,7 +42,7 @@ public class Server implements QuarkusApplication {
         System.setProperty("org.jooq.no-logo", "true");
         System.setProperty("org.jooq.no-tips", "true");
         Quarkus.run(Server.class, args);
-        Locale.setDefault(new Locale("US"));
+        Locale.setDefault(Locale.US);
     }
 
     @Override

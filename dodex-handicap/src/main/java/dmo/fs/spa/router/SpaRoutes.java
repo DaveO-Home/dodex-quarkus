@@ -164,6 +164,7 @@ public class SpaRoutes {
             if (result.getId() == null) {
               result.setId(0L);
             }
+
 //                        session.put("login", new JsonObject(result.getMap()));
             response.send(new JsonObject(result.getMap()).encode()).subscribeAsCompletionStage().isDone();
             routingContext.request().resume();
@@ -182,8 +183,11 @@ public class SpaRoutes {
             .subscribeAsCompletionStage().isDone();
       }
     }));
-
-    route.handler(sessionHandler);
+    if(!DbConfiguration.isUsingPostgres() &&
+      !DbConfiguration.isUsingMariadb() &&
+      !DbConfiguration.isUsingIbmDB2()) {
+      route.handler(sessionHandler);
+    }
   }
 
   public void setPutLoginRoute() {

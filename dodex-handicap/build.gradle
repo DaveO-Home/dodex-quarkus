@@ -13,7 +13,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        url "https://maven.cubrid.org/"
+        url = "https://maven.cubrid.org/"
     }
 }
 
@@ -25,14 +25,14 @@ pmd {
 }
 
 ext {
-    vertxVersion = "4.5.11"
+    vertxVersion = "4.5.13"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
     kotlin_version = "2.0.21"
 }
 
 dependencies {
-    implementation 'io.quarkus:quarkus-smallrye-openapi'
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
     implementation "io.quarkus:quarkus-rest-jackson"
     implementation "io.vertx:vertx-rx-java3:$vertxVersion"
     implementation "io.quarkus:quarkus-rest"
@@ -82,16 +82,17 @@ dependencies {
 //    implementation 'io.grpc:protoc-gen-grpc-java:1.68.0'
 
     // implementation("dmo.fs.utils:generate:0.0.1")
-    implementation project(':generate')
-    implementation project(':dodex-db')
+    implementation(project(':dodex-db'))
+    implementation(project(':generate'))
+    
     testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
     testImplementation "io.rest-assured:rest-assured"
 
     implementation("io.quarkus:quarkus-websockets-next")
 }
 
-group 'dmo.fs'
-version '3.17.0'
+group = 'dmo.fs'
+version = '3.17.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -107,7 +108,7 @@ compileJava {
 //        gradle.includedBuild("dodex-db").task(":build")
 //    }
     options.encoding = "UTF-8"
-    options.compilerArgs << "-Xlint:unchecked"
+    options.compilerArgs << "-Xlint:unchecked,deprecation"
 }
 tasks.withType(KotlinJvmCompile).configureEach {
     compilerOptions {
@@ -158,15 +159,16 @@ tasks.register('run', Exec) {
     // dependsOn gradle.includedBuild("generate").task(":build")
 }
 jar {
-    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 compileTestJava {
     options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked"
 }
 
 test {
     useJUnitPlatform()
     testLogging {
-        events "PASSED", "FAILED", "SKIPPED"
+        events = ["PASSED", "FAILED", "SKIPPED"]
     }
 }

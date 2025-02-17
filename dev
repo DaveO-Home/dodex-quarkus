@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+export VERTXWEB_ENVIRONMENT=dev 
+
+./gradlew quarkusDev $1

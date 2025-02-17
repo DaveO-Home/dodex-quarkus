@@ -8,8 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dmo.fs.db.dodex.utils.Constants;
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.db.SpaDbConfiguration;
+import io.vertx.mutiny.pgclient.PgBuilder;
+import io.vertx.mutiny.sqlclient.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +79,9 @@ public class SpaDatabasePostgres extends DbPostgres {
 		}
 
 		Promise<Void> setupPromise = Promise.promise();
-		PgPool pool = getPool(dbMap, dbProperties);
+		Pool pool = getPool(dbMap, dbProperties);
+
+		logger.debug("{}Pool Created: {}", Constants.dodexDebug, pool);
 
 		pool.getConnection().flatMap(conn -> {
 			conn.query(CHECKLOGIN).execute().flatMap(rows -> {
@@ -116,7 +121,7 @@ public class SpaDatabasePostgres extends DbPostgres {
 		return new SpaLoginImpl();
 	}
 
-	protected static PgPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -129,6 +134,12 @@ public class SpaDatabasePostgres extends DbPostgres {
 				.setIdleTimeout(1);
 
 		Vertx vertx = Server.getVertxMutiny();
-		return PgPool.pool(vertx, connectOptions, poolOptions);
+
+		return PgBuilder
+		.pool()
+		.with(poolOptions)
+		.connectingTo(connectOptions)
+		.using(vertx)
+		.build();
 	}
 }

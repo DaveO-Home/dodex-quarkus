@@ -5,7 +5,7 @@ import dmo.fs.db.dodex.CreateDatabaseImpl;
 import dmo.fs.db.dodex.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.mysqlclient.MySQLBuilder;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
@@ -29,7 +29,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
       LoggerFactory.getLogger(HandicapDatabaseMariadb.class.getName());
     private MySQLConnectOptions connectOptions;
     private PoolOptions poolOptions;
-    protected MySQLPool pool4;
+    protected Pool pool;
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
@@ -113,11 +113,17 @@ public class HandicapDatabaseMariadb extends DbMariadb {
           new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
         // Create the client pool
-        pool4 = MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+        pool = MySQLBuilder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(connectOptions)
+          .using(DodexUtil.getVertx())
+          .build();
+
         String dbName = " and table_schema = '" + dbMap.get("dbname") + "';";
 
-        pool4.withTransaction(conn -> {
-            conn.query(CHECKUSERSQL+dbName).execute().onItem().invoke(row -> {
+        pool.withTransaction(conn -> {
+            conn.query(CHECKUSERSQL + dbName).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   Integer val = null;
                   while (ri.hasNext()) {
@@ -138,7 +144,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                   }
               }).onFailure().invoke(err -> {
                   logger.info(String.format("Users Table Error: %s", err.getMessage()));
-              }).flatMap(result -> conn.query(CHECKMESSAGESSQL+dbName).execute().onItem().invoke(row -> {
+              }).flatMap(result -> conn.query(CHECKMESSAGESSQL + dbName).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   Integer val = null;
                   while (ri.hasNext()) {
@@ -158,7 +164,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                       crow.subscribeAsCompletionStage().isDone();
                   }
               }).onFailure().invoke(err -> logger.info(String.format("Messages Table Error: %s", err.getMessage()))))
-              .flatMap(result -> conn.query(CHECKUNDELIVEREDSQL+dbName).execute().onItem().invoke(row -> {
+              .flatMap(result -> conn.query(CHECKUNDELIVEREDSQL + dbName).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   Integer val = null;
                   while (ri.hasNext()) {
@@ -177,7 +183,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
               }).onFailure().invoke(err -> {
                   logger.info(String.format("Messages Table Error: %s", err.getMessage()));
               }))
-              .flatMap(result -> conn.query(CHECKGROUPSSQL+dbName).execute().onItem().invoke(row -> {
+              .flatMap(result -> conn.query(CHECKGROUPSSQL + dbName).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   Integer val = null;
                   while (ri.hasNext()) {
@@ -196,7 +202,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
               }).onFailure().invoke(err -> {
                   logger.info(String.format("Groups Table Error: %s", err.getMessage()));
               }))
-              .flatMap(result -> conn.query(CHECKMEMBERSQL+dbName).execute().onItem().invoke(row -> {
+              .flatMap(result -> conn.query(CHECKMEMBERSQL + dbName).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   Integer val = null;
                   while (ri.hasNext()) {
@@ -215,7 +221,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
               }).onFailure().invoke(err -> {
                   logger.info(String.format("Undelivered Table Error: %s", err.getMessage()));
               }))
-              .flatMap(result -> conn.query(CHECKHANDICAPSQL+dbName).execute().onFailure().invoke(err ->
+              .flatMap(result -> conn.query(CHECKHANDICAPSQL + dbName).execute().onFailure().invoke(err ->
                   logger.error(String.format("Golfer Table Error: %s", err.getMessage())))
                 .onItem().invoke(rows -> {
                     Set<String> names = new HashSet<>();
@@ -277,7 +283,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                 })).subscribeAsCompletionStage().isDone();
 
             finalPromise.future().onItem().invoke(isTablesCreated -> {
-                poolPromise.complete(pool4);
+                poolPromise.complete(pool);
             }).subscribeAsCompletionStage().isDone();
 
             return null;
@@ -288,7 +294,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getPool4() {
-        return (T) pool4;
+        return (T) pool;
     }
 
     @Override

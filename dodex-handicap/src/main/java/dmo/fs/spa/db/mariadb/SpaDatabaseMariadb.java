@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dmo.fs.quarkus.Server;
 import dmo.fs.spa.db.SpaDbConfiguration;
+import io.vertx.mutiny.mysqlclient.MySQLBuilder;
+import io.vertx.mutiny.sqlclient.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,9 +77,9 @@ public class SpaDatabaseMariadb extends DbMariadb {
 		}
 
 		Promise<Void> setupPromise = Promise.promise();
-		MySQLPool pool = getPool(dbMap, dbProperties);
-		String dbName = " and table_schema = '" + dbMap.get("dbname") + "';";
 
+		Pool pool = getPool(dbMap, dbProperties);
+		String dbName = " and table_schema = '" + dbMap.get("dbname") + "';";
 		pool.getConnection().flatMap(conn -> {
 			conn.query(CHECKLOGINSQL+dbName).execute().flatMap(rows -> {
 				RowIterator<Row> ri = rows.iterator();
@@ -113,7 +115,7 @@ public class SpaDatabaseMariadb extends DbMariadb {
 		return new SpaLoginImpl();
 	}
 
-	protected static MySQLPool getPool(Map<String, String> dbMap, Properties dbProperties) {
+	protected static Pool getPool(Map<String, String> dbMap, Properties dbProperties) {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -124,6 +126,11 @@ public class SpaDatabaseMariadb extends DbMariadb {
 				.setSsl(Boolean.parseBoolean(dbProperties.getProperty("ssl"))).setIdleTimeout(1);
 
 		Vertx vertx = Server.getVertxMutiny();
-		return MySQLPool.pool(vertx, connectOptions, poolOptions);
+		return MySQLBuilder
+		.pool()
+		.with(poolOptions)
+		.connectingTo(connectOptions)
+		.using(vertx)
+		.build();
 	}
 }

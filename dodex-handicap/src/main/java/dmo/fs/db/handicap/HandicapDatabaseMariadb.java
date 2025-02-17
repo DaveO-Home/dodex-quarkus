@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.mysqlclient.MySQLBuilder;
 import io.vertx.mutiny.mysqlclient.MySQLPool;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
@@ -19,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase implements HandicapDatabase {
     protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabaseMariadb.class.getName());
-    protected MySQLPool pool4;
+//    protected MySQLPool pool4;
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
@@ -105,15 +106,22 @@ public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase
           new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
         setPoolOptions(poolOptions);
+        setConnectOptions(connectOptions);
 
         // Create the client pool
-        pool4 = MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+//        pool4 = MySQLPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+        pool = MySQLBuilder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(connectOptions)
+          .using(DodexUtil.getVertx())
+          .build();
         /*
             No need to set up DSL if only generating jooq records(generate project)
          */
         if (!isCreateTables) {
             try {
-                setupSql(pool4);
+                setupSql(pool);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -123,7 +131,7 @@ public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getPool4() {
-        return (T) pool4;
+        return (T) pool;
     }
 
     @Override

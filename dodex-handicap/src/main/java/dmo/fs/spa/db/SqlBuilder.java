@@ -13,9 +13,12 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
+import io.vertx.db2client.impl.DB2PoolImpl;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.mutiny.mysqlclient.MySQLClient;
 import io.vertx.mutiny.sqlclient.PropertyKind;
+import io.vertx.mysqlclient.impl.MySQLPoolImpl;
+import io.vertx.pgclient.impl.PgPoolImpl;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
@@ -55,13 +58,13 @@ public abstract class SqlBuilder {
 
     public static <T> void setupSql(T pool4) {
         // Non-Blocking Drivers
-        if (pool4 instanceof PgPool) {
-            pool = (PgPool) pool4;
+        if (((Pool)pool4).getDelegate() instanceof PgPoolImpl) {
+            pool = (Pool) pool4;
             qmark = false;
-        } else if (pool4 instanceof MySQLPool) {
-            pool = (MySQLPool) pool4;
-        } else if (pool4 instanceof DB2Pool) {
-            pool = (DB2Pool) pool4;
+        } else if (((Pool)pool4).getDelegate() instanceof MySQLPoolImpl) {
+            pool = (Pool)pool4;
+        } else if (((Pool)pool4).getDelegate() instanceof DB2PoolImpl) {
+            pool = (Pool) pool4;
         }
 
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres

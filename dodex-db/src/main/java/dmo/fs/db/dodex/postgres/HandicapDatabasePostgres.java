@@ -2,9 +2,11 @@ package dmo.fs.db.dodex.postgres;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dmo.fs.db.dodex.CreateDatabaseImpl;
+import dmo.fs.db.dodex.utils.Constants;
 import dmo.fs.db.dodex.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
+import io.vertx.mutiny.pgclient.PgBuilder;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
@@ -28,7 +30,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
       LoggerFactory.getLogger(HandicapDatabasePostgres.class.getName());
     private PgConnectOptions connectOptions;
     private PoolOptions poolOptions;
-    protected PgPool pool4;
+    protected Pool pool;
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
@@ -111,9 +113,17 @@ public class HandicapDatabasePostgres extends DbPostgres {
         poolOptions =
           new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
-        pool4 = PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+//        pool4 = PgPool.pool(DodexUtil.getVertx(), connectOptions, poolOptions);
+        pool = PgBuilder
+          .pool()
+          .with(poolOptions)
+          .connectingTo(connectOptions)
+          .using(DodexUtil.getVertx())
+          .build();
 
-        pool4.withTransaction(conn -> {
+        logger.debug("{}Pool Created: {}", Constants.dodexDebug, pool);
+
+        pool.withTransaction(conn -> {
             conn.query(CHECKUSERSQL).execute().onItem().invoke(row -> {
                   RowIterator<Row> ri = row.iterator();
                   String val = null;
@@ -258,7 +268,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
 
             finalPromise.future().onItem().invoke(isTablesCreated -> {
                 if (!isCreateTables) {
-                    poolPromise.complete(pool4);
+                    poolPromise.complete(pool);
                 }
             }).subscribeAsCompletionStage().isDone();
 
@@ -267,10 +277,10 @@ public class HandicapDatabasePostgres extends DbPostgres {
         return poolPromise;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T getPool4() {
-        return (T) pool4;
+        return (T) pool;
     }
 
     @Override

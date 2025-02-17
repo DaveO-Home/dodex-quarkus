@@ -3,11 +3,13 @@ package dmo.fs;
 import dmo.fs.db.dodex.postgres.DbPostgres;
 import io.quarkus.test.junit.QuarkusTest;
 
+import io.vertx.mutiny.pgclient.PgBuilder;
 import org.junit.jupiter.api.Disabled;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,6 @@ import dmo.fs.utils.ColorUtilConstants;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.core.Vertx;
-import io.vertx.mutiny.db2client.DB2Pool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
@@ -28,8 +29,8 @@ import java.sql.SQLException;
 @QuarkusTest
 public class DbQuarkusTest  extends DbPostgres {
 	private static final Logger logger = LoggerFactory.getLogger(DbQuarkusTest.class.getName());
-    @Disabled("Disabled until VertxExtension works with reactivex")
-    // @Test
+//    @Disabled("Disabled until VertxExtension works with reactivex")
+		@Test
     public void testTestEndpoint() {
         given()
           .when().get("/test")
@@ -71,7 +72,7 @@ public class DbQuarkusTest  extends DbPostgres {
 	public Promise<Pool> databaseSetup() {
 
 		Promise<Pool> promise = Promise.promise();
-		DB2Pool pool = getConfiguredPool();
+		Pool pool = getConfiguredPool();
 
         pool.getConnection().flatMap(conn -> {
 			conn.query(CHECKUSERSQL).execute().flatMap(row -> {
@@ -116,7 +117,7 @@ public class DbQuarkusTest  extends DbPostgres {
 		return null;
 	}
 
-	private static DB2Pool getConfiguredPool() {
+	private static Pool getConfiguredPool() {
 
 		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
@@ -130,7 +131,13 @@ public class DbQuarkusTest  extends DbPostgres {
 				.setSsl(false);
 
 		Vertx vertx = Vertx.vertx();
-		return DB2Pool.pool(vertx, connectOptions, poolOptions);
+
+		return PgBuilder
+		.pool()
+		.with(poolOptions)
+		.connectingTo(connectOptions)
+		.using(vertx)
+		.build();
 	}
 
 	public <T> T getPool() {

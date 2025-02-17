@@ -9,7 +9,7 @@ repositories {
     mavenCentral()
     gradlePluginPortal()
     maven {
-        url "https://maven.cubrid.org/"
+        url = "https://maven.cubrid.org/"
     }
 }
 
@@ -20,7 +20,7 @@ pmd {
     toolVersion = "7.0.0"
 }
 
-def vertxVersion = "4.5.11"
+def vertxVersion = "4.5.13"
 
 ext {
 }
@@ -52,8 +52,8 @@ dependencies {
     testImplementation "io.rest-assured:rest-assured"
 }
 
-group 'dmo.fs.db'
-version '3.17.0'
+group = "dmo.fs.db"
+version = "3.17.1"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -66,7 +66,7 @@ compileJava {
 }
 
 jar {
-    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 compileTestJava {
     options.encoding = 'UTF-8'
@@ -75,6 +75,6 @@ compileTestJava {
 test {
     useJUnitPlatform()
     testLogging {
-        events "PASSED", "FAILED", "SKIPPED"
+        events = ["PASSED", "FAILED", "SKIPPED"]
     }
 }

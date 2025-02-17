@@ -2,7 +2,7 @@ package dmo.fs.db.dodex.utils;
 
 public final class ColorUtilConstants {
 
-    protected ColorUtilConstants() {
+    private ColorUtilConstants() {
     }
 
     // Reset

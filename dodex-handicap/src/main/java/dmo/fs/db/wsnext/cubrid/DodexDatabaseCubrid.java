@@ -62,7 +62,6 @@ public class DodexDatabaseCubrid extends DbDefinitionBase implements DodexDataba
         dbProperties = dodexUtil.mapToProperties(dbMap);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Promise<Pool> databaseSetup() {
         if ("dev".equals(webEnv)) {

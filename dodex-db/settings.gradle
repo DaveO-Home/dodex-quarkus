@@ -8,5 +8,6 @@
 //      id "${quarkusPluginId}" version "${quarkusPluginVersion}"
 //    }
 //}
+
 rootProject.name='dodex-db'
 // includeBuild "generate"

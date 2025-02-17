@@ -61,7 +61,7 @@ public class DodexRouterReactive extends DodexReactiveBase {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT] [%4$s] %5$s %3$s %n");
         String value = isProduction ? "prod" : "dev";
 
-        Locale.setDefault(new Locale("US"));
+        Locale.setDefault(Locale.US);
         if (isProduction) {
             DodexUtil.setEnv("prod");
         } else {

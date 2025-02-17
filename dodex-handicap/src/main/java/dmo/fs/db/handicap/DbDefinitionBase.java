@@ -15,6 +15,11 @@ import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.impl.PgPoolImpl;
+import io.vertx.mysqlclient.impl.MySQLPoolImpl;
+import io.vertx.rxjava3.mysqlclient.MySQLBuilder;
+import io.vertx.rxjava3.pgclient.PgBuilder;
+import io.vertx.sqlclient.impl.PoolImpl;
 import io.vertx.sqlclient.PoolOptions;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
@@ -41,12 +46,12 @@ public abstract class DbDefinitionBase {
 
     public static <T> void setupSql(T pool4) throws IOException, SQLException {
         // Non-Blocking Drivers
-        if (pool4 instanceof PgPool) {
-            pool = (PgPool) pool4;
+        if (((Pool)pool4).getDelegate() instanceof PgPoolImpl) {
+            pool = (Pool) pool4;
             qmark = false;
-        } else if (pool4 instanceof MySQLPool) {
-            pool = (MySQLPool) pool4;
         } else if (pool4 instanceof JDBCPool) {
+            pool = (Pool) pool4;
+        } else { //if (pool4 instanceof JDBCPool) {
             pool = (Pool) pool4;
         }
 
@@ -56,26 +61,32 @@ public abstract class DbDefinitionBase {
 
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
         create = DSL.using(DodexUtil.getSqlDialect(), settings);
-
         /* @TODO: convert GroupOpenApiSql to mutiny */
-        if (pool4 instanceof PgPool) {
-            io.vertx.rxjava3.pgclient.PgPool poolRx =
-              io.vertx.rxjava3.pgclient.PgPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), pgConnectOptions, poolOptions);
+        DodexUtil.setVertxR(io.vertx.rxjava3.core.Vertx.vertx());
+        if (((Pool)pool4).getDelegate() instanceof PgPoolImpl) { // if (pool4 instanceof PgPool) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx = PgBuilder
+              .pool()
+              .with(poolOptions)
+              .connectingTo(pgConnectOptions)
+              .using(DodexUtil.getVertxR())
+              .build();
             GroupOpenApiSql.setPool(poolRx);
-        } else if (pool4 instanceof MySQLPool) {
-            io.vertx.rxjava3.mysqlclient.MySQLPool poolRx =
-              io.vertx.rxjava3.mysqlclient.MySQLPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), mySQLConnectOptions, poolOptions);
+        } else if (((Pool)pool4).getDelegate() instanceof MySQLPoolImpl) {
+            io.vertx.rxjava3.sqlclient.Pool poolRx = MySQLBuilder
+              .pool()
+              .with(poolOptions)
+              .connectingTo(mySQLConnectOptions)
+              .using(DodexUtil.getVertxR())
+              .build();
             GroupOpenApiSql.setPool(poolRx);
         } else if (pool4 instanceof JDBCPool) {
             io.vertx.rxjava3.sqlclient.Pool poolRx =
-              io.vertx.rxjava3.jdbcclient.JDBCPool.pool(io.vertx.rxjava3.core.Vertx.vertx(), jdbcConnectOptions, poolOptions);
+              io.vertx.rxjava3.jdbcclient.JDBCPool.pool(DodexUtil.getVertxR(), jdbcConnectOptions, poolOptions);
             GroupOpenApiSql.setPool(poolRx);
         }
-
         GroupOpenApiSql.setCreate(create);
         GroupOpenApiSql.setQmark(qmark);
         GroupOpenApiSql.buildSql();
-
         PopulateGolfer.setQMark(qmark);
         PopulateGolfer.setSqlPool(pool);
         PopulateGolfer.setDslContext(create);

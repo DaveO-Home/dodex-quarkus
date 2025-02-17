@@ -9,12 +9,12 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.13.1'
-    // testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
+    testImplementation "junit:junit:4.13.1"
+    // testImplementation = "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
 }
 
-group 'dmo.fs.quarkus'
-version '3.17.0'
+group = 'dmo.fs.quarkus'
+version = '3.17.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -27,7 +27,6 @@ def dir = System.getProperty("user.dir")
 
 compileJava {
     options.encoding = "UTF-8"
-    options.compilerArgs << "-Xlint:unchecked"
 }
 
 tasks.register('run', Exec) {
@@ -44,7 +43,7 @@ tasks.register('run', Exec) {
     }
 }
 jar {
-    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 compileTestJava {
     options.encoding = 'UTF-8'
@@ -53,6 +52,6 @@ compileTestJava {
 test {
     useJUnitPlatform()
     testLogging {
-        events "PASSED", "FAILED", "SKIPPED"
+        events = ["PASSED", "FAILED", "SKIPPED"]
     }
 }

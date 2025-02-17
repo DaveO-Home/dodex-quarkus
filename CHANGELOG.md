@@ -1,5 +1,13 @@
 # Changelog
 
+## [v3.17.1](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.17.1) (2025-02-17)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.17.0...v3.17.1)
+
+* Upgraded to Quarkus 3.18.3
+* Fixed deprecated packages
+* Upgraded JOOQ - more stable across databases
+
 ## [v3.17.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.17.0) (2025-01-20)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.4.0...v3.17.0)

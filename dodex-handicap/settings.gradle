@@ -9,4 +9,5 @@ pluginManagement {
     }
 }
 rootProject.name='dodex-handicap'
+// include "dodex-db", "generate"
 

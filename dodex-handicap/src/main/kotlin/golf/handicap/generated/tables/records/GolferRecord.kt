@@ -6,8 +6,6 @@ package golf.handicap.generated.tables.records
 
 import golf.handicap.generated.tables.Golfer
 
-import java.math.BigDecimal
-
 import org.jooq.Record1
 import org.jooq.impl.UpdatableRecordImpl
 
@@ -42,17 +40,17 @@ open class GolferRecord() : UpdatableRecordImpl<GolferRecord>(Golfer.GOLFER) {
         set(value): Unit = set(5, value)
         get(): String? = get(5) as String?
 
-    open var overlapYears: Int?
+    open var overlapYears: Boolean?
         set(value): Unit = set(6, value)
-        get(): Int? = get(6) as Int?
+        get(): Boolean? = get(6) as Boolean?
 
-    open var `public`: Int?
+    open var `public`: Boolean?
         set(value): Unit = set(7, value)
-        get(): Int? = get(7) as Int?
+        get(): Boolean? = get(7) as Boolean?
 
-    open var lastLogin: BigDecimal?
+    open var lastLogin: Long?
         set(value): Unit = set(8, value)
-        get(): BigDecimal? = get(8) as BigDecimal?
+        get(): Long? = get(8) as Long?
 
     // -------------------------------------------------------------------------
     // Primary key information
@@ -63,7 +61,7 @@ open class GolferRecord() : UpdatableRecordImpl<GolferRecord>(Golfer.GOLFER) {
     /**
      * Create a detached, initialised GolferRecord
      */
-    constructor(pin: String? = null, firstName: String? = null, lastName: String? = null, handicap: Float? = null, country: String? = null, state: String? = null, overlapYears: Int? = null, `public`: Int? = null, lastLogin: BigDecimal? = null): this() {
+    constructor(pin: String? = null, firstName: String? = null, lastName: String? = null, handicap: Float? = null, country: String? = null, state: String? = null, overlapYears: Boolean? = null, `public`: Boolean? = null, lastLogin: Long? = null): this() {
         this.pin = pin
         this.firstName = firstName
         this.lastName = lastName
