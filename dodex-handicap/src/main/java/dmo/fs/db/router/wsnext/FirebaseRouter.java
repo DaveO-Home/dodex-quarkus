@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 public class FirebaseRouter {
     protected static final Logger logger = LoggerFactory.getLogger(FirebaseRouter.class.getSimpleName());
     protected static Vertx vertx = DodexUtil.getVertx();
-    protected static final ConcurrentHashMap<String, HashMap<String,String>> queryParams = new ConcurrentHashMap<>();
+    protected static final ConcurrentMap<String, Map<String,String>> queryParams = new ConcurrentHashMap<>();
     protected static final String DODEX_PROJECT_ID = "dodex-firebase"; // ""dodex-6f42d";
     protected static final String LOGFORMAT = "{}{}{}";
     protected String remoteAddress;
@@ -48,8 +49,10 @@ public class FirebaseRouter {
     @Inject
     WebSocketConnection connection;
 
-    public FirebaseRouter(final Vertx vertx) throws SQLException, IOException, InterruptedException {
-        FirebaseRouter.vertx = vertx;
+    public FirebaseRouter(Vertx vertx) throws SQLException, IOException, InterruptedException {
+        if(FirebaseRouter.vertx == null) {
+            FirebaseRouter.vertx = vertx;
+        }
         FirestoreOptions firestoreOptions;
         try {
             firestoreOptions = FirestoreOptions.getDefaultInstance().toBuilder().setProjectId(DODEX_PROJECT_ID)
@@ -66,14 +69,14 @@ public class FirebaseRouter {
 
     @OnOpen()
     public String onOpen() throws SQLException, IOException, InterruptedException {
-        connection.handshakeRequest().query().transform(q -> {
+        Map<String, Map<String, String>> paramsMap = connection.handshakeRequest().query().transform(q -> {
             String query = URLDecoder.decode(q, StandardCharsets.UTF_8);
 
             String[] params = query.split("&");
             String[] handle = params[0].split("=");
             String[] id = params[1].split("=");
 
-            HashMap<String, String> parameters = new HashMap<>();
+            Map<String, String> parameters = new HashMap<>();
             parameters.put(handle[0], handle[1]);
             parameters.put(id[0], id[1]);
             queryParams.put(connection.id(), parameters);
@@ -81,9 +84,9 @@ public class FirebaseRouter {
         });
 
         logger.info(String.join("", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-            queryParams.get(connection.id()).get("handle"), ColorUtilConstants.RESET));
+            paramsMap.get(connection.id()).get("handle"), ColorUtilConstants.RESET));
 
-        broadcast(connection, "User " + queryParams.get(connection.id()).get("handle") + " joined", queryParams);
+        broadcast(connection, "User " + paramsMap.get(connection.id()).get("handle") + " joined", queryParams);
 
         if (ke != null) {
             ke.setValue("sessions", connection.getOpenConnections().size());
@@ -136,8 +139,8 @@ public class FirebaseRouter {
         return null;
     }
 
-    protected long broadcast(WebSocketConnection connection, String message, ConcurrentHashMap<String, HashMap<String,String>> queryParams) {
-        long c = connection.getOpenConnections().stream().filter(session -> {
+    protected long broadcast(WebSocketConnection connection, String message, ConcurrentMap<String, Map<String,String>> queryParams) {
+        return connection.getOpenConnections().stream().filter(session -> {
             if (connection.id().equals(session.id())) {
                 return false;
             }
@@ -149,7 +152,6 @@ public class FirebaseRouter {
             }
             return true;
         }).count();
-        return c;
     }
 
     private void setWebSocket() throws InterruptedException, IOException, SQLException {
@@ -199,7 +201,7 @@ public class FirebaseRouter {
         logger.info(LOGFORMAT, ColorUtilConstants.BLUE_BOLD_BRIGHT, "Firebase Handle: " + handle,
             ColorUtilConstants.RESET);
 
-        final ArrayList<String> onlineUsers = new ArrayList<>();
+        final List<String> onlineUsers = new ArrayList<>();
 
         // Checking if message or command
         Map<String, String> returnObject = DodexUtil.commandMessage(message);

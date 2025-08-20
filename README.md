@@ -19,7 +19,7 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 <div style="text-align: left; display: grid; grid-template-columns: 1fr 1fr;">
   <div>root project
 
-```
+```test
 dodex-quarkus
    ├── build.gradle
    ├── CHANGELOG.md
@@ -63,7 +63,7 @@ dodex-quarkus
   <div>
 sub projects
 
-```
+```text
    ├── dodex-db
    │   ├── build.gradle
    │   ├── gradle.properties

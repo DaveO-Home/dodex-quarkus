@@ -5,7 +5,6 @@ import dmo.fs.db.handicap.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.mysqlclient.MySQLBuilder;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.sqlclient.PoolOptions;
 import org.slf4j.Logger;
@@ -17,10 +16,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase implements HandicapDatabase {
+public class HandicapDatabaseMariadb extends DbDefinitionBase implements HandicapDatabase {
     protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabaseMariadb.class.getName());
-//    protected MySQLPool pool4;
     protected Properties dbProperties;
     protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
     protected Map<String, String> dbMap;
@@ -79,6 +77,7 @@ public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase
         this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() throws InterruptedException, SQLException {
         if (isCreateTables) {
             databaseSetup();
@@ -87,7 +86,6 @@ public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase
     }
 
     protected void databaseSetup() throws InterruptedException, SQLException {
-        Promise<String> finalPromise = Promise.promise();
         if ("dev".equals(webEnv)) {
             DbConfiguration.configureTestDefaults(dbMap, dbProperties);
         } else {
@@ -136,7 +134,7 @@ public class HandicapDatabaseMariadb extends dmo.fs.db.handicap.DbDefinitionBase
 
     @Override
     public void setVertxR(io.vertx.rxjava3.core.Vertx vertx) {
-
+        //
     }
 
     @Override

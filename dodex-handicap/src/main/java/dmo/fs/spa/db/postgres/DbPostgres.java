@@ -4,6 +4,8 @@ package dmo.fs.spa.db.postgres;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SqlBuilder;
 
+import java.util.Locale;
+
 public abstract class DbPostgres extends SqlBuilder implements SpaDatabase {
 	public static final String CHECKLOGIN = "SELECT to_regclass('public.login')";
 
@@ -34,6 +36,6 @@ public abstract class DbPostgres extends SqlBuilder implements SpaDatabase {
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 }

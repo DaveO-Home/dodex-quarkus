@@ -4,6 +4,8 @@ package dmo.fs.spa.db.db2;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SqlBuilder;
 
+import java.util.Locale;
+
 public abstract class DbIbmDB2 extends SqlBuilder implements SpaDatabase {
 	protected static final String CHECKLOGINSQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='LOGIN'";
 
@@ -25,17 +27,17 @@ public abstract class DbIbmDB2 extends SqlBuilder implements SpaDatabase {
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbIbmDB2() {
 		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 
 	public String getLoginIndex(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()+"INDEX").sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)+"INDEX").sql;
 	}
 }

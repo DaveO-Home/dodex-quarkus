@@ -10,7 +10,6 @@ import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
-import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.arc.properties.UnlessBuildProperty;
 import io.quarkus.websockets.next.*;
 import io.reactivex.rxjava3.core.Observable;
@@ -72,17 +71,17 @@ public class DodexRouterReactive extends DodexReactiveBase {
         JDBCPool pool4 = createDatabase.getPool4();
 
         dodexReactiveDatabase = DbConfiguration.getDefaultDb();
-        DodexReactiveBase.setDodexDatabase(dodexReactiveDatabase);
-        DodexReactiveBase.setPoolOptions(createDatabase.getPoolOptions());
-        DodexReactiveBase.setJDBCConnectOptions(createDatabase.getConnectOptions());
-        DodexReactiveBase.setupSql(pool4);
-        DodexReactiveDatabase.setVertx(Server.vertx);
+        setDodexDatabase(dodexReactiveDatabase);
+        setPoolOptions(createDatabase.getPoolOptions());
+        setJDBCConnectOptions(createDatabase.getConnectOptions());
+        setupSql(pool4);
+        setVertx(Server.vertx);
 
         dodexReactiveDatabase.databaseSetup();
     /*
       Give new tables time to create.
      */
-        long ob = Observable.timer(250, TimeUnit.MILLISECONDS).blockingFirst();
+        Observable.timer(250, TimeUnit.MILLISECONDS).blockingFirst();
     }
 
     @OnOpen

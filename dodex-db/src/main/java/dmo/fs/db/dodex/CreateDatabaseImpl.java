@@ -12,10 +12,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("PMD.NonThreadSafeSingleton")
 public abstract class CreateDatabaseImpl {
     static Logger logger = LoggerFactory.getLogger(CreateDatabaseImpl.class.getName());
     protected static final Map<String, String> map = new ConcurrentHashMap<>();
@@ -72,7 +74,7 @@ public abstract class CreateDatabaseImpl {
 
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb() throws InterruptedException, IOException, SQLException {
-        defaultDb = dodexUtil.getDefaultDb().toLowerCase();
+        defaultDb = dodexUtil.getDefaultDb().toLowerCase(Locale.US);
 
         if (defaultDb.equals(DbTypes.POSTGRES.db) && dodexDatabase == null) {
             dodexDatabase = new HandicapDatabasePostgres();
@@ -102,7 +104,7 @@ public abstract class CreateDatabaseImpl {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(Boolean isCreateTables) throws InterruptedException, IOException, SQLException {
-        defaultDb = dodexUtil.getDefaultDb().toLowerCase();
+        defaultDb = dodexUtil.getDefaultDb().toLowerCase(Locale.US);
 
         if (defaultDb.equals(DbTypes.POSTGRES.db) && isCreateTables) {
             dodexDatabase = new HandicapDatabasePostgres(true);

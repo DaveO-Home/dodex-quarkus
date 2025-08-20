@@ -2,16 +2,17 @@ package dmo.fs.db.handicap.rx;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import dmo.fs.db.handicap.HandicapDatabaseH2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import dmo.fs.db.handicap.utils.DodexUtil;
 import dmo.fs.db.handicap.HandicapDatabase;
 
+@SuppressWarnings("PMD.NonThreadSafeSingleton")
 public abstract class DbConfiguration {
     static Logger logger = LoggerFactory.getLogger(DbConfiguration.class.getName());
     protected static final Map<String, String> map = new ConcurrentHashMap<>();
@@ -34,8 +35,6 @@ public abstract class DbConfiguration {
         }
     }
 
-    ;
-
     public static boolean isUsingSqlite3() {
         return isUsingSqlite3;
     }
@@ -46,7 +45,7 @@ public abstract class DbConfiguration {
 
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb() throws InterruptedException, IOException, SQLException {
-        defaultDb = dodexUtil.getDefaultDb().toLowerCase();
+        defaultDb = dodexUtil.getDefaultDb().toLowerCase(Locale.US);
 
         if (defaultDb.equals(DbTypes.SQLITE3.db) && handicapDatabase == null) {
             handicapDatabase = new HandicapDatabaseSqlite3();
@@ -57,7 +56,7 @@ public abstract class DbConfiguration {
 
     @SuppressWarnings("unchecked")
     public static <T> T getDefaultDb(Boolean isCreateTables) throws InterruptedException, IOException, SQLException {
-        defaultDb = dodexUtil.getDefaultDb().toLowerCase();
+        defaultDb = dodexUtil.getDefaultDb().toLowerCase(Locale.US);
 
         if (defaultDb.equals(DbTypes.SQLITE3.db) && isCreateTables) {
             handicapDatabase = new HandicapDatabaseSqlite3(isCreateTables);

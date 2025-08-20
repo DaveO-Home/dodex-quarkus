@@ -3,11 +3,9 @@ package dmo.fs.db.dodex.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-// import dmo.fs.quarkus.Server;
 import io.vertx.mutiny.core.Vertx;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-//import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,22 +23,10 @@ public class DodexUtil {
     protected static final String REMOVEUSER = ";removeuser";
     protected static final String USERS = ";users";
     protected static String env = "dev";
-    protected static Vertx vertx = null;
-    ;
-
-    protected static io.vertx.reactivex.core.Vertx vertxR = null;
+    protected static Vertx vertx;
+    protected static io.vertx.reactivex.core.Vertx vertxR;
 
     public static String defaultDb = "h2";
-
-//    public void await(Disposable disposable) {
-//        while (!disposable.isDisposed()) {
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {
-//                logger.error(String.join("", "Await: ", e.getMessage()));
-//            }
-//        }
-//    }
 
     public Map<String, String> commandMessage(String clientData) {
         Map<String, String> returnObject = new ConcurrentHashMap<>();
@@ -126,9 +112,6 @@ public class DodexUtil {
             }
             return clientData.substring(clientData.lastIndexOf("!!") + 2);
         };
-
-        protected ClientInfoUtilHelper() {
-        }
     }
 
     public JsonNode getDefaultNode() throws IOException {
@@ -144,23 +127,24 @@ public class DodexUtil {
         try {
             configDefaultDb = config.getValue("dodex.default.db", String.class);
         } catch (NoSuchElementException nse) {
+            nse.getStackTrace();
         }
         String defaultdbProp = System.getProperty("DEFAULT_DB");
         String defaultdbEnv = System.getenv("DEFAULT_DB");
-        DodexUtil.defaultDb = node.get("defaultdb").textValue();
+        defaultDb = node.get("defaultdb").textValue();
         /*
         use environment variable first, if set, then properties then quarkus-config and then from dodex-config json
         */
-        DodexUtil.defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp :
-          configDefaultDb != null ? configDefaultDb : DodexUtil.defaultDb;
-        System.setProperty("DEFAULT_DB", DodexUtil.defaultDb);
+        defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
+        System.setProperty("DEFAULT_DB", defaultDb);
 
-        return node.get(DodexUtil.defaultDb);
+        return node.get(defaultDb);
     }
 
     public String getDefaultDb() throws IOException {
         getDefaultNode();
-        return DodexUtil.defaultDb;
+        return defaultDb;
     }
 
     public Map<String, String> jsonNodeToMap(JsonNode jsonNode, String env) {

@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Defaults: off - when turned on 1. execute on start up and every 7 days
  * thereafter. 2. remove users who have not logged in for 90 days.
  */
+@SuppressWarnings("PMD.GuardLogStatement")
 public class CleanOrphanedUsers extends DbDefinitionBase {
     protected static Logger logger = LoggerFactory.getLogger(CleanOrphanedUsers.class.getName());
 
@@ -49,7 +50,7 @@ public class CleanOrphanedUsers extends DbDefinitionBase {
                 .startingAfter(java.time.Duration.ofMillis(delay))
                 .every(java.time.Duration.ofDays(period))
                 .onItem().invoke(clean)
-                .onFailure().invoke(err -> err.printStackTrace()).subscribe().with(l -> logger.getName());
+                .onFailure().invoke(Throwable::printStackTrace).subscribe().with(l -> logger.getName());
     }
 
     protected final Runnable clean = new Runnable() {

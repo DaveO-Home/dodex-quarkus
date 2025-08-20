@@ -50,9 +50,6 @@ public class GroupOpenApiSql implements GroupOpenApi {
     protected final static DateTimeFormatter formatter =
       DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault());
 
-    public GroupOpenApiSql() {
-    }
-
     public static void buildSql() {
         GETGROUPBYNAME = qmark ? setupGroupByName().replaceAll("\\$\\d", "?") : setupGroupByName();
         GETADDGROUP = qmark ? setupAddGroup().replaceAll("\\$\\d", "?") : setupAddGroup();
@@ -184,6 +181,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
         return GETUSERBYNAMESQLITE;
     }
 
+    @Override
     public Future<JsonObject> addGroupAndMembers(JsonObject addGroupJson)
       throws InterruptedException, SQLException, IOException {
         final Promise<JsonObject> promise = Promise.promise();
@@ -201,8 +199,6 @@ public class GroupOpenApiSql implements GroupOpenApi {
         }
 
         addGroup(addGroupJson).onSuccess(groupJson -> {
-            String entry0 = selectedUsers.get(0);
-
             if (groupJson.getInteger("status") == 0) {
                 try {
                     addMembers(selectedUsers, groupJson).onSuccess(promise::complete).onFailure(err -> {
@@ -330,14 +326,15 @@ public class GroupOpenApiSql implements GroupOpenApi {
                             List<Tuple> userList = new ArrayList<>();
                             StringBuilder sql = new StringBuilder();
                             StringBuilder stringBuilder = new StringBuilder();
+                            Character tick = '\'';
 
                             for (String name : newUsers) {
                                 if (DbConfiguration.isUsingSqlite3() ||
                                   DbConfiguration.isUsingH2() ||
                                   DbConfiguration.isUsingCubrid()) {
-                                    stringBuilder.append("'").append(name).append("'");
+                                    stringBuilder.append(tick).append(name).append(tick);
                                     if (!newUsers.get(newUsers.size() - 1).equals(name)) {
-                                        stringBuilder.append(",");
+                                        stringBuilder.append(',');
                                     }
                                 } else {
                                     userList.add(Tuple.of(name));
@@ -432,6 +429,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
         return promise.future();
     }
 
+    @Override
     public Future<JsonObject> deleteGroupOrMembers(JsonObject deleteGroupJson)
       throws InterruptedException, SQLException, IOException {
         Promise<JsonObject> promise = Promise.promise();
@@ -476,6 +474,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
         return promise.future();
     }
 
+    @Override
     public Future<JsonObject> deleteGroup(JsonObject deleteGroupJson)
       throws InterruptedException, SQLException, IOException {
         Promise<JsonObject> promise = Promise.promise();
@@ -572,7 +571,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
                             List<Tuple> userList = new ArrayList<>();
                             for (String name : selectedUsers) {
                                 if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingH2()) {
-                                    stringBuilder.append("'").append(name).append("',");
+                                    stringBuilder.append('\'').append(name).append("',");
                                 } else {
                                     userList.add(Tuple.of(name));
                                 }
@@ -645,6 +644,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
         return promise.future();
     }
 
+    @Override
     public Future<JsonObject> getMembersList(JsonObject getGroupJson)
       throws InterruptedException, SQLException, IOException {
         Promise<JsonObject> promise = Promise.promise();
@@ -726,7 +726,7 @@ public class GroupOpenApiSql implements GroupOpenApi {
                           config.getBoolean("dodex.groups.checkForOwner");
                       groupJson.put("checkForOwner", isCheckForOwner);
                       groupJson.put("isValidForOperation", groupJson.getInteger("status") != -1 &&
-                        !isCheckForOwner || groupJson.getInteger("checkGroupOwnerId") == groupJson.getInteger("groupOwnerId"));
+                        !isCheckForOwner || groupJson.getInteger("checkGroupOwnerId").equals(groupJson.getInteger("groupOwnerId")));
                       if (!groupJson.getBoolean("isValidForOperation")) {
                           groupJson.put("errorMessage", "Contact owner for group administration");
                       }

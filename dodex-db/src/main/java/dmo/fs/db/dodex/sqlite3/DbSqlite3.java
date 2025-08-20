@@ -5,6 +5,8 @@ import dmo.fs.db.dodex.CreateDatabase;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 
+import java.util.Locale;
+
 public abstract class DbSqlite3 implements CreateDatabase {
   public final static String[] tables = {"users", "messages", "undelivered", "login", "groups", "member"};
 
@@ -20,12 +22,12 @@ public abstract class DbSqlite3 implements CreateDatabase {
 
   @Override
   public void setVertx(Vertx vertx) {
-
+    //
   }
 
   @Override
   public void setVertxR(io.vertx.reactivex.core.Vertx vertx) {
-
+    //
   }
 
   @Override
@@ -69,19 +71,15 @@ public abstract class DbSqlite3 implements CreateDatabase {
         "CONSTRAINT member_group_id_foreign FOREIGN KEY (group_id)" +
         "REFERENCES groups (id))");
 
-    String sql;
+    final String sql;
 
     CreateTable(String sql) {
       this.sql = sql;
     }
   }
 
-  public DbSqlite3() {
-    super();
-  }
-
   public String getCreateTable(String table) {
-    return CreateTable.valueOf("CREATE" + table.toUpperCase()).sql;
+    return CreateTable.valueOf("CREATE" + table.toUpperCase(Locale.US)).sql;
   }
 
 //    protected enum CheckTable {

@@ -84,10 +84,12 @@ public class HandicapDatabaseH2 extends DbH2 {
         this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         return returnPromise.future();
     }
 
+    @Override
     public Promise<Pool> databaseSetup() {
         Promise<Pool> poolPromise = Promise.promise();
         if ("dev".equals(webEnv)) {
@@ -204,7 +206,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                     }
 
                     String sql = getCreateTable("GOLFER");
-                    if ((names.contains("GOLFER"))) {
+                    if (names.contains("GOLFER")) {
                         sql = SELECTONE;
                     }
 
@@ -216,7 +218,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                           }
                           String sql2 = getCreateTable("COURSE");
 
-                          if ((names.contains("COURSE"))) {
+                          if (names.contains("COURSE")) {
                               sql2 = SELECTONE;
                           }
                           conn.query(sql2).execute().onFailure().invoke(err ->
@@ -226,7 +228,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                                     logger.warn("{} -- Course Table Added.", fileName);
                                 }
                                 String sql3 = getCreateTable("RATINGS");
-                                if ((names.contains("RATINGS"))) {
+                                if (names.contains("RATINGS")) {
                                     sql3 = SELECTONE;
                                 }
                                 conn.query(sql3).execute().onFailure().invoke(err ->
@@ -236,7 +238,7 @@ public class HandicapDatabaseH2 extends DbH2 {
                                           logger.warn("{} -- Ratings Table Added.", fileName);
                                       }
                                       String sql4 = getCreateTable("SCORES");
-                                      if ((names.contains("SCORES"))) {
+                                      if (names.contains("SCORES")) {
                                           sql4 = SELECTONE;
                                       }
                                       conn.query(sql4).execute().onFailure().invoke(err ->
@@ -283,22 +285,25 @@ public class HandicapDatabaseH2 extends DbH2 {
 
     @Override
     public void setVertxR(Vertx vertx) {
+        //
     }
 
+    @Override
     public io.vertx.mutiny.core.Vertx getVertx() {
         return null;
     }
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
-
+        //
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getConnectOptions() {
         return (T) connectOptions;
     }
-
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }

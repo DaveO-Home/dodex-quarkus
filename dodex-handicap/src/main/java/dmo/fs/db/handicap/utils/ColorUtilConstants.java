@@ -2,7 +2,8 @@ package dmo.fs.db.handicap.utils;
 
 public final class ColorUtilConstants {
 
-    protected ColorUtilConstants() {
+    private ColorUtilConstants() {
+        //
     }
 
     // Reset

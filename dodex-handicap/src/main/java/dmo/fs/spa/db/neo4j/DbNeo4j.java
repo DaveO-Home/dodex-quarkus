@@ -22,7 +22,7 @@ public abstract class DbNeo4j extends DbNeo4jBase implements SpaNeo4j {
         CreateSchema(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbNeo4j() {
 		super();

@@ -81,7 +81,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
 
     public void doMessage(WebSocketConnection session, Map<String, WebSocketConnection> sessions, String message) {
         final MessageUser messageUser = setMessageUser();
-        final ArrayList<String> onlineUsers = new ArrayList<>();
+        final List<String> onlineUsers = new ArrayList<>();
         // Checking if message or command
         final Map<String, String> returnObject = DodexUtil.commandMessage(message);
         final String selectedUsers = returnObject.get("selectedUsers");
@@ -93,7 +93,10 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
             deleteUser(session, messageUser);
         }
 
-        sessions = session.getOpenConnections().stream().collect(Collectors.toConcurrentMap(WebSocketConnection::id, v -> v));
+        sessions = session.getOpenConnections()
+          .stream()
+          .collect(Collectors.toConcurrentMap(WebSocketConnection::id, v -> v));
+
         if (!computedMessage.isEmpty()) {
             // broadcast
             if ("".equals(selectedUsers) && "".equals(command)) {
@@ -190,7 +193,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
     }
 
     protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
-        long c = connection.getOpenConnections().stream().filter(session -> {
+        return connection.getOpenConnections().stream().filter(session -> {
             if (connection.id().equals(session.id())) {
                 return false;
             }
@@ -202,7 +205,6 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
             }
             return true;
         }).count();
-        return c;
     }
 
     protected WebSocketConnection getThisWebSocket(WebSocketConnection connection) {
@@ -210,7 +212,7 @@ public class DodexReactiveBase extends DbReactiveSqlBase {
           .filter(s -> s.id().equals(connection.id())).findFirst().orElse(connection);
     }
 
-    public static dmo.fs.db.reactive.DodexReactiveDatabase getDodexDatabase() {
+    public static DodexReactiveDatabase getDodexDatabase() {
         return dodexDatabase;
     }
 

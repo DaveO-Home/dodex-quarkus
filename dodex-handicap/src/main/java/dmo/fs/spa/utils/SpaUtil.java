@@ -1,25 +1,21 @@
 
 package dmo.fs.spa.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.reactivex.disposables.Disposable;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.jooq.SQLDialect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dmo.fs.db.dodex.utils.DodexUtil;
-import dmo.fs.spa.router.SpaRoutes;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.jooq.SQLDialect;
-
-import io.reactivex.disposables.Disposable;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SpaUtil {
     protected static final Logger logger = LoggerFactory.getLogger(SpaUtil.class.getName());
@@ -56,23 +52,25 @@ public class SpaUtil {
         String configDefaultDb = null;
         try {
             configDefaultDb = config.getValue("dodex.default.db", String.class);
-        } catch(NoSuchElementException nse) {}
+        } catch (NoSuchElementException nse) {
+            nse.printStackTrace();
+        }
         final String propDefaultdb = System.getProperty("DEFAULT_DB");
         final String envDefaultdb = System.getenv("DEFAULT_DB");
-        SpaUtil.defaultDb = node.get("defaultdb").textValue();
+        defaultDb = node.get("defaultdb").textValue();
         /*
          * use environment variable first, if set, than properties and then from config
          * json
          */
-        SpaUtil.defaultDb = envDefaultdb != null ? envDefaultdb : propDefaultdb != null ? propDefaultdb :
-          configDefaultDb != null ? configDefaultDb : SpaUtil.defaultDb;
+        defaultDb = envDefaultdb != null ? envDefaultdb : propDefaultdb != null ? propDefaultdb :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
 
-        return node.get(SpaUtil.defaultDb);
+        return node.get(defaultDb);
     }
 
     public static String getDefaultDb() throws IOException {
         getDefaultNode();
-        return SpaUtil.defaultDb;
+        return defaultDb;
     }
 
     public static Map<String, String> jsonNodeToMap(final JsonNode jsonNode, final String env) {
@@ -119,7 +117,7 @@ public class SpaUtil {
         String database;
         try {
             database = getDefaultDb();
-            database = "sqlite3".equals(database) ? "SQLITE" : database.toUpperCase();
+            database = "sqlite3".equals(database) ? "SQLITE" : database.toUpperCase(Locale.US);
             for (final SQLDialect sqlDialect : SQLDialect.values()) {
                 if (database.equals(sqlDialect.name())) {
                     return sqlDialect;
@@ -155,7 +153,7 @@ public class SpaUtil {
 
         spaLogin.setName(userName);
         spaLogin.setPassword(password);
-        spaLogin.setId(0l);
+        spaLogin.setId(0L);
         spaLogin.setLastLogin(new Date());
         spaLogin.setStatus("0");
 

@@ -25,21 +25,11 @@ public class DodexUtil {
     protected static final String REMOVEUSER = ";removeuser";
     protected static final String USERS = ";users";
     protected static String env = "dev";
-    protected static Vertx vertx = null;
+    protected static Vertx vertx;
 
-    protected static io.vertx.rxjava3.core.Vertx vertxR = null;
+    protected static io.vertx.rxjava3.core.Vertx vertxR;
 
     public static String defaultDb = "h2";
-
-//    public void await(Disposable disposable) {
-//        while (!disposable.isDisposed()) {
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {
-//                logger.error(String.join("", "Await: ", e.getMessage()));
-//            }
-//        }
-//    }
 
     public Map<String, String> commandMessage(String clientData) {
         Map<String, String> returnObject = new ConcurrentHashMap<>();
@@ -125,9 +115,6 @@ public class DodexUtil {
             }
             return clientData.substring(clientData.lastIndexOf("!!") + 2);
         };
-
-        protected ClientInfoUtilHelper() {
-        }
     }
 
     public JsonNode getDefaultNode() throws IOException {
@@ -143,23 +130,24 @@ public class DodexUtil {
         try {
             configDefaultDb = config.getValue("dodex.default.db", String.class);
         } catch (NoSuchElementException nse) {
+            nse.printStackTrace();
         }
         String defaultdbProp = System.getProperty("DEFAULT_DB");
         String defaultdbEnv = System.getenv("DEFAULT_DB");
-        DodexUtil.defaultDb = node.get("defaultdb").textValue();
+        defaultDb = node.get("defaultdb").textValue();
         /*
         use environment variable first, if set, then properties then quarkus-config and then from dodex-config json
         */
-        DodexUtil.defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp :
-          configDefaultDb != null ? configDefaultDb : DodexUtil.defaultDb;
-        System.setProperty("DEFAULT_DB", DodexUtil.defaultDb);
+        defaultDb = defaultdbEnv != null ? defaultdbEnv : defaultdbProp != null ? defaultdbProp :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
+        System.setProperty("DEFAULT_DB", defaultDb);
 
-        return node.get(DodexUtil.defaultDb);
+        return node.get(defaultDb);
     }
 
     public String getDefaultDb() throws IOException {
         getDefaultNode();
-        return DodexUtil.defaultDb;
+        return defaultDb;
     }
 
     public Map<String, String> jsonNodeToMap(JsonNode jsonNode, String env) {
@@ -207,7 +195,7 @@ public class DodexUtil {
         String database = null;
         try {
             database = dodexUtil.getDefaultDb();
-            database = "SQLITE".equals(database) ? "SQLITE" : database.toUpperCase();
+            database = "SQLITE".equals(database) ? "SQLITE" : database.toUpperCase(Locale.US);
             for (SQLDialect sqlDialect : SQLDialect.values()) {
                 if (database.equals(sqlDialect.name())) {
                     return sqlDialect;
@@ -221,14 +209,16 @@ public class DodexUtil {
     }
 
     public static Vertx getVertx() {
-        if (DodexUtil.vertx == null) {
-            DodexUtil.vertx = Server.getVertxMutiny();
+        if (vertx == null) {
+            synchronized (logger) {
+                vertx = Server.getVertxMutiny();
+            }
         }
-        return DodexUtil.vertx;
+        return vertx;
     }
 
-    public static void setVertx(Vertx vertx) {
-        DodexUtil.vertx = vertx;
+    public static void setVertx(Vertx orgVertx) {
+        vertx = orgVertx;
     }
 
     public static boolean isNull(Object obj) {
@@ -236,11 +226,11 @@ public class DodexUtil {
     }
 
     public static io.vertx.rxjava3.core.Vertx getVertxR() {
-        return DodexUtil.vertxR;
+        return vertxR;
     }
 
-    public static void setVertxR(io.vertx.rxjava3.core.Vertx vertxR) {
-        DodexUtil.vertxR = vertxR;
+    public static void setVertxR(io.vertx.rxjava3.core.Vertx orgVertxR) {
+        vertxR = orgVertxR;
     }
 
     // per Horcrux7 @stack overflow

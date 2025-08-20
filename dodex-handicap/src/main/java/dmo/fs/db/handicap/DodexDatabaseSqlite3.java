@@ -65,19 +65,19 @@ public class DodexDatabaseSqlite3  extends DbDefinitionBase implements HandicapD
 //        databaseSetup();
     }
 
-    public DodexDatabaseSqlite3(Boolean isCreateTables)
-      throws IOException {
-        super();
-//        defaultNode = dodexUtil.getDefaultNode();
-//
-//        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-//        dbProperties = dodexUtil.mapToProperties(dbMap);
-//
-//        dbProperties.setProperty("foreign_keys", "true");
-//        this.isCreateTables = isCreateTables;
-//        logger.info("In (true) sqlite: " + defaultNode);
-    }
-
+//    public DodexDatabaseSqlite3(Boolean isCreateTables)
+//      throws IOException {
+//        super();
+////        defaultNode = dodexUtil.getDefaultNode();
+////
+////        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+////        dbProperties = dodexUtil.mapToProperties(dbMap);
+////
+////        dbProperties.setProperty("foreign_keys", "true");
+////        this.isCreateTables = isCreateTables;
+////        logger.info("In (true) sqlite: " + defaultNode);
+//    }
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
 //            databaseSetup();
@@ -111,13 +111,14 @@ public class DodexDatabaseSqlite3  extends DbDefinitionBase implements HandicapD
         return (T) pool4;
     }
 
+    @Override
     public io.vertx.mutiny.core.Vertx getVertx() {
         return null;
     }
 
     @Override
     public void setVertxR(Vertx vertx) {
-
+        //
     }
 
     @Override

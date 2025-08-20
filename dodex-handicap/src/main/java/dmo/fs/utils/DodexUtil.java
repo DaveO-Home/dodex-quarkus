@@ -111,9 +111,7 @@ public class DodexUtil {
             return null;
         };
 
-        public static Function<String, String> getCommand = (clientData) -> {
-            return command.apply(clientData);
-        };
+        public static Function<String, String> getCommand = command;
 
         public static Function<String, String> getMessage = (clientData) -> {
             if (getCommand.apply(clientData) == null) {
@@ -130,9 +128,6 @@ public class DodexUtil {
             }
             return clientData.substring(clientData.lastIndexOf("!!") + 2);
         };
-
-        protected ClientInfoUtilHelper() {
-        }
     }
 
     public JsonNode getDefaultNode() throws IOException {
@@ -147,22 +142,24 @@ public class DodexUtil {
         String configDefaultDb = null;
         try {
             configDefaultDb = config.getValue("dodex.default.db", String.class);
-        } catch(NoSuchElementException nse) {}
+        } catch(NoSuchElementException nse) {
+            nse.printStackTrace();
+        }
         String propDefaultdb = System.getProperty("DEFAULT_DB");
         String envDefaultdb = System.getenv("DEFAULT_DB");
-        DodexUtil.defaultDb = node.get("defaultdb").textValue();
+        defaultDb = node.get("defaultdb").textValue();
 
         /* use environment variable first, if set, then properties then quarkus-config and then from dodex-config json */
-        DodexUtil.defaultDb = envDefaultdb != null ? envDefaultdb : propDefaultdb != null ? propDefaultdb :
-          configDefaultDb != null ? configDefaultDb : DodexUtil.defaultDb;
+        defaultDb = envDefaultdb != null ? envDefaultdb : propDefaultdb != null ? propDefaultdb :
+          configDefaultDb != null ? configDefaultDb : defaultDb;
 
-        System.setProperty("DEFAULT_DB", DodexUtil.defaultDb);
-        return node.get(DodexUtil.defaultDb);
+        System.setProperty("DEFAULT_DB", defaultDb);
+        return node.get(defaultDb);
     }
 
     public String getDefaultDb() throws IOException {
         getDefaultNode();
-        return DodexUtil.defaultDb;
+        return defaultDb;
     }
 
     public Map<String, String> jsonNodeToMap(JsonNode jsonNode, String env) {
@@ -210,7 +207,7 @@ public class DodexUtil {
         String database = null;
         try {
             database = dodexUtil.getDefaultDb();
-            database = "SQLITE".equals(database) ? "SQLITE" : database.toUpperCase();
+            database = "SQLITE".equals(database) ? "SQLITE" : database.toUpperCase(Locale.US);
             for (SQLDialect sqlDialect : SQLDialect.values()) {
                 if (database.equals(sqlDialect.name())) {
                     return sqlDialect;
@@ -228,7 +225,7 @@ public class DodexUtil {
     }
 
     public static Vertx getVertx() {
-        return DodexUtil.vertx;
+        return vertx;
     }
 
     public static void setVertx(Vertx vertx) {

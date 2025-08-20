@@ -1,26 +1,10 @@
 package dmo.fs.kafka;
 
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import jakarta.enterprise.context.SessionScoped;
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.smallrye.common.annotation.NonBlocking;
+import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-
 import jakarta.ws.rs.PathParam;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
@@ -34,13 +18,13 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-//import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.quarkus.arc.properties.IfBuildProperty;
-import io.smallrye.common.annotation.NonBlocking;
-import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
 
 @IfBuildProperty(name = "DODEX_KAFKA", stringValue = "true")
 @Path("/events/{command}/{init}")
@@ -60,12 +44,12 @@ public class KafkaConsumerDodex {
         Iterator<Object> data = message.getMetadata().iterator();
         Integer payload = 0;
 
-        while(data.hasNext()) {
+        while (data.hasNext()) {
             Object next = data.next();
 
-            if(next instanceof IncomingKafkaRecordMetadata) {
+            if (next instanceof IncomingKafkaRecordMetadata) {
                 ConsumerRecord<String, String> record = ((IncomingKafkaRecordMetadata<String, String>) next).getRecord();
-                String key = record.key(); 
+                String key = record.key();
                 String topic = record.topic();
                 Timestamp timestamp = new Timestamp(record.timestamp());
                 int partition = record.partition();
@@ -73,31 +57,31 @@ public class KafkaConsumerDodex {
 
                 try {
                     payload = message.getPayload();
-                    if(dodexEventData.size() > dodexEventsLimit) {
+                    if (dodexEventData.size() > dodexEventsLimit) {
                         dodexEventData.clear();
                     }
                     dodexEventData.add(new DodexEventData(key, topic, payload, timestamp, partition, offset));
                 } catch (Exception ex) {
                     logger.info("Payload Error: {}", ex.getMessage());
                 }
-                
-                if(logger.isDebugEnabled()) {
+
+                if (logger.isDebugEnabled()) {
                     logger.info("Consumer Payload: {}--{}--{}--{}", key, topic, payload, KafkaEmitterDodex.getRemoveMessages());
                 }
-                if(KafkaEmitterDodex.getRemoveMessages()) {
+                if (KafkaEmitterDodex.getRemoveMessages()) {
                     removeMessages(topic, offset, partition);
                 }
                 break;
             }
         }
-        
+
         return message.ack();
     }
 
     @GET
     public Set<DodexEventData> list(@PathParam("command") String command, @PathParam("init") int init) {
         // let a new monitor start with fresh cache
-        if(init == 0 && dodexEventData.size() > dodexEventsLimit/2) {
+        if (init == 0 && dodexEventData.size() > dodexEventsLimit / 2) {
             dodexEventData.clear();
         }
         return dodexEventData;
@@ -123,7 +107,7 @@ public class KafkaConsumerDodex {
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             List<TopicPartition> ll = new LinkedList<>();
-            ll.add (new TopicPartition(topic, partition));
+            ll.add(new TopicPartition(topic, partition));
             consumer.assign(ll);
             Set<TopicPartition> assignment;
 
@@ -136,18 +120,18 @@ public class KafkaConsumerDodex {
             assert endOffsets.keySet().equals(beginningOffsets.keySet());
 
             totalCount = beginningOffsets.entrySet().stream().mapToLong(entry -> {
-                    TopicPartition tp = entry.getKey();
-                    Long beginningOffset = entry.getValue();
-                    Long endOffset = endOffsets.get(tp);
-                    return endOffset - beginningOffset;
-                }).sum();
-            
+                TopicPartition tp = entry.getKey();
+                Long beginningOffset = entry.getValue();
+                Long endOffset = endOffsets.get(tp);
+                return endOffset - beginningOffset;
+            }).sum();
+
             beginningOffsets.clear();
             consumer.close(Duration.ofMillis(500));
         }
-        
+
         if (totalCount > KafkaEmitterDodex.getMessageLimit()) {
-            long toDelete = offset - totalCount/2;
+            long toDelete = offset - totalCount / 2;
             TopicPartition tp = new TopicPartition(topic, partition);
             RecordsToDelete rtd = RecordsToDelete.beforeOffset(toDelete);
             Map<TopicPartition, RecordsToDelete> deleteRecords = new ConcurrentHashMap<>();
@@ -159,7 +143,7 @@ public class KafkaConsumerDodex {
                 AdminClient ac = AdminClient.create(config);
                 DeleteRecordsResult dr = ac.deleteRecords(deleteRecords);
                 dr.all().get(1L, TimeUnit.SECONDS);
-                logger.info("Approximate records deleted: {}", totalCount/2);
+                logger.info("Approximate records deleted: {}", totalCount / 2);
                 ac.close();
             } catch (InterruptedException | TimeoutException e) {
                 e.printStackTrace();
@@ -168,6 +152,7 @@ public class KafkaConsumerDodex {
             }
         }
     }
+
     public static Queue<DodexEventData> getEventqueue() {
         return eventQueue;
     }

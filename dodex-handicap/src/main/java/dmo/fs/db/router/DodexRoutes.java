@@ -220,6 +220,7 @@ public class DodexRoutes {
             case "cubrid":
                 DodexRouterReactive dodexRouterReactiveCubrid = CDI.current().select(DodexRouterReactive.class).get();
                 dodexRouterReactiveCubrid.setUsingCubrid(true);
+            // fallthrough
             case "sqlite3": // non mutiny supported db's - uses Vertx reactivex instead
                 DodexRouterReactive dodexRouterReactive = CDI.current().select(DodexRouterReactive.class).get();
                 router.route().handler(routingContext -> {
@@ -286,6 +287,7 @@ public class DodexRoutes {
                     routingContext.next();
                 });
                 SpaDbConfiguration.getSpaDb();
+            // fallthrough
             default:
                 if(!"neo4j".equals(defaultDbName)) {
                     DodexRouter dodexRouter = CDI.current().select(DodexRouter.class).get();

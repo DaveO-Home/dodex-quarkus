@@ -1,38 +1,31 @@
 package dmo.fs.db.router.wsnext;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import dmo.fs.db.reactive.DbCubridSqlBase;
-import dmo.fs.db.reactive.DodexReactiveBase;
-
-import dmo.fs.quarkus.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.admin.CleanOrphanedUsers;
 import dmo.fs.db.MessageUser;
 import dmo.fs.db.MessageUserImpl;
+import dmo.fs.db.reactive.DbCubridSqlBase;
 import dmo.fs.kafka.KafkaEmitterDodex;
+import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import dmo.fs.utils.ParseQueryUtilHelper;
+import io.quarkus.websockets.next.WebSocketConnection;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Context;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.shareddata.LocalMap;
 import io.vertx.reactivex.core.shareddata.SharedData;
-import io.quarkus.websockets.next.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class CubridRouterReactive extends DbCubridSqlBase {
     protected static final Logger logger = LoggerFactory.getLogger(CubridRouterReactive.class.getName());
@@ -69,9 +62,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                 processUserMessages(session, mUser).onComplete(fut -> {
                     final int messageCount = fut.result().get("messages");
                     if (messageCount > 0) {
-                        logger.info(
-                          String.format("%sMessages Delivered: %d to %s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                            messageCount, mUser.getName(), ColorUtilConstants.RESET));
+                        logger.info("{}Messages Delivered: {} to {}{}", ColorUtilConstants.BLUE_BOLD_BRIGHT, messageCount, mUser.getName(), ColorUtilConstants.RESET);
                         if (ke != null) {
                             ke.setValue("delivered", messageCount);
                         }
@@ -86,7 +77,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                           Map<String, Map<String, String>> sessionsNext) {
         queryParams = ParseQueryUtilHelper.getQueryMap(wsChatSessions.get(session.id()));
         final MessageUser messageUser = setMessageUser(session, sessions);
-        final ArrayList<String> onlineUsers = new ArrayList<>();
+        final List<String> onlineUsers = new ArrayList<>();
         // Checking if message or command
         final Map<String, String> returnObject = DodexUtil.commandMessage(message);
         final String selectedUsers = returnObject.get("selectedUsers");
@@ -123,11 +114,7 @@ public class CubridRouterReactive extends DbCubridSqlBase {
                         .subscribe().asCompletionStage();
                       if (complete.isCompletedExceptionally()) {
                           if (logger.isInfoEnabled()) {
-                              logger.info(
-                                String.format("%sWebsocket-connection...Unable to send message: %s%s%s%s",
-                                  ColorUtilConstants.BLUE_BOLD_BRIGHT,
-                                  sessionsNext.get(s.id()).get("handle"), ": ",
-                                  "", ColorUtilConstants.RESET));
+                              logger.info("{}Websocket-connection...Unable to send message: {}{}{}{}", ColorUtilConstants.BLUE_BOLD_BRIGHT, sessionsNext.get(s.id()).get("handle"), ": ", "", ColorUtilConstants.RESET);
                           }
                       }
                       // keep track of delivered messages

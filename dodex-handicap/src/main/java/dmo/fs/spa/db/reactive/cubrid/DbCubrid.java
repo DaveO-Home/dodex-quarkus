@@ -4,6 +4,8 @@ package dmo.fs.spa.db.reactive.cubrid;
 import dmo.fs.spa.db.reactive.SpaDatabaseReactive;
 import dmo.fs.spa.db.reactive.SqlBuilder;
 
+import java.util.Locale;
+
 public abstract class DbCubrid extends SqlBuilder implements SpaDatabaseReactive {
 	protected final static String CHECKLOGINSQL = "SELECT class_name FROM _db_class WHERE class_name = 'login'";
 
@@ -24,13 +26,13 @@ public abstract class DbCubrid extends SqlBuilder implements SpaDatabaseReactive
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbCubrid() {
 		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 }

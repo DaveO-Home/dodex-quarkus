@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -89,6 +91,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
         logger.info("In (true) sqlite: {}", defaultNode);
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
             databaseSetup();
@@ -96,6 +99,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
         return returnPromise.future();
     }
 
+    @Override
     public Promise<Pool> databaseSetup() {
         Promise<Pool> poolPromise = Promise.promise();
         if ("dev".equals(webEnv)) {
@@ -132,7 +136,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
                           connection.createStatement().execute(getCreateTable(table));
                       }
                   } catch (SQLException se) {
-                      throw new RuntimeException(se.getMessage());
+                      throw new RuntimeException(Arrays.toString(se.getStackTrace()));
                   }
 
                   return new String[]{String.valueOf(isNext), table};
@@ -142,7 +146,7 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
                       if ("users".equals(data[1])) {
                           logger.info("Using database: {}", dbMap.get("filename"));
                       }
-                      logger.info("{} Table Added.", data[1].substring(0, 1).toUpperCase() + data[1].substring(1));
+                      logger.info("{} Table Added.", data[1].substring(0, 1).toUpperCase(Locale.US) + data[1].substring(1));
                   }
               });
             connection.close();
@@ -192,16 +196,18 @@ public class DodexDatabaseSqlite3 extends DbSqlite3 {
         return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
     }
 
+    @Override
     public io.vertx.mutiny.core.Vertx getVertx() {
         return null;
     }
 
-
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getConnectOptions() {
         return (T) connectOptions;
     }
 
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }

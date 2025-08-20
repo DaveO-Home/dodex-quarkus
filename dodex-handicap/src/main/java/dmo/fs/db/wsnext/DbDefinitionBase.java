@@ -15,10 +15,7 @@ import io.vertx.db2client.impl.DB2PoolImpl;
 import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.mutiny.core.Promise;
-import io.vertx.mutiny.db2client.DB2Pool;
 import io.vertx.mutiny.mysqlclient.MySQLClient;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.*;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.impl.MySQLPoolImpl;
@@ -30,7 +27,6 @@ import io.vertx.rxjava3.pgclient.PgBuilder;
 import io.vertx.sqlclient.PoolOptions;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jooq.impl.DSL.*;
 
+@SuppressWarnings("PMD.GuardLogStatement")
 public abstract class DbDefinitionBase {
     protected static final Logger logger = LoggerFactory.getLogger(DbDefinitionBase.class.getSimpleName());
     protected static final String QUERYUSERS = "select * from users where password=$";
@@ -92,12 +89,12 @@ public abstract class DbDefinitionBase {
 
     public <T> void setupSql(T pool) {
         // Non-Blocking Drivers
-        if (((Pool)pool).getDelegate() instanceof PgPoolImpl) {
+        if (((Pool) pool).getDelegate() instanceof PgPoolImpl) {
             this.pool = (Pool) pool;
             qmark = false;
-        } else if (((Pool)pool).getDelegate() instanceof MySQLPoolImpl) {
+        } else if (((Pool) pool).getDelegate() instanceof MySQLPoolImpl) {
             this.pool = (Pool) pool;
-        } else if (((Pool)pool).getDelegate() instanceof DB2PoolImpl) {
+        } else if (((Pool) pool).getDelegate() instanceof DB2PoolImpl) {
             this.pool = (Pool) pool;
         } else {
             this.pool = (Pool) pool;
@@ -105,12 +102,12 @@ public abstract class DbDefinitionBase {
 
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
 
-        create = DSL.using(DodexUtil.getSqlDialect(), settings);
-        if(dmo.fs.db.handicap.utils.DodexUtil.getVertxR() == null) {
+        create = using(DodexUtil.getSqlDialect(), settings);
+        if (dmo.fs.db.handicap.utils.DodexUtil.getVertxR() == null) {
             dmo.fs.db.handicap.utils.DodexUtil.setVertxR(io.vertx.rxjava3.core.Vertx.vertx());
         }
         /* @TODO: convert GroupOpenApiSql to mutiny */
-        if (((Pool)pool).getDelegate() instanceof PgPoolImpl) {
+        if (((Pool) pool).getDelegate() instanceof PgPoolImpl) {
             io.vertx.rxjava3.sqlclient.Pool poolRx = PgBuilder
               .pool()
               .with(poolOptions)
@@ -118,7 +115,7 @@ public abstract class DbDefinitionBase {
               .using(dmo.fs.db.handicap.utils.DodexUtil.getVertxR())
               .build();
             GroupOpenApiSql.setPool(poolRx);
-        } else if (((Pool)pool).getDelegate() instanceof MySQLPoolImpl) {
+        } else if (((Pool) pool).getDelegate() instanceof MySQLPoolImpl) {
             io.vertx.rxjava3.sqlclient.Pool poolRx = MySQLBuilder
               .pool()
               .with(poolOptions)
@@ -130,7 +127,7 @@ public abstract class DbDefinitionBase {
             io.vertx.rxjava3.sqlclient.Pool poolRx =
               io.vertx.rxjava3.jdbcclient.JDBCPool.pool(dmo.fs.db.handicap.utils.DodexUtil.getVertxR(), jdbcConnectOptions, poolOptions);
             GroupOpenApiSql.setPool(poolRx);
-        }  else if (((Pool)pool).getDelegate() instanceof DB2PoolImpl) {
+        } else if (((Pool) pool).getDelegate() instanceof DB2PoolImpl) {
             io.vertx.rxjava3.sqlclient.Pool poolRx = DB2Builder
               .pool()
               .with(poolOptions)
@@ -531,7 +528,6 @@ public abstract class DbDefinitionBase {
         Timestamp timeStamp = new Timestamp(new Date().getTime());
         OffsetDateTime time = OffsetDateTime.now();
         long date = new Date().getTime();
-        LocalDateTime localTime = LocalDateTime.now();
 
         Object dateTime = time;
         if (DbConfiguration.isUsingIbmDB2()) {
@@ -752,7 +748,7 @@ public abstract class DbDefinitionBase {
                     DateFormat formatDate = DateFormat.getDateInstance(DateFormat.DEFAULT,
                       java.util.Locale.getDefault());
                     String message;
-                    if(row.getValue(2).getClass().getName().contains("Buffer")) {
+                    if (row.getValue(2).getClass().getName().contains("Buffer")) {
                         message = row.getBuffer(2).toString();
                     } else {
                         message = row.getString(2);
@@ -986,14 +982,14 @@ public abstract class DbDefinitionBase {
     }
 
     public <T> void setConnectOptions(T connectOptions) {
-        if(connectOptions instanceof PgConnectOptions) {
+        if (connectOptions instanceof PgConnectOptions) {
             pgConnectOptions = (PgConnectOptions) connectOptions;
-        } else if(connectOptions instanceof MySQLConnectOptions) {
+        } else if (connectOptions instanceof MySQLConnectOptions) {
             mySQLConnectOptions = (MySQLConnectOptions) connectOptions;
-        } else if(connectOptions instanceof JDBCConnectOptions) {
+        } else if (connectOptions instanceof JDBCConnectOptions) {
             jdbcConnectOptions = (JDBCConnectOptions) connectOptions;
-        } else if(connectOptions instanceof DB2ConnectOptions) {
+        } else if (connectOptions instanceof DB2ConnectOptions) {
             db2ConnectOptions = (DB2ConnectOptions) connectOptions;
         }
-    };
+    }
 }

@@ -48,8 +48,6 @@ public class GroupOpenApiSqlCubridRx extends GroupOpenApiSqlRx {
         }
 
         addGroup(addGroupJson).onSuccess(groupJson -> {
-            String entry0 = selectedUsers.get(0);
-
             if (groupJson.getInteger("status") == 0) {
                 try {
                     addMembers(selectedUsers, groupJson).onSuccess(promise::complete).onFailure(err -> {
@@ -80,7 +78,6 @@ public class GroupOpenApiSqlCubridRx extends GroupOpenApiSqlRx {
       throws InterruptedException, SQLException, IOException {
         Promise<JsonObject> promise = Promise.promise();
         Timestamp currentDate = new Timestamp(new Date().getTime());
-        OffsetDateTime time = OffsetDateTime.now();
 
         DodexReactiveDatabase dodexDatabase = DbConfiguration.getDefaultDb();
         MessageUser messageUser = dodexDatabase.createMessageUser();
@@ -368,6 +365,7 @@ public class GroupOpenApiSqlCubridRx extends GroupOpenApiSqlRx {
         return promise.future();
     }
 
+    @Override
     protected Future<JsonObject> deleteMembers(List<String> selectedUsers, JsonObject deleteGroupJson) {
         Promise<JsonObject> promise = Promise.promise();
 
@@ -392,7 +390,7 @@ public class GroupOpenApiSqlCubridRx extends GroupOpenApiSqlRx {
                             for (String name : selectedUsers) {
                                 if (DbConfiguration.isUsingSqlite3() || DbConfiguration.isUsingH2()
                                   || DbConfiguration.isUsingCubrid()) {
-                                    stringBuilder.append("'").append(name).append("',");
+                                    stringBuilder.append('\'').append(name).append("',");
                                 } else {
                                     userList.add(Tuple.of(name));
                                 }

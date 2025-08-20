@@ -4,6 +4,8 @@ package dmo.fs.spa.db.mariadb;
 import dmo.fs.spa.db.SpaDatabase;
 import dmo.fs.spa.db.SqlBuilder;
 
+import java.util.Locale;
+
 public abstract class DbMariadb extends SqlBuilder implements SpaDatabase {
     protected static final String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='login'";
 
@@ -22,13 +24,13 @@ public abstract class DbMariadb extends SqlBuilder implements SpaDatabase {
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbMariadb() {
 		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 }

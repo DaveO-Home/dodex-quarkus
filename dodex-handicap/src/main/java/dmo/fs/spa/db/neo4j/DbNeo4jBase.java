@@ -1,24 +1,21 @@
 
 package dmo.fs.spa.db.neo4j;
 
+import dmo.fs.spa.utils.SpaLogin;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Promise;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Result;
+
 import java.sql.Timestamp;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Result;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmo.fs.spa.utils.SpaLogin;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.core.Promise;
-
 public abstract class DbNeo4jBase {
-    private static final Logger logger = LoggerFactory.getLogger(DbNeo4jBase.class.getName());
+//    private static final Logger logger = LoggerFactory.getLogger(DbNeo4jBase.class.getName());
     private Driver driver;
 
     public Promise<SpaLogin> getLogin(SpaLogin spaLogin) throws InterruptedException, ExecutionException {

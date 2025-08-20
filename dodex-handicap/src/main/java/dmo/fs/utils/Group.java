@@ -1,7 +1,6 @@
 package dmo.fs.utils;
 
 import java.io.Serializable;
-import java.sql.Array;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +17,10 @@ public class Group implements Serializable {
   public String errorMessage;
   public String members;
 
-  public Group() {}
+  public Group() {
+    //
+  }
+
   public Group( String groupMessage,
                 String name,
                 String groupName,

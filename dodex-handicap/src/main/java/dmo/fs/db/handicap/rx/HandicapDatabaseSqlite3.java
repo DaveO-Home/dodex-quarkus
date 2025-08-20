@@ -78,6 +78,7 @@ public class HandicapDatabaseSqlite3 extends DbDefinitionBase implements Handica
         logger.info("In (true) sqlite: {}", defaultNode);
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
             databaseSetup();
@@ -86,6 +87,7 @@ public class HandicapDatabaseSqlite3 extends DbDefinitionBase implements Handica
     }
 
     protected void databaseSetup() {
+        //
     }
 
     @Override
@@ -96,7 +98,7 @@ public class HandicapDatabaseSqlite3 extends DbDefinitionBase implements Handica
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
-
+        //
     }
 
     @Override
@@ -106,14 +108,15 @@ public class HandicapDatabaseSqlite3 extends DbDefinitionBase implements Handica
 
     @Override
     public <T> void setConnectOptions(T connectOptions) {
-
+        //
     }
 
     @Override
     public void setPoolOptions(PoolOptions poolOptions) {
-
+        //
     }
 
+    @Override
     public io.vertx.mutiny.core.Vertx getVertx() {
         return null;
     }

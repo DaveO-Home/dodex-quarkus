@@ -13,7 +13,11 @@ import java.lang.management.RuntimeMXBean;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class JooqGenerate {
+public final class JooqGenerate {
+    private JooqGenerate() {
+        // No need to make dynamic
+    }
+
     public static void main(String[] args) throws IOException {
         final Logger logger = LoggerFactory.getLogger(JooqGenerate.class.getName());
 
@@ -52,7 +56,7 @@ public class JooqGenerate {
         }
     }
 
-    protected static void generateJooqObjects(String jdbcUrl, String jooqMetaName, String databaseDbname) {
+    private static void generateJooqObjects(String jdbcUrl, String jooqMetaName, String databaseDbname) {
         try {
             // ForcedType ft = new ForcedType();
             // ft.setName("BLOB");
@@ -97,9 +101,11 @@ public class JooqGenerate {
             RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
             String name = runtimeBean.getName();
             int k = name.indexOf('@');
-            if (k > 0)
+            if (k > 0) {
                 return name.substring(0, k);
+            }
         } catch (Exception ignored) {
+            //
         }
         return null;
     }

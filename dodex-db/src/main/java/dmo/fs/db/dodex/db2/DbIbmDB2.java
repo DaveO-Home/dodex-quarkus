@@ -3,6 +3,8 @@ package dmo.fs.db.dodex.db2;
 
 import dmo.fs.db.dodex.CreateDatabase;
 
+import java.util.Locale;
+
 public abstract class DbIbmDB2 implements CreateDatabase {
 	protected static final String CHECKUSERSQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='USERS'";
     protected static final String CHECKMESSAGESQL = "select tabname from syscat.tables where tabschema='DB2INST1' and tabname='MESSAGES'";
@@ -43,17 +45,17 @@ public abstract class DbIbmDB2 implements CreateDatabase {
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbIbmDB2() {
 		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 
 	public String getUsersIndex(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()+"INDEX").sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)+"INDEX").sql;
 	}
 }

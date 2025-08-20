@@ -92,7 +92,7 @@ public class Server implements QuarkusApplication {
 
               if (isUsingHandicap && supportedDBs.contains(defaultDbName) && isUseHandicapSet) {
                   logger.warn("{}Handicap Started on port: {}{}",
-                    ColorUtilConstants.YELLOW, Server.getPort(), ColorUtilConstants.RESET);
+                    ColorUtilConstants.YELLOW, getPort(), ColorUtilConstants.RESET);
               }
 
               if (!isProduction) {

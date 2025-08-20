@@ -3,7 +3,6 @@ package dmo.fs.db.reactive;
 import dmo.fs.db.MessageUser;
 import dmo.fs.utils.ColorUtilConstants;
 import io.quarkus.websockets.next.WebSocketConnection;
-import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -475,7 +474,7 @@ public abstract class DbCubridSqlBase extends DbReactiveSqlBase {
     }
 
     protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
-        long c = connection.getOpenConnections().stream().filter(session -> {
+        return connection.getOpenConnections().stream().filter(session -> {
             if (connection.id().equals(session.id())) {
                 return false;
             }
@@ -487,7 +486,6 @@ public abstract class DbCubridSqlBase extends DbReactiveSqlBase {
             }
             return true;
         }).count();
-        return c;
     }
 
     protected WebSocketConnection getThisWebSocket(WebSocketConnection connection) {

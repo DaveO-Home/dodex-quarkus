@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,7 +122,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
                           connection.createStatement().execute(getCreateTable(table));
                       }
                   } catch (SQLException se) {
-                      throw new RuntimeException(se.getMessage());
+                      throw new RuntimeException(Arrays.toString(se.getStackTrace()));
                   }
 
                   return new String[]{String.valueOf(isNext), table};
@@ -131,7 +133,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
                           logger.info("Using database: {}", dbMap.get("filename"));
                       }
                       logger.info("{} Table Added in db {}.",
-                        data[1].substring(0, 1).toUpperCase() + data[1].substring(1), dbMap.get("dbname").split(":")[0]);
+                        data[1].substring(0, 1).toUpperCase(Locale.US) + data[1].substring(1), dbMap.get("dbname").split(":")[0]);
                   }
               });
             connection.close();
@@ -151,16 +153,17 @@ public class DodexDatabaseCubrid extends DbCubrid {
         return (T) connectOptions;
     }
 
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }
-
 
     @SuppressWarnings("unchecked")
     public <T> T getPool() {
         return (T) pool;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getPool4() {
         PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
@@ -185,7 +188,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
-
+        //
     }
 
     @Override
@@ -195,7 +198,7 @@ public class DodexDatabaseCubrid extends DbCubrid {
 
     @Override
     public void setVertxR(Vertx vertx) {
-
+        //
     }
 
     @Override

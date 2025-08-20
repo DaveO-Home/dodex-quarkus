@@ -12,6 +12,7 @@ import io.vertx.mutiny.core.Promise;
 import jakarta.ws.rs.core.Response.Status;
 import org.neo4j.driver.*;
 import org.neo4j.driver.async.AsyncSession;
+import org.neo4j.driver.async.ResultCursor;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.reactive.ReactiveSession;
 import org.slf4j.Logger;
@@ -79,7 +80,7 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 		AsyncSession session = driver.session(AsyncSession.class); // driver.asyncSession();
 
 		session.runAsync(getCheckConstraints())
-			.thenCompose(fn -> fn.singleAsync())
+			.thenCompose(ResultCursor::singleAsync)
 			.handle((record, exception) -> {
 				if (exception != null) {
 					Throwable source = exception;
@@ -101,12 +102,12 @@ public class DodexDatabaseNeo4j extends DbNeo4j {
 				if (count < 4) {
 					session
 					.runAsync(getCheckApoc())
-					.thenCompose(fn -> fn.singleAsync())
+					.thenCompose(ResultCursor::singleAsync)
 					.handle((record, exception2) -> {
 						if (exception2 != null) {
 							Throwable source = exception2;
 							if (exception2 instanceof CompletionException) {
-								source = ((CompletionException) exception2).getCause();
+								source = exception2.getCause();
 							}
 							Status status = Status.INTERNAL_SERVER_ERROR;
 							if (source instanceof NoSuchRecordException) {

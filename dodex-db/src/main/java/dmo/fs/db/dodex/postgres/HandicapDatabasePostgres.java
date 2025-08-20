@@ -7,7 +7,6 @@ import dmo.fs.db.dodex.utils.DodexUtil;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.pgclient.PgBuilder;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
@@ -37,7 +36,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
     protected JsonNode defaultNode;
     protected String webEnv = DodexUtil.getEnv();
     protected DodexUtil dodexUtil = new DodexUtil();
-    protected static Boolean isCreateTables = false;
+    protected Boolean isCreateTables = false;
     protected Promise<String> returnPromise = Promise.promise();
 
     public HandicapDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -82,9 +81,10 @@ public class HandicapDatabasePostgres extends DbPostgres {
         dbProperties = dodexUtil.mapToProperties(dbMap);
 
         dbProperties.setProperty("foreign_keys", "true");
-        HandicapDatabasePostgres.isCreateTables = isCreateTables;
+        this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
             databaseSetup();
@@ -92,6 +92,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
         return returnPromise.future();
     }
 
+    @Override
     public Promise<Pool> databaseSetup() {
         Promise<Pool> poolPromise = Promise.promise();
         Promise<String> finalPromise = Promise.promise();
@@ -188,7 +189,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                     }
                     String sql =
                       getCreateTable("GOLFER").replaceAll("dummy", dbProperties.get("user").toString());
-                    if ((names.contains("golfer"))) {
+                    if (names.contains("golfer")) {
                         sql = SELECTONE;
                     }
 
@@ -200,7 +201,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                           }
                           String sql2 =
                             getCreateTable("COURSE").replaceAll("dummy", dbProperties.get("user").toString());
-                          if ((names.contains("course"))) {
+                          if (names.contains("course")) {
                               sql2 = SELECTONE;
                           }
                           conn.query(sql2).execute().onFailure()
@@ -211,7 +212,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                                 }
                                 String sql3 = getCreateTable("RATINGS").replaceAll("dummy",
                                   dbProperties.get("user").toString());
-                                if ((names.contains("ratings"))) {
+                                if (names.contains("ratings")) {
                                     sql3 = SELECTONE;
                                 }
                                 conn.query(sql3).execute().onFailure()
@@ -222,7 +223,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                                       }
                                       String sql4 = getCreateTable("SCORES").replaceAll("dummy",
                                         dbProperties.get("user").toString());
-                                      if ((names.contains("scores"))) {
+                                      if (names.contains("scores")) {
                                           sql4 = SELECTONE;
                                       }
                                       conn.query(sql4).execute().onFailure()
@@ -233,7 +234,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                                             }
                                             String sql5 = getCreateTable("GROUPS").replaceAll("dummy",
                                               dbProperties.get("user").toString());
-                                            if ((names.contains("groups"))) {
+                                            if (names.contains("groups")) {
                                                 sql5 = SELECTONE;
                                             }
                                             conn.query(sql5).execute().onFailure()
@@ -244,7 +245,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
                                                   }
                                                   String sql6 = getCreateTable("MEMBER").replaceAll("dummy",
                                                     dbProperties.get("user").toString());
-                                                  if ((names.contains("member"))) {
+                                                  if (names.contains("member")) {
                                                       sql6 = SELECTONE;
                                                   }
                                                   conn.query(sql6).execute().onFailure()
@@ -285,7 +286,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
-
+        //
     }
 
     @Override
@@ -295,6 +296,7 @@ public class HandicapDatabasePostgres extends DbPostgres {
 
     @Override
     public void setVertxR(Vertx vertx) {
+        //
     }
 
     @Override
@@ -302,11 +304,13 @@ public class HandicapDatabasePostgres extends DbPostgres {
         return null;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getConnectOptions() {
         return (T) connectOptions;
     }
 
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }

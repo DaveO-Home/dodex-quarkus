@@ -11,7 +11,6 @@ import dmo.fs.utils.DodexUtil;
 import io.vertx.db2client.DB2ConnectOptions;
 import io.vertx.mutiny.core.Promise;
 import io.vertx.mutiny.db2client.DB2Builder;
-import io.vertx.mutiny.db2client.DB2Pool;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
 import org.slf4j.Logger;
@@ -22,6 +21,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
 /*
     DB2 only supports "dodex"
 */
@@ -73,7 +73,7 @@ public class DodexDatabaseIbmDB2 extends DbDefinitionBase implements DodexDataba
 
         Promise<Pool> promise = Promise.promise();
         pool = getPool(dbMap, dbProperties);
-;
+
         setupSql(pool);
 
         promise.complete(pool);

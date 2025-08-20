@@ -85,6 +85,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
         this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() throws InterruptedException, SQLException {
         if (isCreateTables) {
             databaseSetup();
@@ -92,6 +93,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
         return returnPromise.future();
     }
 
+    @Override
     public Promise<Pool> databaseSetup() {
         Promise<Pool> poolPromise = Promise.promise();
         Promise<String> finalPromise = Promise.promise();
@@ -231,7 +233,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                     }
 
                     String sql = getCreateTable("GOLFER");
-                    if ((names.contains("golfer"))) {
+                    if (names.contains("golfer")) {
                         sql = SELECTONE;
                     }
 
@@ -243,7 +245,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                         }
                         String sql2 = getCreateTable("COURSE");
 
-                        if ((names.contains("COURSE"))) {
+                        if (names.contains("COURSE")) {
                             sql2 = SELECTONE;
                         }
                         conn.query(sql2).execute().onFailure().invoke(err -> {
@@ -253,7 +255,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                                 logger.warn("Course Table Added.");
                             }
                             String sql3 = getCreateTable("RATINGS");
-                            if ((names.contains("ratings"))) {
+                            if (names.contains("ratings")) {
                                 sql3 = SELECTONE;
                             }
                             conn.query(sql3).execute().onFailure().invoke(err -> {
@@ -263,7 +265,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
                                     logger.warn("Ratings Table Added.");
                                 }
                                 String sql4 = getCreateTable("SCORES");
-                                if ((names.contains("scores"))) {
+                                if (names.contains("scores")) {
                                     sql4 = SELECTONE;
                                 }
                                 conn.query(sql4).execute().onFailure().invoke(err -> {
@@ -299,7 +301,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
-
+        //
     }
 
     @Override
@@ -309,7 +311,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
 
     @Override
     public void setVertxR(Vertx vertx) {
-
+        //
     }
 
     @Override
@@ -323,6 +325,7 @@ public class HandicapDatabaseMariadb extends DbMariadb {
         return (T) connectOptions;
     }
 
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }

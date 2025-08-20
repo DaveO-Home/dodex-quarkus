@@ -3,6 +3,8 @@ package dmo.fs.db.dodex.cubrid;
 
 import dmo.fs.db.dodex.CreateDatabase;
 
+import java.util.Locale;
+
 public abstract class DbCubrid implements CreateDatabase {
     protected final static String[] tables = {"users", "messages", "undelivered", "login", "groups", "member"};
 
@@ -75,13 +77,11 @@ public abstract class DbCubrid implements CreateDatabase {
         }
     }
 
-    ;
-
     protected DbCubrid() {
         super();
     }
 
     public String getCreateTable(String table) {
-        return CreateTable.valueOf("CREATE" + table.toUpperCase()).sql;
+        return CreateTable.valueOf("CREATE" + table.toUpperCase(Locale.US)).sql;
     }
 }

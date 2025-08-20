@@ -47,7 +47,7 @@ public class DodexDatabaseSqlite3 extends DbReactiveSqlBase implements DodexReac
             this.dbOverrideMap = dbOverrideMap;
         }
 
-        dmo.fs.db.reactive.DbConfiguration.mapMerge(dbMap, dbOverrideMap);
+        DbConfiguration.mapMerge(dbMap, dbOverrideMap);
     }
 
     public DodexDatabaseSqlite3() throws InterruptedException, IOException, SQLException {
@@ -81,7 +81,7 @@ public class DodexDatabaseSqlite3 extends DbReactiveSqlBase implements DodexReac
     @Override
     public Promise<JDBCPool> databaseSetup() {
         if ("dev".equals(webEnv)) {
-            dmo.fs.db.reactive.DbConfiguration.configureTestDefaults(dbMap, dbProperties);
+            DbConfiguration.configureTestDefaults(dbMap, dbProperties);
         } else {
             DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
         }

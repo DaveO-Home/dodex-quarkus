@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class CassandraRouter {
   protected static final Logger logger = LoggerFactory.getLogger(CassandraRouter.class.getName());
   protected DodexCassandra dodexCassandra;
-  protected final Vertx vertx = Server.vertx;
+  protected static final Vertx vertx = Server.vertx;
   protected EventBus eb = vertx.eventBus();
   protected static final String LOGFORMAT = "{}{}{}";
   protected String remoteAddress;
@@ -54,8 +54,7 @@ public class CassandraRouter {
 
   protected CassandraRouter() throws SQLException, IOException, InterruptedException {
     setWebSocket();
-    logger.info(String.format("%sCassandra Router Started%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-      ColorUtilConstants.RESET));
+    logger.info("{}Cassandra Router Started{}", ColorUtilConstants.BLUE_BOLD_BRIGHT, ColorUtilConstants.RESET);
   }
 
   @Inject
@@ -147,7 +146,7 @@ public class CassandraRouter {
     messageUser.setPassword(queryParams.get("id"));
     messageUser.setIp(remoteAddress == null ? "unknown" : remoteAddress);
 
-    final ArrayList<String> onlineUsers = new ArrayList<>();
+    final List<String> onlineUsers = new ArrayList<>();
     // Checking if message or command
     final Map<String, String> returnObject = DodexUtil.commandMessage(message);
     // message with command stripped out
@@ -293,19 +292,18 @@ public class CassandraRouter {
   }
 
   protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
-    long c = connection.getOpenConnections().stream().filter(session -> {
-      if (connection.id().equals(session.id())) {
-        return false;
-      }
-      CompletableFuture<Void> complete = session.sendText(message).subscribe().asCompletionStage();
-      if (complete.isCompletedExceptionally()) {
-        logger.info(String.format("%sUnable to send message: %s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
-          queryParams.get("handle"), ": Exception in broadcast",
-          ColorUtilConstants.RESET));
-      }
-      return true;
-    }).count();
-    return c;
+      return connection.getOpenConnections().stream().filter(session -> {
+        if (connection.id().equals(session.id())) {
+          return false;
+        }
+        CompletableFuture<Void> complete = session.sendText(message).subscribe().asCompletionStage();
+        if (complete.isCompletedExceptionally()) {
+          logger.info(String.format("%sUnable to send message: %s%s%s", ColorUtilConstants.BLUE_BOLD_BRIGHT,
+            queryParams.get("handle"), ": Exception in broadcast",
+            ColorUtilConstants.RESET));
+        }
+        return true;
+      }).count();
   }
 
   protected WebSocketConnection getThisWebSocket(WebSocketConnection connection) {

@@ -1,19 +1,8 @@
 package dmo.fs.spa.db.reactive.h2;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
-import dmo.fs.quarkus.Server;
-import dmo.fs.spa.db.reactive.SqlBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.db.reactive.DbConfiguration;
+import dmo.fs.quarkus.Server;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaLoginImpl;
 import dmo.fs.utils.DodexUtil;
@@ -28,117 +17,125 @@ import io.vertx.reactivex.sqlclient.Row;
 import io.vertx.reactivex.sqlclient.RowIterator;
 import io.vertx.reactivex.sqlclient.RowSet;
 import io.vertx.sqlclient.PoolOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SpaDatabaseH2 extends DbH2 {
-	protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseH2.class.getName());
-	protected Properties dbProperties;
-	protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
-	protected Map<String, String> dbMap;
-	protected JsonNode defaultNode;
-	protected String webEnv = Server.isProduction() ? "prod" : "dev";
-	protected DodexUtil dodexUtil = new DodexUtil();
-	protected JDBCPool pool;
+    protected static final Logger logger = LoggerFactory.getLogger(SpaDatabaseH2.class.getName());
+    protected Properties dbProperties;
+    protected Map<String, String> dbOverrideMap = new ConcurrentHashMap<>();
+    protected Map<String, String> dbMap;
+    protected JsonNode defaultNode;
+    protected String webEnv = Server.isProduction() ? "prod" : "dev";
+    protected DodexUtil dodexUtil = new DodexUtil();
+    protected JDBCPool pool;
 
-	public SpaDatabaseH2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
-		super();
+    public SpaDatabaseH2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
+        super();
 
-		defaultNode = dodexUtil.getDefaultNode();
-		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-		dbProperties = dodexUtil.mapToProperties(dbMap);
+        defaultNode = dodexUtil.getDefaultNode();
+        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+        dbProperties = dodexUtil.mapToProperties(dbMap);
 
-		if (dbOverrideProps != null) {
-			this.dbProperties = dbOverrideProps;
-		}
-		if (dbOverrideMap != null) {
-			this.dbOverrideMap = dbOverrideMap;
-		}
+        if (dbOverrideProps != null) {
+            this.dbProperties = dbOverrideProps;
+        }
+        if (dbOverrideMap != null) {
+            this.dbOverrideMap = dbOverrideMap;
+        }
 
-		assert dbOverrideMap != null;
-		DbConfiguration.mapMerge(dbMap, dbOverrideMap);
-	}
+        assert dbOverrideMap != null;
+        DbConfiguration.mapMerge(dbMap, dbOverrideMap);
+    }
 
-	public SpaDatabaseH2() throws InterruptedException, IOException, SQLException {
-		super();
-		defaultNode = dodexUtil.getDefaultNode();
-		dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
-		dbProperties = dodexUtil.mapToProperties(dbMap);
-	}
+    public SpaDatabaseH2() throws InterruptedException, IOException, SQLException {
+        super();
+        defaultNode = dodexUtil.getDefaultNode();
+        dbMap = dodexUtil.jsonNodeToMap(defaultNode, webEnv);
+        dbProperties = dodexUtil.mapToProperties(dbMap);
+    }
 
-	@Override
-	public Future<Void> databaseSetup() {
-		if ("dev".equals(webEnv)) {
-			DbConfiguration.configureTestDefaults(dbMap, dbProperties);
-		} else {
-			DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
-		}
+    @Override
+    public Future<Void> databaseSetup() {
+        if ("dev".equals(webEnv)) {
+            DbConfiguration.configureTestDefaults(dbMap, dbProperties);
+        } else {
+            DbConfiguration.configureDefaults(dbMap, dbProperties); // Prod
+        }
 
-		Promise<Void> setupPromise = Promise.promise();
-		pool = getPool(dbMap, dbProperties);
+        Promise<Void> setupPromise = Promise.promise();
+        pool = getPool(dbMap, dbProperties);
 
-		Completable completable = pool.rxGetConnection().flatMapCompletable(conn -> conn.rxBegin()
-				.flatMapCompletable(tx -> conn.query(CHECKLOGINSQL).rxExecute().doOnSuccess(row -> {
-					RowIterator<Row> ri = row.iterator();
-					String val = null;
-					while (ri.hasNext()) {
-						val = ri.next().getString(0);
-					}
-					if (val == null) {
-						final String usersSql = getCreateTable("LOGIN");
+        Completable completable = pool.rxGetConnection().flatMapCompletable(conn -> conn.rxBegin()
+          .flatMapCompletable(tx -> conn.query(CHECKLOGINSQL).rxExecute().doOnSuccess(row -> {
+                RowIterator<Row> ri = row.iterator();
+                String val = null;
+                while (ri.hasNext()) {
+                    val = ri.next().getString(0);
+                }
+                if (val == null) {
+                    final String usersSql = getCreateTable("LOGIN");
 
-						Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err ->
-								logger.info(String.format("Login Table Create Error: %s", err.getMessage())))
-							.doOnSuccess(result -> logger.warn("Login Table Added."));
+                    Single<RowSet<Row>> crow = conn.query(usersSql).rxExecute().doOnError(err ->
+                        logger.info(String.format("Login Table Create Error: %s", err.getMessage())))
+                      .doOnSuccess(result -> logger.warn("Login Table Added."));
 
-						crow.subscribe(result -> conn.rxClose()
-							.doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe(), err -> {
-								logger.error(String.format("Login Table Result Error: %s", err.getMessage()));
-								err.printStackTrace();
-						});
-					} else {
-						conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
-					}
-				}).doOnError(err -> logger.error(String.format("Login Table Query Error: %s", err.getMessage())))
-					.doOnError(Throwable::printStackTrace).flatMapCompletable(res -> Completable.complete())));
+                    crow.subscribe(result -> conn.rxClose()
+                      .doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe(), err -> {
+                        logger.error(String.format("Login Table Result Error: %s", err.getMessage()));
+                        err.printStackTrace();
+                    });
+                } else {
+                    conn.rxClose().doOnSubscribe(res -> tx.rxCommit().subscribe()).subscribe();
+                }
+            }).doOnError(err -> logger.error(String.format("Login Table Query Error: %s", err.getMessage())))
+            .doOnError(Throwable::printStackTrace).flatMapCompletable(res -> Completable.complete())));
 
-		completable.subscribe(() -> {
-			try {
-				SqlBuilder.setupSql(pool);
-				setupPromise.complete();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}, err -> {
-			logger.error(String.format("Tables Create Error: %s", err.getMessage()));
-			err.printStackTrace();
-		});
+        completable.subscribe(() -> {
+            try {
+                setupSql(pool);
+                setupPromise.complete();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, err -> {
+            logger.error(String.format("Tables Create Error: %s", err.getMessage()));
+            err.printStackTrace();
+        });
 
-		return setupPromise.future();
-	}
+        return setupPromise.future();
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> T getPool() {
-		return (T) pool;
-	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getPool() {
+        return (T) pool;
+    }
 
-	@Override
-	public SpaLogin createSpaLogin() {
-		return new SpaLoginImpl();
-	}
+    @Override
+    public SpaLogin createSpaLogin() {
+        return new SpaLoginImpl();
+    }
 
-	@SuppressWarnings("unchecked")
-	protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
+    @SuppressWarnings("unchecked")
+    protected static <T> T getPool(Map<String, String> dbMap, Properties dbProperties) {
 
-		PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
+        PoolOptions poolOptions = new PoolOptions().setMaxSize(Runtime.getRuntime().availableProcessors() * 5);
 
-		JDBCConnectOptions connectOptions;
-		connectOptions = new JDBCConnectOptions().setJdbcUrl(dbMap.get("url") + dbMap.get("filename"))
-				.setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
-				.setIdleTimeout(1);
+        JDBCConnectOptions connectOptions;
+        connectOptions = new JDBCConnectOptions().setJdbcUrl(dbMap.get("url") + dbMap.get("filename"))
+          .setUser(dbProperties.getProperty("user")).setPassword(dbProperties.getProperty("password"))
+          .setIdleTimeout(1);
 
-		Vertx vertx = Server.vertx;
+        Vertx vertx = Server.vertx;
 
-		return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
-	}
+        return (T) JDBCPool.pool(vertx, connectOptions, poolOptions);
+    }
 
 }

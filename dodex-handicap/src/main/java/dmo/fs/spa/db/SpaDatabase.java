@@ -16,5 +16,7 @@ public interface SpaDatabase {
 
 	Future<Void> databaseSetup();
 
-	static <T> void setupSql(T pool) {};
+	static <T> void setupSql(T pool) {
+		//
+	}
 }

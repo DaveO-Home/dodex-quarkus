@@ -156,11 +156,13 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
         return promise;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T getConnectOptions() {
         return (T) connectOptions;
     }
 
+    @Override
     public PoolOptions getPoolOptions() {
         return poolOptions;
     }
@@ -173,6 +175,7 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 
     @Override
     public void setVertx(Vertx vertx) {
+        //
     }
 
     @Override
@@ -182,6 +185,7 @@ public class DodexDatabaseIbmDB2 extends DbIbmDB2 {
 
     @Override
     public void setVertxR(io.vertx.reactivex.core.Vertx vertx) {
+        //
     }
 
     @Override

@@ -2,15 +2,14 @@ package dmo.fs.db.router.wsnext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dmo.fs.db.wsnext.admin.CleanOrphanedUsers;
-import dmo.fs.db.wsnext.DodexDatabase;
 import dmo.fs.db.MessageUser;
+import dmo.fs.db.wsnext.DodexDatabase;
+import dmo.fs.db.wsnext.admin.CleanOrphanedUsers;
 import dmo.fs.kafka.KafkaEmitterDodex;
 import dmo.fs.quarkus.Server;
 import dmo.fs.utils.ColorUtilConstants;
 import dmo.fs.utils.DodexUtil;
 import io.quarkus.websockets.next.WebSocketConnection;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Context;
 import io.vertx.mutiny.core.Promise;
@@ -50,11 +49,8 @@ public abstract class DodexRouterBase {
     @Inject
     WebSocketConnection connection;
 
-    protected DodexRouterBase() {
-    }
-
     protected long broadcast(WebSocketConnection connection, String message, Map<String, String> queryParams) {
-        long c = connection.getOpenConnections().stream().filter(session -> {
+        return connection.getOpenConnections().stream().filter(session -> {
             if (connection.id().equals(session.id())) {
                 return false;
             }
@@ -66,7 +62,6 @@ public abstract class DodexRouterBase {
             }
             return true;
         }).count();
-        return c;
     }
 
     protected WebSocketConnection getThisWebSocket(WebSocketConnection connection) {
@@ -125,7 +120,7 @@ public abstract class DodexRouterBase {
     protected void doMessage(WebSocketConnection session, String message) {
         WebSocketConnection ws = getThisWebSocket(session);
         final MessageUser messageUser = setMessageUser(ws);
-        final ArrayList<String> onlineUsers = new ArrayList<>();
+        final List<String> onlineUsers = new ArrayList<>();
         // Checking if message or command
         final Map<String, String> returnObject = DodexUtil.commandMessage(message);
         final String selectedUsers = returnObject.get("selectedUsers");

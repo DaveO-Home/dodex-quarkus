@@ -19,7 +19,6 @@ import io.vertx.reactivex.sqlclient.*;
 import io.vertx.sqlclient.PoolOptions;
 import org.jooq.DSLContext;
 import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jooq.impl.DSL.*;
 
+@SuppressWarnings("PMD.GuardLogStatement")
 public abstract class DbReactiveSqlBase {
     protected static final Logger logger = LoggerFactory.getLogger(DbReactiveSqlBase.class.getName());
     protected static final String QUERYUSERS = "select * from USERS where password=$";
@@ -70,7 +70,7 @@ public abstract class DbReactiveSqlBase {
     protected static JDBCConnectOptions jdbcConnectOptions;
     protected static PoolOptions poolOptions;
     protected static boolean qmark = true;
-    DateFormat sqlite3DateFormat = new SimpleDateFormat("yyyy-MM-dd"); // HH:mm:ss");
+    DateFormat sqlite3DateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // HH:mm:ss");
 
     public static <T> void setupSql(T jdbcPool) {
         if (jdbcPool instanceof JDBCPool) {
@@ -78,7 +78,7 @@ public abstract class DbReactiveSqlBase {
         }
 
         Settings settings = new Settings().withRenderNamedParamPrefix("$"); // making compatible with Vertx4/Postgres
-        create = DSL.using(DodexUtil.getSqlDialect(), settings);
+        create = using(DodexUtil.getSqlDialect(), settings);
 
         /* @TODO: convert GroupOpenApiSql to mutiny */
         io.vertx.rxjava3.sqlclient.Pool poolRx =
@@ -339,7 +339,6 @@ public abstract class DbReactiveSqlBase {
     public Future<MessageUser> addUser(WebSocketConnection ws, MessageUser messageUser) {
         Promise<MessageUser> promise = Promise.promise();
         Timestamp current = new Timestamp(new Date().getTime());
-        OffsetDateTime time = OffsetDateTime.now();
 
         pool.getConnection(c -> {
             Tuple parameters = Tuple.of(messageUser.getName(), messageUser.getPassword(),
@@ -463,7 +462,6 @@ public abstract class DbReactiveSqlBase {
     public Future<Long> addMessage(WebSocketConnection ws, MessageUser messageUser, String message) {
         Promise<Long> promise = Promise.promise();
 
-        OffsetDateTime time = OffsetDateTime.now();
         Timestamp current = Timestamp.valueOf(LocalDateTime.now());
         String currentTimeStamp = sqlite3DateFormat.format(current);
         Tuple parameters = Tuple.of(message, messageUser.getName(), currentTimeStamp);

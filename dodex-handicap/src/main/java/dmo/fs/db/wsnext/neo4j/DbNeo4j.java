@@ -37,7 +37,7 @@ public abstract class DbNeo4j extends DbNeo4jBase implements DodexNeo4j {
         CreateSchema(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbNeo4j() {
 		super();

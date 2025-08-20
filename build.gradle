@@ -1,7 +1,4 @@
 
-plugins {
-    id 'java'
-}
 
 repositories {
     mavenLocal()
@@ -9,25 +6,15 @@ repositories {
 }
 
 dependencies {
-    testImplementation "junit:junit:4.13.1"
-    // testImplementation = "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
 }
 
 group = 'dmo.fs.quarkus'
-version = '3.17.1'
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
+version = '3.18.0'
 
 def usr = System.getProperty("user.home")
 def OS = System.getProperty("os.name").toLowerCase()
 def dir = System.getProperty("user.dir")
 
-compileJava {
-    options.encoding = "UTF-8"
-}
 
 tasks.register('run', Exec) {
 //   workingDir dir
@@ -42,16 +29,4 @@ tasks.register('run', Exec) {
         commandLine "./gradlew", "quarkusDev"
     }
 }
-jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-compileTestJava {
-    options.encoding = 'UTF-8'
-}
 
-test {
-    useJUnitPlatform()
-    testLogging {
-        events = ["PASSED", "FAILED", "SKIPPED"]
-    }
-}

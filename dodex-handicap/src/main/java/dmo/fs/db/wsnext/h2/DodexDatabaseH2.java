@@ -25,9 +25,9 @@ public class DodexDatabaseH2 extends DbDefinitionBase implements DodexDatabase {
     protected String webEnv = DodexUtil.getEnv();
     protected DodexUtil dodexUtil = new DodexUtil();
 
-    public DodexDatabaseH2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
-        super();
-    }
+//    public DodexDatabaseH2(Map<String, String> dbOverrideMap, Properties dbOverrideProps) throws IOException {
+//        super();
+//    }
 
     public DodexDatabaseH2() throws IOException {
         super();

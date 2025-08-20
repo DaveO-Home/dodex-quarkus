@@ -8,18 +8,18 @@ plugins {
 }
 
 repositories {
+    mavenCentral()
+    mavenLocal()
     maven {
         url = "https://plugins.gradle.org/m2/"
     }
-    mavenCentral()
-    mavenLocal()
 }
 
 group = "dmo.fs.utils"
 version = "0.0.1"
 
 ext {
-  vertxVersion = "4.5.13"
+  vertxVersion = "4.5.14"
 }
 
 def jooqVersion = "3.19.18"

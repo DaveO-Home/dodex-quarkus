@@ -4,6 +4,8 @@ package dmo.fs.spa.db.reactive.sqlite3;
 import dmo.fs.spa.db.reactive.SpaDatabaseReactive;
 import dmo.fs.spa.db.reactive.SqlBuilder;
 
+import java.util.Locale;
+
 public abstract class DbSqlite3 extends SqlBuilder implements SpaDatabaseReactive {
 	public static final String CHECKLOGINSQL = "SELECT name FROM sqlite_master WHERE type='table' AND name='login'";
 
@@ -15,13 +17,13 @@ public abstract class DbSqlite3 extends SqlBuilder implements SpaDatabaseReactiv
         CreateTable(String sql) {
             this.sql = sql;
         }
-    };
+    }
 
 	protected DbSqlite3() {
 		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE"+table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE"+table.toUpperCase(Locale.US)).sql;
 	}
 }

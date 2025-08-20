@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,7 @@ public class Neo4jRouter {
     protected Driver driver;
     protected static final KafkaEmitterDodex ke = CDI.current().select(KafkaEmitterDodex.class).isUnsatisfied() ? null :
       CDI.current().select(KafkaEmitterDodex.class).get();
-    protected static final ConcurrentHashMap<String, HashMap<String, String>> queryParams = new ConcurrentHashMap<>();
+    protected static final ConcurrentMap<String, Map<String, String>> queryParams = new ConcurrentHashMap<>();
 
     public Neo4jRouter(final Vertx vertx) {
         Neo4jRouter.vertx = vertx;
@@ -83,7 +84,7 @@ public class Neo4jRouter {
             String[] handle = params[0].split("=");
             String[] id = params[1].split("=");
 
-            HashMap<String, String> parameters = new HashMap<>();
+            Map<String, String> parameters = new HashMap<>();
             parameters.put(handle[0], handle[1]);
             parameters.put(id[0], id[1]);
             queryParams.put(connection.id(), parameters);
@@ -151,7 +152,7 @@ public class Neo4jRouter {
     public void onMessage(String message) {
         final MessageUser messageUser = dodexNeo4j.createMessageUser();
         String handle = queryParams.get(connection.id()).get("handle");
-        final ArrayList<String> onlineUsers = new ArrayList<>();
+        final List<String> onlineUsers = new ArrayList<>();
 
         // Checking if message or command
         Map<String, String> returnObject = DodexUtil.commandMessage(message);
@@ -285,7 +286,7 @@ public class Neo4jRouter {
         }
     }
 
-    protected long broadcast(WebSocketConnection connection, String message, ConcurrentHashMap<String, HashMap<String, String>> queryParams) {
+    protected long broadcast(WebSocketConnection connection, String message, ConcurrentMap<String, Map<String, String>> queryParams) {
         return connection.getOpenConnections().stream().filter(session -> {
             if (connection.id().equals(session.id())) {
                 return false;

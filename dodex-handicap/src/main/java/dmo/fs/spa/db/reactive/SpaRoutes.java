@@ -1,13 +1,5 @@
 package dmo.fs.spa.db.reactive;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmo.fs.spa.db.SpaDbConfiguration;
 import dmo.fs.spa.utils.SpaLogin;
 import dmo.fs.spa.utils.SpaUtil;
@@ -25,7 +17,15 @@ import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.util.Optional;
+
+@SuppressWarnings("PMD.GuardLogStatement")
 public class SpaRoutes {
     protected static final Logger logger = LoggerFactory.getLogger(SpaRoutes.class.getName());
     protected static final String FAILURE = "{\"status\":\"-99\"}";
@@ -35,12 +35,12 @@ public class SpaRoutes {
     protected static final SpaDatabaseReactive spaDatabaseReactive = SpaDbConfiguration.getSpaDb();
 
     public SpaRoutes(Vertx vertx, io.vertx.mutiny.ext.web.Router router, io.vertx.mutiny.core.Promise<io.vertx.mutiny.ext.web.Router> routesPromise)
-            throws InterruptedException, SQLException {
+      throws InterruptedException, SQLException {
         this.vertx = vertx;
         this.router = router.getDelegate();
         sessionStore = LocalSessionStore.create(vertx);
 
-    spaDatabaseReactive.databaseSetup().onSuccess(none -> {
+        spaDatabaseReactive.databaseSetup().onSuccess(none -> {
             setGetLoginRoute();
             setPutLoginRoute();
             setLogoutRoute();
@@ -59,7 +59,7 @@ public class SpaRoutes {
 
         route.failureHandler(routingContext -> {
             HttpServerResponse response = routingContext.response();
-            if(response.getStatusCode() != 200) {
+            if (response.getStatusCode() != 200) {
                 logger.info("Login Post Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
             }
         });
@@ -109,7 +109,7 @@ public class SpaRoutes {
 
                 future.onFailure(failed -> {
                     logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT, "Add Login Failed: ",
-                            failed.getMessage(), ColorUtilConstants.RESET));
+                      failed.getMessage(), ColorUtilConstants.RESET));
                     response.end(FAILURE);
                 });
             } else {
@@ -125,16 +125,15 @@ public class SpaRoutes {
         if ("dev".equals(DodexUtil.getEnv())) {
             route.handler(CorsHandler.create().allowedMethod(HttpMethod.PUT));
         }
+
         route.failureHandler(routingContext -> {
             HttpServerResponse response = routingContext.response();
-            if(response.getStatusCode() != 200) {
+            if (response.getStatusCode() != 200) {
                 logger.info("Login Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
             }
         });
-        route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
-//            HttpServerResponse response = routingContext.response();
 
-//            response.putHeader("content-type", "application/json");
+        route.handler(routingContext -> routingContext.request().bodyHandler(bodyHandler -> {
             SpaApplication spaApplication = null;
             try {
                 spaApplication = new SpaApplication();
@@ -191,7 +190,7 @@ public class SpaRoutes {
 
                             future.onFailure(failed -> {
                                 logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT,
-                                        "Add Login failed...: ", failed.getMessage(), ColorUtilConstants.RESET));
+                                  "Add Login failed...: ", failed.getMessage(), ColorUtilConstants.RESET));
                                 response.end(FAILURE);
                             });
                         }
@@ -200,13 +199,13 @@ public class SpaRoutes {
 
                     futureLogin.onFailure(failed -> {
                         logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT, "Add Login failed...: ",
-                                failed.getMessage(), ColorUtilConstants.RESET));
+                          failed.getMessage(), ColorUtilConstants.RESET));
                         response.end(FAILURE);
                     });
 
                 } catch (InterruptedException | SQLException e) {
                     logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT,
-                            "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
+                      "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
 
                 } catch (Exception exception) {
                     exception.printStackTrace();
@@ -226,7 +225,7 @@ public class SpaRoutes {
 
         route.failureHandler(routingContext -> {
             HttpServerResponse response = routingContext.response();
-            if(response.getStatusCode() != 200) {
+            if (response.getStatusCode() != 200) {
                 logger.info("Login Delete Error: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
             }
         });
@@ -252,7 +251,7 @@ public class SpaRoutes {
                     data = String.join("", "{\"status\":\"", status, "\"}");
                 } catch (Exception e) {
                     logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT,
-                            "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
+                      "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
                 }
             }
 
@@ -273,7 +272,7 @@ public class SpaRoutes {
 
         route.failureHandler(routingContext -> {
             HttpServerResponse response = routingContext.response();
-            if(response.getStatusCode() != 200) {
+            if (response.getStatusCode() != 200) {
                 logger.info("Login Post Unregister: {} -- {} -- {}", response.headers(), response.getStatusCode(), response.getStatusMessage());
             }
         });
@@ -303,7 +302,7 @@ public class SpaRoutes {
                 try {
 
                     Future<SpaLogin> future = spaApplication
-                            .unregisterLogin(URLDecoder.decode(queryData.get(), StandardCharsets.UTF_8));
+                      .unregisterLogin(URLDecoder.decode(queryData.get(), StandardCharsets.UTF_8));
 
                     future.onSuccess(result -> {
                         session.destroy();
@@ -312,13 +311,13 @@ public class SpaRoutes {
 
                     future.onFailure(failed -> {
                         logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT, "Unregister Login failed...: ",
-                                failed.getMessage(), ColorUtilConstants.RESET));
+                          failed.getMessage(), ColorUtilConstants.RESET));
                         response.end(FAILURE);
                     });
 
                 } catch (Exception e) {
                     logger.error(String.join("", ColorUtilConstants.RED_BOLD_BRIGHT,
-                            "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
+                      "Context Configuration failed...: ", e.getMessage(), ColorUtilConstants.RESET));
                     e.printStackTrace();
                 }
             } else {

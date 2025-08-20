@@ -10,6 +10,7 @@ public class FirebaseUser {
     private Timestamp lastLogin;
 
     public FirebaseUser() {
+        //
     }
 
     public FirebaseUser(String id, String name, String password, String ip, Timestamp lastLogin) {

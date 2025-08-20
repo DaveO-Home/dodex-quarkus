@@ -78,7 +78,6 @@ public class GroupOpenApiSqlRx extends GroupOpenApiSql {
       throws InterruptedException, SQLException, IOException {
     Promise<JsonObject> promise = Promise.promise();
     Timestamp currentDate = new Timestamp(new Date().getTime());
-    OffsetDateTime time = OffsetDateTime.now();
 
     DodexReactiveDatabase dodexDatabase = DbConfiguration.getDefaultDb();
     MessageUser messageUser = dodexDatabase.createMessageUser();

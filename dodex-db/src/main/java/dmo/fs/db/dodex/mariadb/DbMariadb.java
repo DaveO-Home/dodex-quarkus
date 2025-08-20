@@ -3,6 +3,8 @@ package dmo.fs.db.dodex.mariadb;
 
 import dmo.fs.db.dodex.CreateDatabase;
 
+import java.util.Locale;
+
 public abstract class DbMariadb implements CreateDatabase {
 	protected final static String CHECKLOGINSQL = "select 1 from information_schema.tables where table_name='LOGIN'";
 	protected final static String CHECKUSERSQL = "select 1 from information_schema.tables where table_name='users'";
@@ -121,13 +123,9 @@ public abstract class DbMariadb implements CreateDatabase {
 		CreateTable(String sql) {
 			this.sql = sql;
 		}
-	};
-
-	public DbMariadb() {
-		super();
 	}
 
 	public String getCreateTable(String table) {
-		return CreateTable.valueOf("CREATE" + table.toUpperCase()).sql;
+		return CreateTable.valueOf("CREATE" + table.toUpperCase(Locale.US)).sql;
 	}
 }

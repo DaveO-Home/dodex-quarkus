@@ -10,9 +10,7 @@ import dmo.fs.utils.ParseQueryUtilHelper;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.arc.properties.UnlessBuildProperty;
 import io.quarkus.websockets.next.*;
-
 import io.vertx.core.buffer.Buffer;
-import io.vertx.reactivex.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.PoolOptions;
 import jakarta.enterprise.inject.spi.CDI;
 import org.slf4j.Logger;
@@ -123,7 +121,7 @@ public class DodexRouter extends DodexRouterBase {
         return ke;
     }
 
-    public <T> T  getConnectionOptions() {
+    public <T> T getConnectionOptions() {
         return createDatabase.getConnectOptions();
     }
 

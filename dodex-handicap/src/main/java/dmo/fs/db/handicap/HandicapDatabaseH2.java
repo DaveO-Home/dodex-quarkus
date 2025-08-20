@@ -23,10 +23,13 @@ public class HandicapDatabaseH2 extends DbDefinitionBase implements HandicapData
     protected Pool pool4;
     protected Boolean isCreateTables = false;
     protected Promise<String> returnPromise = Promise.promise();
-
+    protected Map<String, String> dbOberrideMap;
+    protected Properties dbOverrideProps;
     public HandicapDatabaseH2(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
       throws IOException {
         super();
+        this.dbOberrideMap = dbOverrideMap;
+        this.dbOverrideProps = dbOverrideProps;
         databaseSetup();
     }
 
@@ -41,6 +44,7 @@ public class HandicapDatabaseH2 extends DbDefinitionBase implements HandicapData
         this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
             databaseSetup();
@@ -81,13 +85,16 @@ public class HandicapDatabaseH2 extends DbDefinitionBase implements HandicapData
 
     @Override
     public void setVertxR(Vertx vertx) {
+        //
     }
 
+    @Override
     public io.vertx.mutiny.core.Vertx getVertx() {
         return null;
     }
 
     @Override
     public void setVertx(io.vertx.mutiny.core.Vertx vertx) {
+        //
     }
 }

@@ -23,9 +23,6 @@ public class SpaApplication {
     protected SpaDatabaseReactive spaDatabase;
     protected Vertx vertx;
 
-    protected SpaApplication() {
-    }
-
     protected void setDatabase(SpaDatabaseReactive spaDatabaseReactive) throws InterruptedException {
         spaDatabase = spaDatabaseReactive;
         if(!(spaDatabase instanceof SpaDatabaseReactive)) {

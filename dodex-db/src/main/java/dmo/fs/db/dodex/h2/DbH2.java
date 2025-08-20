@@ -3,6 +3,8 @@ package dmo.fs.db.dodex.h2;
 
 import dmo.fs.db.dodex.CreateDatabase;
 
+import java.util.Locale;
+
 public abstract class DbH2 implements CreateDatabase {
     public static final String CHECKUSERSQL = "SELECT table_name FROM  INFORMATION_SCHEMA.TABLES where table_name = 'USERS' and table_type = 'BASE TABLE' and TABLE_SCHEMA = 'PUBLIC'";
     protected static final String CHECKMESSAGESSQL = "SELECT table_name FROM  INFORMATION_SCHEMA.TABLES where table_name = 'MESSAGES'";
@@ -87,13 +89,11 @@ public abstract class DbH2 implements CreateDatabase {
         }
     }
 
-    ;
-
     protected DbH2() {
         super();
     }
 
     public String getCreateTable(String table) {
-        return CreateTable.valueOf("CREATE" + table.toUpperCase()).sql;
+        return CreateTable.valueOf("CREATE" + table.toUpperCase(Locale.US)).sql;
     }
 }

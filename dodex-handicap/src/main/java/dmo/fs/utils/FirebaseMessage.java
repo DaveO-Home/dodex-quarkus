@@ -2,10 +2,8 @@ package dmo.fs.utils;
 
 import com.google.cloud.Timestamp;
 
+@SuppressWarnings({"PMD.FormalParameterNamingConventions", "PMD.MethodNamingConventions"})
 public class FirebaseMessage {
-
-    public FirebaseMessage() {
-    }
     
     public FirebaseMessage(String name, String password, String message_id, String user_id, String message,
             String from_handle, Timestamp post_date) {

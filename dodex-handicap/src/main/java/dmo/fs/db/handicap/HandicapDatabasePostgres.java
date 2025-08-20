@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /*
     Sets up DSL for jooq and handicap sql
  */
-public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBase implements HandicapDatabase {
+public class HandicapDatabasePostgres extends DbDefinitionBase implements HandicapDatabase {
     protected final static Logger logger =
       LoggerFactory.getLogger(HandicapDatabasePostgres.class.getName());
     protected Properties dbProperties;
@@ -28,7 +28,7 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
     protected JsonNode defaultNode;
     protected String webEnv = DodexUtil.getEnv();
     protected DodexUtil dodexUtil = new DodexUtil();
-    protected static Boolean isCreateTables = false;
+    protected Boolean isCreateTables = false;
     protected Promise<String> returnPromise = Promise.promise();
 
     public HandicapDatabasePostgres(Map<String, String> dbOverrideMap, Properties dbOverrideProps)
@@ -73,9 +73,10 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
         dbProperties = dodexUtil.mapToProperties(dbMap);
 
         dbProperties.setProperty("foreign_keys", "true");
-        HandicapDatabasePostgres.isCreateTables = isCreateTables;
+        this.isCreateTables = isCreateTables;
     }
 
+    @Override
     public Uni<String> checkOnTables() {
         if (isCreateTables) {
             databaseSetup();
@@ -146,7 +147,7 @@ public class HandicapDatabasePostgres extends dmo.fs.db.handicap.DbDefinitionBas
 
     @Override
     public void setVertxR(io.vertx.rxjava3.core.Vertx vertx) {
-
+        //
     }
 
     @Override

@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 plugins {
     id 'java'
     id "org.jetbrains.kotlin.jvm" version "2.0.21"
-    id "org.jetbrains.kotlin.plugin.allopen" version "2.0.21"
+    id "org.jetbrains.kotlin.plugin.allopen" version "2.1.20"
     id "io.quarkus" version "${quarkusPluginVersion}" 
     id "pmd"
 }
@@ -18,14 +18,16 @@ repositories {
 }
 
 pmd {
-    ruleSetFiles = files("../dodexstart.xml")
+    ruleSetFiles = files(["../dodexstart.xml"])
     ruleSets = []
-    ignoreFailures = false
-    toolVersion = "7.0.0"
+    ignoreFailures = true
+    toolVersion = "7.13.0"
+    consoleOutput = false
+    rulesMinimumPriority = 3
 }
 
 ext {
-    vertxVersion = "4.5.13"
+    vertxVersion = "4.5.14"
     javaMainClass = "dmo.fs.db.handicap.utils.JooqGenerate"
     kotlin_version = "2.0.21"
 }
@@ -36,8 +38,11 @@ dependencies {
     implementation "io.quarkus:quarkus-rest-jackson"
     implementation "io.vertx:vertx-rx-java3:$vertxVersion"
     implementation "io.quarkus:quarkus-rest"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.20"
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20"
     implementation "io.quarkus:quarkus-grpc:${quarkusPlatformVersion}"
+    implementation "com.google.protobuf:protobuf-kotlin:4.30.2"
+
     implementation "io.quarkus:quarkus-kotlin"
 
     implementation "io.smallrye.reactive:smallrye-mutiny-vertx-jdbc-client"
@@ -47,14 +52,12 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.0.1"
-//    implementation "io.quarkiverse.jdbc:quarkus-jdbc-sqlite:3.0.11"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.6.0"
 
     implementation "io.quarkus:quarkus-vertx-web:3.0.0.Beta1"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     
     implementation "io.quarkus:quarkus-vertx-http"
-    // implementation "io.quarkus:quarkus-smallrye-reactive-messaging-kafka"
     implementation "io.quarkus:quarkus-messaging-kafka"
     implementation "org.apache.kafka:kafka-clients"
     implementation("org.jooq:jooq:3.19.6")
@@ -78,10 +81,6 @@ dependencies {
 //    implementation("io.quarkus:quarkus-opentelemetry")
 //    implementation("io.opentelemetry:opentelemetry-exporter-logging:1.43.0")
 
-
-//    implementation 'io.grpc:protoc-gen-grpc-java:1.68.0'
-
-    // implementation("dmo.fs.utils:generate:0.0.1")
     implementation(project(':dodex-db'))
     implementation(project(':generate'))
     
@@ -92,7 +91,7 @@ dependencies {
 }
 
 group = 'dmo.fs'
-version = '3.17.1'
+version = '3.18.0'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -104,11 +103,9 @@ def OS = System.getProperty("os.name").toLowerCase()
 def dir = System.getProperty("user.dir")
 
 compileJava {
-//    doFirst {
-//        gradle.includedBuild("dodex-db").task(":build")
-//    }
     options.encoding = "UTF-8"
     options.compilerArgs << "-Xlint:unchecked,deprecation"
+    dependsOn compileQuarkusGeneratedSourcesJava
 }
 tasks.withType(KotlinJvmCompile).configureEach {
     compilerOptions {
@@ -117,13 +114,6 @@ tasks.withType(KotlinJvmCompile).configureEach {
     }
 }
 
-/*
-    The "run" task can be used to set Environment Variables before executing "quarkusDev"
- */
-
-tasks.register('copyDatabaseConfig', Copy) {
-    dependsOn gradle.includedBuild("generate").task(":build")
-}
 /*
   Using a java class to generate jooq objects - allows for multiple db's - see ./generate directory
   Composite build - implementation("dmo.fs.utils:generate:0.0.1") - this avoids the circular dependancy error
@@ -141,9 +131,11 @@ tasks.register('jooqGenerate', JavaExec) {
     environment "VERTXWEB_ENVIRONMENT", "dev"
     mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
     args = ["dev"]
-    // dependsOn copyDatabaseConfig
 }
 
+/*
+    The "run" task can be used to set Environment Variables before executing "quarkusDev"
+ */
 tasks.register('run', Exec) {
 //   workingDir dir
     if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {

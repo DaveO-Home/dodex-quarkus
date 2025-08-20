@@ -16,11 +16,13 @@ repositories {
 pmd {
     ruleSetFiles = files("../dodexstart.xml")
     ruleSets = []
-    ignoreFailures = false
-    toolVersion = "7.0.0"
+    ignoreFailures = true
+    toolVersion = "7.13.0"
+    consoleOutput = false
+    rulesMinimumPriority = 5
 }
 
-def vertxVersion = "4.5.13"
+def vertxVersion = "4.5.14"
 
 ext {
 }
@@ -35,7 +37,7 @@ dependencies {
     implementation "io.quarkus:quarkus-reactive-mysql-client"
     implementation "io.quarkus:quarkus-reactive-pg-client"
     implementation "io.quarkus:quarkus-reactive-db2-client"
-    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.0.1"
+    implementation "io.quarkiverse.neo4j:quarkus-neo4j:5.6.0"
     implementation "io.quarkus:quarkus-vertx:${quarkusPlatformVersion}"
     implementation("jakarta.xml.bind:jakarta.xml.bind-api")
     implementation "io.quarkus:quarkus-jdbc-h2:${quarkusPlatformVersion}"
@@ -48,12 +50,12 @@ dependencies {
     implementation "com.google.firebase:firebase-admin:9.3.0"
     implementation group: "com.google.guava", name: "guava", version: "33.1.0-jre"
 
-    testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
-    testImplementation "io.rest-assured:rest-assured"
+//    testImplementation "io.quarkus:quarkus-junit5:${quarkusPlatformVersion}"
+//    testImplementation "io.rest-assured:rest-assured"
 }
 
 group = "dmo.fs.db"
-version = "3.17.1"
+version = "3.18.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21

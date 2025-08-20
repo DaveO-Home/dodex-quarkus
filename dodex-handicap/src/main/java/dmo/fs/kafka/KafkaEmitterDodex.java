@@ -1,29 +1,26 @@
 package dmo.fs.kafka;
 
-import java.io.InputStream;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.TimeZone;
-import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import dmo.fs.utils.ColorUtilConstants;
+import io.quarkus.arc.Unremovable;
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
+import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmo.fs.utils.ColorUtilConstants;
-import io.quarkus.arc.Unremovable;
-import io.quarkus.arc.properties.IfBuildProperty;
-import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
-import io.vertx.core.json.JsonObject;
+import javax.annotation.Priority;
+import java.io.InputStream;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.TimeZone;
+import java.util.concurrent.CompletableFuture;
 
 @IfBuildProperty(name = "DODEX_KAFKA", stringValue = "true")
 @Unremovable
@@ -41,7 +38,12 @@ public class KafkaEmitterDodex {
     @Inject
     @Channel(channel)
     Emitter<Integer> countEmitter;
-    {
+
+//    {
+//        this.setConfig();
+//    }
+
+    public KafkaEmitterDodex() {
         setConfig();
     }
 
@@ -62,22 +64,22 @@ public class KafkaEmitterDodex {
             logger.info("Emitting data: {}--{}--{}--{}--{}", offset, key, partition, dodexEventsTopic, value);
         }
         Message<Integer> message = Message.of(value)
-            .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
-                .withKey(key)
-                .withPartition(partition)
-                .withTimestamp(Instant.ofEpochMilli(System.currentTimeMillis() - (-offset)))
-                .withTopic(dodexEventsTopic)
-                .build());
+          .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
+            .withKey(key)
+            .withPartition(partition)
+            .withTimestamp(Instant.ofEpochMilli(System.currentTimeMillis() - (-offset)))
+            .withTopic(dodexEventsTopic)
+            .build());
 
         countEmitter.send(message
-            .withAck(() -> CompletableFuture.completedFuture(null))
-            .withNack(throwable -> {
-                logger.info("Not Acknowledged: {}", throwable.getMessage());
-                return CompletableFuture.completedFuture(null);
-            }));
+          .withAck(() -> CompletableFuture.completedFuture(null))
+          .withNack(throwable -> {
+              logger.info("Not Acknowledged: {}", throwable.getMessage());
+              return CompletableFuture.completedFuture(null);
+          }));
     }
 
-    private void setConfig() { 
+    private void setConfig() {
         JsonObject jsonObject;
         ObjectMapper jsonMapper = new ObjectMapper();
         JsonNode node;
@@ -97,7 +99,7 @@ public class KafkaEmitterDodex {
             optionalRemoveMessages.ifPresent(aBoolean -> removeMessages = aBoolean);
         } catch (final Exception exception) {
             logger.info(String.format("%sContext Configuration failed...%s%s", ColorUtilConstants.RED_BOLD_BRIGHT,
-                    exception.getMessage(), ColorUtilConstants.RESET));
+              exception.getMessage(), ColorUtilConstants.RESET));
             exception.printStackTrace();
         }
     }

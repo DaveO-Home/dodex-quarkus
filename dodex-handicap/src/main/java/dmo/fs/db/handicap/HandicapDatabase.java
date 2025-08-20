@@ -19,7 +19,9 @@ public interface HandicapDatabase {
 
 	io.vertx.rxjava3.core.Vertx getVertxR();
 
-	static <T> void setupSql(T pool) {};
+	static <T> void setupSql(T pool) {
+        //
+	}
 
 	<T> void setConnectOptions(T connectOptions);
 

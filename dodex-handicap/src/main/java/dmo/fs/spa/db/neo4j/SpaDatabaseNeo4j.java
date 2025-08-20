@@ -77,6 +77,7 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
 
         Session session = driver.session(); //.asyncSession();
         int value = -1;
+
         try {
             org.neo4j.driver.Record record = session.run(getCheckConstraints()).single();
             value = record.get(0).asInt();
@@ -86,18 +87,23 @@ public class SpaDatabaseNeo4j extends DbNeo4j {
             } else {
                 createConstraints(driver, promise);
             }
-        } catch (Exception exception) {
-            Throwable source = exception;
-            if (exception instanceof CompletionException) {
-                source = exception.getCause();
-            }
-            Status status = Status.INTERNAL_SERVER_ERROR;
-            if (source instanceof NoSuchRecordException) {
-                status = Status.NOT_FOUND;
-            }
-            logger.error("Error Checking Constraints: {}{}{}", ColorUtilConstants.RED,
+        } catch (NoSuchRecordException nsr) {
+            Status status = Status.NOT_FOUND;
+            logger.error("{}Error Checking Constraints(NF): {}{}", ColorUtilConstants.RED,
               status.getReasonPhrase(), ColorUtilConstants.RESET);
-            source.printStackTrace();
+            nsr.printStackTrace();
+            promise.complete();
+        } catch (CompletionException ce) {
+            Status status = Status.INTERNAL_SERVER_ERROR;
+            logger.error("{}Error Checking Constraints(Completion?): {}{}", ColorUtilConstants.RED,
+              status.getReasonPhrase(), ColorUtilConstants.RESET);
+            ce.printStackTrace();
+            promise.complete();
+        } catch (Exception exception) {
+            Status status = Status.SEE_OTHER;
+            logger.error("{}Error Checking Constraints: {}{}", ColorUtilConstants.RED,
+              status.getReasonPhrase(), ColorUtilConstants.RESET);
+            exception.printStackTrace();
             promise.complete();
         }
 

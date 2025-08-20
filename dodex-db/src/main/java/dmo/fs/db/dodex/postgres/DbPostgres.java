@@ -3,6 +3,8 @@ package dmo.fs.db.dodex.postgres;
 
 import dmo.fs.db.dodex.CreateDatabase;
 
+import java.util.Locale;
+
 public abstract class DbPostgres implements CreateDatabase {
     protected final static String CHECKUSERSQL = "SELECT to_regclass('public.users')";
     protected final static String CHECKMESSAGESSQL = "SELECT to_regclass('public.messages')";
@@ -144,13 +146,7 @@ public abstract class DbPostgres implements CreateDatabase {
         }
     }
 
-    ;
-
-    public DbPostgres() {
-        super();
-    }
-
     public String getCreateTable(String table) {
-        return CreateTable.valueOf("CREATE" + table.toUpperCase()).sql;
+        return CreateTable.valueOf("CREATE" + table.toUpperCase(Locale.US)).sql;
     }
 }

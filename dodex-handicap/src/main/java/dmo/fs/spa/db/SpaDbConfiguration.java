@@ -2,6 +2,7 @@ package dmo.fs.spa.db;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -22,6 +23,7 @@ import dmo.fs.spa.db.reactive.SpaDatabaseReactive;
 import dmo.fs.spa.db.reactive.sqlite3.SpaDatabaseSqlite3;
 import dmo.fs.spa.utils.SpaUtil;
 
+@SuppressWarnings("PMD.NonThreadSafeSingleton")
 public class SpaDbConfiguration extends DbConfiguration {
     protected static final Logger logger = LoggerFactory.getLogger(SpaDbConfiguration.class.getName());
 
@@ -39,7 +41,7 @@ public class SpaDbConfiguration extends DbConfiguration {
     @SuppressWarnings("unchecked")
     public static <T> T getSpaDb() {
         try {
-            defaultDb = SpaUtil.getDefaultDb().toLowerCase();
+            defaultDb = SpaUtil.getDefaultDb().toLowerCase(Locale.US);
 
             if (defaultDb.equals(DbTypes.POSTGRES.db) && spaDatabase == null) {
                 spaDatabase = new SpaDatabasePostgres();
@@ -94,7 +96,7 @@ public class SpaDbConfiguration extends DbConfiguration {
     @SuppressWarnings("unchecked")
     public static <T> T getSpaDb(Map<String, String> overrideMap, Properties overrideProps) throws InterruptedException, SQLException {
         try {
-            defaultDb = SpaUtil.getDefaultDb().toLowerCase();
+            defaultDb = SpaUtil.getDefaultDb().toLowerCase(Locale.US);
 
             if (defaultDb.equals(DbTypes.POSTGRES.db) && spaDatabase == null) {
                 spaDatabase = new SpaDatabasePostgres(overrideMap, overrideProps);
