@@ -104,45 +104,60 @@ def dir = System.getProperty("user.dir")
 
 compileJava {
     options.encoding = "UTF-8"
-    options.compilerArgs << "-Xlint:unchecked,deprecation"
-    dependsOn compileQuarkusGeneratedSourcesJava
-}
-tasks.withType(KotlinJvmCompile).configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
-        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
-    }
-}
+	    options.compilerArgs << "-Xlint:unchecked,deprecation"
+	}
 
-/*
-  Using a java class to generate jooq objects - allows for multiple db's - see ./generate directory
-  Composite build - implementation("dmo.fs.utils:generate:0.0.1") - this avoids the circular dependancy error
-*/
-tasks.register('jooqGenerate', JavaExec) {
-    group "Execution"
-    doFirst {
-        classpath = sourceSets.main.runtimeClasspath
-    }
+	tasks.withType(JavaExec).configureEach {
+	    jvmArgs += ["--enable-native-access=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"]
 
-    def defaultDb = System.getenv("DEFAULT_DB") ?: "sqlite3"
-    defaultDb = defaultDb == "sqlite3" || defaultDb == "postgres" ? defaultDb : "sqlite3"
+	    if(JavaVersion.current() >= JavaVersion.VERSION_24) {
+		jvmArgs += ["--sun-misc-unsafe-memory-access=allow"]    	
+	    }
+	}
 
-    environment "DEFAULT_DB", defaultDb
-    environment "VERTXWEB_ENVIRONMENT", "dev"
-    mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
-    args = ["dev"]
-}
+	tasks.quarkusDev {
+	    jvmArgs += ["--enable-native-access=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"]
+	    if(JavaVersion.current() >= JavaVersion.VERSION_24) {
+		jvmArgs += "--sun-misc-unsafe-memory-access=allow"
+	    }
+	}
 
-/*
-    The "run" task can be used to set Environment Variables before executing "quarkusDev"
- */
-tasks.register('run', Exec) {
-//   workingDir dir
-    if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {
-        environment "GOOGLE_APPLICATION_CREDENTIALS", "$usr/auth/service-account-key.json"
-    }
-    //on windows:
-    if (OS.indexOf("win") >= 0) {
+	tasks.withType(KotlinJvmCompile).configureEach {
+	    compilerOptions {
+		jvmTarget.set(JvmTarget.JVM_21)
+		freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+	    }
+	}
+
+	/*
+	  Using a java class to generate jooq objects - allows for multiple db's - see ./generate directory
+	  Composite build - implementation("dmo.fs.utils:generate:0.0.1") - this avoids the circular dependancy error
+	*/
+	tasks.register('jooqGenerate', JavaExec) {
+	    group = "Execution"
+	    doFirst {
+		classpath = sourceSets.main.runtimeClasspath
+	    }
+
+	    def defaultDb = System.getenv("DEFAULT_DB") ?: "sqlite3"
+	    defaultDb = defaultDb == "sqlite3" || defaultDb == "postgres" ? defaultDb : "sqlite3"
+
+	    environment "DEFAULT_DB", defaultDb
+	    environment "VERTXWEB_ENVIRONMENT", "dev"
+	    mainClass = "dmo.fs.db.generate.utils.JooqGenerate"
+	    args = ["dev"]
+	}
+
+	/*
+	    The "run" task can be used to set Environment Variables before executing "quarkusDev"
+	 */
+	tasks.register('run', Exec) {
+	//   workingDir dir
+	    if ("firebase" == System.getenv("DEFAULT_DB") && System.getenv("GOOGLE_APPLICATION_CREDENTIALS") == null) {
+		environment "GOOGLE_APPLICATION_CREDENTIALS", "$usr/auth/service-account-key.json"
+	    }
+	    //on windows:
+	    if (OS.indexOf("win") >= 0) {
         commandLine "cmd", "/c", ".\\gradlew", "quarkusDev"
     } else {
         //on linux

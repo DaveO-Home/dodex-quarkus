@@ -55,7 +55,7 @@
 #       Darwin, MinGW, and NonStop.
 #
 #   (3) This script is generated from the Groovy template
-#       https://github.com/gradle/gradle/blob/HEAD/subprojects/plugins/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
+#       https://github.com/gradle/gradle/blob/HEAD/platforms/jvm/plugins-application/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
 #       within the Gradle project.
 #
 #       You can find Gradle at https://github.com/gradle/gradle/.
@@ -200,8 +200,13 @@ fi
 
 
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m" "--enable-native-access=ALL-UNNAMED" "--add-opens" "java.base/java.lang=ALL-UNNAMED"'
 
+#JV=$(java -version 2>&1 | grep -oP 'version "?(1\.)?\K\d+')
+#if [[ ! -z "$JV" ]] && [ $JV -ge 23 ]; then
+#    DEFAULT_JVM_OPTS="$DEFAULT_JVM_OPTS --sun-misc-unsafe-memory-access=allow"
+#fi
+ 
 # Collect all arguments for the java command:
 #   * DEFAULT_JVM_OPTS, JAVA_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
 #     and any embedded shellness will be escaped.
@@ -212,7 +217,7 @@ set -- \
         "-Dorg.gradle.appname=$APP_BASE_NAME" \
         -classpath "$CLASSPATH" \
         org.gradle.wrapper.GradleWrapperMain \
-        "$@"
+        "$@" 
 
 # Stop when "xargs" is not available.
 if ! command -v xargs >/dev/null 2>&1
@@ -246,4 +251,4 @@ eval "set -- $(
         tr '\n' ' '
     )" '"$@"'
 
-exec "$JAVACMD" "$@"
+exec "$JAVACMD" "$@" -q

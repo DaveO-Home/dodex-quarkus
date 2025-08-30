@@ -1,5 +1,19 @@
 # Changelog
 
+## [v3.26.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.26.0) (2025-09-02)
+
+[Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.18.0...v3.26.0)
+
+* Upgraded to Quarkus 3.26.0
+* Upgraded to Gradle 9.0.0
+* Can run with Java 24
+  * changed DEFAULT_JVM_OPTS in `gradlew`
+  * can also use JAVA_OPTS environment variable to fix WARNINGS
+    * '"--enable-native-access=ALL-UNNAMED" "--add-opens" "java.base/java.lang=ALL-UNNAMED"' for Java24
+    * "--sun-misc-unsafe-memory-access=allow" for Netty - required for jvmArgs
+    * for Netty 4.2 will need "--enable-native-access=io.netty.common"
+    * also added these jvmArgs in build.gradle
+
 ## [v3.18.0](https://github.com/DaveO-Home/dodex-quarkus/tree/v3.18.0) (2025-08-20)
 
 [Full Changelog](https://github.com/DaveO-Home/dodex-vertx/compare/v3.17.2...v3.18.0)

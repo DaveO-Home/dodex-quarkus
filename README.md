@@ -5,8 +5,10 @@ An asynchronous server for Dodex, Dodex-input and Dodex-mess using the Quarkus S
 ## Install Assumptions
 
 1. Java 21+ installed with JAVA_HOME set.
-2. Gradle 8+ installed. If you have sdkman installed, execute `sdk install gradle 8.12` otherwise executing gradlew should install gradle.
+2. Gradle 8+ installed. If you have sdkman installed, execute `sdk install gradle 9.0.0` otherwise executing gradlew should install gradle.  
+   * __Note;__ the supplied `gradlew` has been modified to fix Java24 WARNINGS - see `CHANGELOG.md`
 3. Javascript **node** with **npm** package manager installed.
+4. Can now use Java 24 with Gradle 9
 
 ## Project Layout
 
